@@ -25,7 +25,9 @@ export async function GET(req: Request) {
   for (const ws of workspaces) {
     const today = todayIn(ws.timezone);
     if (isWeekend(today)) continue;
-    const holiday = await db.holiday.findFirst({ where: { workspaceId: ws.id, date: fromISO(today) } });
+    const holiday = await db.holiday.findFirst({
+      where: { workspaceId: ws.id, date: fromISO(today), region: { in: [...new Set(["", ws.settings?.holidayRegion ?? ""])] } },
+    });
     if (holiday) continue;
 
     const out = (await activeBookingsBetween(ws.id, today, today))

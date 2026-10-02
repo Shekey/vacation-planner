@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AllowanceCard } from "@/components/allowance-card";
 import { TypeDot, typeLabel } from "@/components/badges";
 import { halfDayLabel, portionOn } from "@/lib/booking-days";
-import { activeBookingsBetween, allowanceSummary, loadHolidays, spanOf } from "@/lib/bookings";
+import { activeBookingsBetween, allowanceSummary, loadHolidays, regionOf, spanOf } from "@/lib/bookings";
 import { addDays, eachDay, formatDate, formatRange, fromISO, toISO, todayIn } from "@/lib/dates";
 import { daysAtRisk, longWeekendTips } from "@/lib/smart-days";
 import { db } from "@/lib/db";
@@ -16,7 +16,8 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
   const horizon = addDays(today, 14);
   const tipsUntil = addDays(today, 120);
   const year = Number(today.slice(0, 4));
-  const holidays = await loadHolidays(workspace.id);
+  const myRegion = regionOf(membership, settings);
+  const holidays = await loadHolidays(workspace.id, myRegion);
 
   const [bookings, summary, pendingCount, myUpcoming, nextHoliday, myBookings] = await Promise.all([
     activeBookingsBetween(workspace.id, today, horizon),
@@ -27,7 +28,10 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
     db.booking.count({
       where: { membershipId: membership.id, status: { in: ["PENDING", "APPROVED"] }, endDate: { gte: fromISO(today) } },
     }),
-    db.holiday.findFirst({ where: { workspaceId: workspace.id, date: { gte: fromISO(today) } }, orderBy: { date: "asc" } }),
+    db.holiday.findFirst({
+      where: { workspaceId: workspace.id, date: { gte: fromISO(today) }, region: { in: [...new Set(["", myRegion])] } },
+      orderBy: { date: "asc" },
+    }),
     db.booking.findMany({
       where: {
         membershipId: membership.id,

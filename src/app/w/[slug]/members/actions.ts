@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/components/action-form";
 import { db } from "@/lib/db";
+import { isHolidayRegion } from "@/lib/holiday-regions";
 import { inviteMembers, parseEmailList, resendInvitation } from "@/lib/invitations";
 import { requireAdmin } from "@/lib/session";
 import { appOrigin } from "@/lib/url";
@@ -87,7 +88,19 @@ export async function updateMemberAction(
     }
   }
 
-  await db.membership.update({ where: { id: member.id }, data: { role, annualAllowanceDays: allowance } });
+  // Only sent when the workspace has regions to pick from; "" means the workspace default.
+  const region = formData.get("region");
+  let holidayRegion = member.holidayRegion;
+  if (typeof region === "string") {
+    const country = ctx.workspace.settings?.holidayCountry ?? "";
+    if (region && !isHolidayRegion(country, region)) return { error: "Pick a region from the list." };
+    holidayRegion = region || null;
+  }
+
+  await db.membership.update({
+    where: { id: member.id },
+    data: { role, annualAllowanceDays: allowance, holidayRegion },
+  });
   revalidatePath(`/w/${slug}`, "layout");
   return { ok: "Saved." };
 }

@@ -1,4 +1,4 @@
-import { activeBookingsBetween, spanOf } from "@/lib/bookings";
+import { activeBookingsBetween, regionOf, spanOf } from "@/lib/bookings";
 import { halfDayLabel } from "@/lib/booking-days";
 import { addDays, fromISO, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
@@ -11,7 +11,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/calendar/[token
   const { token } = await ctx.params;
   const membership = await db.membership.findUnique({
     where: { calendarToken: token.replace(/\.ics$/, "") },
-    include: { workspace: true },
+    include: { workspace: { include: { settings: true } } },
   });
   if (!membership || membership.removedAt) return new Response("Not found", { status: 404 });
 
@@ -21,7 +21,14 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/calendar/[token
   const to = addDays(today, 400);
   const [bookings, holidays] = await Promise.all([
     activeBookingsBetween(workspace.id, from, to),
-    db.holiday.findMany({ where: { workspaceId: workspace.id, date: { gte: fromISO(from), lte: fromISO(to) } } }),
+    // The feed owner's holidays: nationwide plus their region's.
+    db.holiday.findMany({
+      where: {
+        workspaceId: workspace.id,
+        date: { gte: fromISO(from), lte: fromISO(to) },
+        region: { in: [...new Set(["", regionOf(membership, { holidayRegion: workspace.settings?.holidayRegion ?? null })])] },
+      },
+    }),
   ]);
 
   const events: CalendarEvent[] = [

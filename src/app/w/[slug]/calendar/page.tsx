@@ -2,10 +2,10 @@ import Link from "next/link";
 import { Legend, typeColor } from "@/components/badges";
 import { ScrollToToday } from "@/components/scroll-to-today";
 import { portionOn } from "@/lib/booking-days";
-import { activeBookingsBetween, spanOf } from "@/lib/bookings";
+import { activeBookingsBetween, regionOf, spanOf } from "@/lib/bookings";
 import { eachDay, fromISO, isWeekend, isYearMonth, monthBounds, shiftMonth, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
-import { requireMembership } from "@/lib/session";
+import { requireMembership, settingsOf } from "@/lib/session";
 
 export default async function CalendarPage({ params, searchParams }: PageProps<"/w/[slug]/calendar">) {
   const { slug } = await params;
@@ -25,9 +25,12 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
     activeBookingsBetween(workspace.id, start, end),
     db.holiday.findMany({ where: { workspaceId: workspace.id, date: { gte: fromISO(start), lte: fromISO(end) } } }),
   ]);
-  const holidays = new Map(holidayRows.map((h) => [toISO(h.date), h.name]));
-  const offDayClass = (d: string) =>
-    holidays.has(d) ? "bg-rose-500/10" : isWeekend(d) ? "bg-black/5 dark:bg-white/5" : "";
+  // Nationwide holidays shade the whole column; regional ones only the rows of people in that region.
+  const settings = settingsOf(workspace);
+  const holidayName = (d: string, region: string) =>
+    holidayRows.find((h) => toISO(h.date) === d && (h.region === "" || h.region === region))?.name;
+  const offDayClass = (d: string, region = "") =>
+    holidayName(d, region) ? "bg-rose-500/10" : isWeekend(d) ? "bg-black/5 dark:bg-white/5" : "";
   // You first, then everyone else alphabetically.
   const label = (m: (typeof members)[number]) => m.user.name ?? m.user.email;
   members.sort((a, b) =>
@@ -73,7 +76,7 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
                 <th
                   key={d}
                   data-today={d === today ? "" : undefined}
-                  title={holidays.get(d)}
+                  title={holidayName(d, "")}
                   className={`min-w-6 p-1 text-center font-normal ${offDayClass(d)} ${
                     d === today ? "text-sky-600 font-bold dark:text-sky-400" : "opacity-70"
                   }`}
@@ -88,6 +91,7 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
             {members.map((m) => {
               const own = byMember.get(m.id) ?? [];
               const canBook = isAdmin || m.id === membership.id;
+              const region = regionOf(m, settings);
               return (
                 <tr key={m.id} className="border-t border-black/5 dark:border-white/10">
                   <th className="sticky left-0 z-10 w-24 min-w-24 max-w-24 truncate bg-background p-2 text-left font-medium sm:w-auto sm:min-w-28 sm:max-w-40">
@@ -99,7 +103,8 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
                     const hits = own
                       .map((b) => ({ b, portion: portionOn(spanOf(b), d) }))
                       .filter((h): h is { b: (typeof own)[number]; portion: "FULL" | "AM" | "PM" } => h.portion !== null);
-                    const weekendClass = offDayClass(d);
+                    const weekendClass = offDayClass(d, region);
+                    const holiday = holidayName(d, region);
                     const todayClass = d === today ? "ring-1 ring-inset ring-sky-500/60" : "";
                     const title = hits
                       .map(
@@ -108,7 +113,7 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
                             b.status === "PENDING" ? ", pending" : ""
                           }${b.note ? ` – ${b.note}` : ""}`,
                       )
-                      .concat(holidays.has(d) ? [`Holiday: ${holidays.get(d)}`] : [])
+                      .concat(holiday ? [`Holiday: ${holiday}`] : [])
                       .join("\n");
                     return (
                       <td key={d} title={title || undefined} className={`relative h-8 p-0 ${weekendClass} ${todayClass}`}>

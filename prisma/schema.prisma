@@ -96,10 +96,12 @@ model Holiday {
   workspaceId String
   date        DateTime @db.Date
   name        String
+  // ISO 3166-2 region the holiday applies to, e.g. "DE-BE"; empty for everyone in the workspace.
+  region      String   @default("")
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  @@unique([workspaceId, date])
+  @@unique([workspaceId, date, region])
 }
 
 // Per-workspace feature flags.
@@ -116,6 +118,8 @@ model WorkspaceSettings {
   minPeoplePresent     Int?
   // ISO 3166 country code last used to import public holidays, e.g. "BA".
   holidayCountry       String?
+  // Default ISO 3166-2 region for members' regional holidays, e.g. "DE-BE"; null means nationwide only.
+  holidayRegion        String?
   // Microsoft Teams webhook (Workflows or connector) for booking notifications.
   teamsWebhookUrl      String?
 
@@ -134,6 +138,8 @@ model Membership {
   removedAt            DateTime?
   // Secret for the personal iCal feed URL; null until the member turns the feed on.
   calendarToken        String?   @unique
+  // Where this member works, for regional holidays, e.g. "DE-NW"; null uses the workspace default.
+  holidayRegion        String?
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)

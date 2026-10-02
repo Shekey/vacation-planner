@@ -1,4 +1,4 @@
-import { activeBookingsBetween, allowanceSummary, loadHolidays, spanOf } from "@/lib/bookings";
+import { activeBookingsBetween, allowanceSummary, regionOf, spanOf } from "@/lib/bookings";
 import { addDays, fromISO, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import type { requireMembership } from "@/lib/session";
@@ -14,13 +14,13 @@ export async function loadBookingFormData(ctx: Ctx) {
   const today = todayIn(workspace.timezone);
   const currentYear = Number(today.slice(0, 4));
 
-  const holidaySet = await loadHolidays(workspace.id);
+  // All regions' holidays; the form keeps the ones for the person being booked.
   const holidays = (
     await db.holiday.findMany({
       where: { workspaceId: workspace.id, date: { gte: fromISO(addDays(today, -366)), lte: fromISO(addDays(today, 731)) } },
       orderBy: { date: "asc" },
     })
-  ).map((h) => ({ date: toISO(h.date), name: h.name }));
+  ).map((h) => ({ date: toISO(h.date), name: h.name, region: h.region }));
   const memberCount = await db.membership.count({ where: { workspaceId: workspace.id, removedAt: null } });
 
   const memberships = await db.membership.findMany({
@@ -30,13 +30,14 @@ export async function loadBookingFormData(ctx: Ctx) {
   });
   const members = await Promise.all(
     memberships.map(async (m) => {
-      const s = await allowanceSummary(m, settings, currentYear, holidaySet);
+      const s = await allowanceSummary(m, settings, currentYear);
       const label = m.user.name ?? m.user.email;
       return {
         id: m.id,
         name: m.id === membership.id ? `${label} (you)` : label,
         allowance: s.allowance,
         takenThisYear: s.used + s.pending,
+        region: regionOf(m, settings),
       };
     }),
   );
@@ -50,5 +51,5 @@ export async function loadBookingFormData(ctx: Ctx) {
     name: b.membership.user.name ?? b.membership.user.email,
   }));
 
-  return { settings, isAdmin, today, currentYear, members, team, holidays, holidaySet, memberCount };
+  return { settings, isAdmin, today, currentYear, members, team, holidays, memberCount };
 }

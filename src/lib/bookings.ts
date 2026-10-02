@@ -14,11 +14,21 @@ export type Settings = {
   maxCarryOverDays: number | null;
   minPeoplePresent: number | null;
   teamsWebhookUrl: string | null;
+  /** Default region for regional holidays, e.g. "DE-BE". */
+  holidayRegion: string | null;
 };
 
-/** Public holiday dates of a workspace, for day counting. */
-export async function loadHolidays(workspaceId: string): Promise<Set<ISODate>> {
-  const rows = await db.holiday.findMany({ where: { workspaceId }, select: { date: true } });
+/** The region whose holidays apply to a member: their own, else the workspace default, else nationwide only. */
+export function regionOf(membership: { holidayRegion?: string | null }, settings: { holidayRegion: string | null }): string {
+  return membership.holidayRegion ?? settings.holidayRegion ?? "";
+}
+
+/** Public holiday dates for people in `region` (nationwide ones plus that region's), for day counting. */
+export async function loadHolidays(workspaceId: string, region = ""): Promise<Set<ISODate>> {
+  const rows = await db.holiday.findMany({
+    where: { workspaceId, region: { in: [...new Set(["", region])] } },
+    select: { date: true },
+  });
   return new Set(rows.map((h) => toISO(h.date)));
 }
 
@@ -92,7 +102,7 @@ export async function createBooking(opts: {
   if (!target) throw new BookingError("That member is not in this workspace.");
 
   const status = initialStatus(actor, settings);
-  const holidays = await loadHolidays(workspace.id);
+  const holidays = await loadHolidays(workspace.id, regionOf(target, settings));
   const booking = await write(() =>
     db.booking.create({
       data: {
@@ -151,7 +161,7 @@ export async function updateBooking(opts: {
 
   // A member changing dates sends the booking back for approval.
   const status = initialStatus(actor, settings);
-  const holidays = await loadHolidays(workspace.id);
+  const holidays = await loadHolidays(workspace.id, regionOf(existing.membership, settings));
   const booking = await write(() =>
     db.booking.update({
       where: { id: existing.id },
@@ -300,14 +310,14 @@ async function vacationDaysInYear(membershipId: string, rules: DayRules, year: n
 }
 
 export async function allowanceSummary(
-  membership: { id: string; workspaceId: string; annualAllowanceDays: Prisma.Decimal | null },
+  membership: { id: string; workspaceId: string; annualAllowanceDays: Prisma.Decimal | null; holidayRegion?: string | null },
   settings: Settings,
   year: number,
   holidays?: Set<ISODate>,
 ): Promise<AllowanceSummary> {
   const rules: DayRules = {
     countWeekends: settings.countWeekends,
-    holidays: holidays ?? (await loadHolidays(membership.workspaceId)),
+    holidays: holidays ?? (await loadHolidays(membership.workspaceId, regionOf(membership, settings))),
   };
   const { used, pending } = await vacationDaysInYear(membership.id, rules, year);
   if (membership.annualAllowanceDays === null) {
