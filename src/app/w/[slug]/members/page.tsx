@@ -1,5 +1,6 @@
 import { ActionForm } from "@/components/action-form";
 import { db } from "@/lib/db";
+import { HOLIDAY_REGIONS } from "@/lib/holiday-regions";
 import { requireAdmin } from "@/lib/session";
 import {
   inviteAction,
@@ -25,6 +26,8 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
     }),
   ]);
   const now = new Date();
+  const regions = HOLIDAY_REGIONS[workspace.settings?.holidayCountry ?? ""] ?? [];
+  const defaultRegion = regions.find((r) => r.code === workspace.settings?.holidayRegion)?.name;
 
   return (
     <div className="space-y-8">
@@ -105,6 +108,21 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
                     />
                     <span className="opacity-60">days/yr</span>
                   </label>
+                  {regions.length > 0 && (
+                    <select
+                      name="region"
+                      defaultValue={m.holidayRegion ?? ""}
+                      className="input w-auto max-w-48 py-1"
+                      aria-label="Works in (for public holidays)"
+                    >
+                      <option value="">{defaultRegion ? `Team default (${defaultRegion})` : "Nationwide holidays only"}</option>
+                      {regions.map((r) => (
+                        <option key={r.code} value={r.code}>
+                          {r.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <button className="rounded-md border border-black/20 px-2 py-1 dark:border-white/25">Save</button>
                 </ActionForm>
                 {m.id !== me.id && (

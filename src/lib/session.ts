@@ -40,6 +40,7 @@ type SettingsRow = {
   maxCarryOverDays: { toString(): string } | null;
   minPeoplePresent: number | null;
   teamsWebhookUrl: string | null;
+  holidayRegion: string | null;
 };
 
 export function settingsOf(workspace: { settings: SettingsRow | null }): Settings {
@@ -51,6 +52,7 @@ export function settingsOf(workspace: { settings: SettingsRow | null }): Setting
     maxCarryOverDays: s?.maxCarryOverDays == null ? null : Number(s.maxCarryOverDays),
     minPeoplePresent: s?.minPeoplePresent ?? null,
     teamsWebhookUrl: s?.teamsWebhookUrl ?? null,
+    holidayRegion: s?.holidayRegion ?? null,
   };
 }
 

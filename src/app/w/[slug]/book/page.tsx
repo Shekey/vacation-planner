@@ -11,6 +11,7 @@ export default async function BookPage({ params, searchParams }: PageProps<"/w/[
   const data = await loadBookingFormData(ctx);
 
   const start = isISODate(query.start) ? query.start : data.today;
+  const end = isISODate(query.end) && query.end >= start ? query.end : start;
   const requested = typeof query.member === "string" ? query.member : null;
   const membershipId = data.members.some((m) => m.id === requested) ? requested! : ctx.membership.id;
 
@@ -27,7 +28,7 @@ export default async function BookPage({ params, searchParams }: PageProps<"/w/[
         team={data.team}
         holidays={data.holidays}
         memberCount={data.memberCount}
-        initial={{ membershipId, type: "VACATION", start, end: start, startPart: "FULL", endPart: "FULL", note: "" }}
+        initial={{ membershipId, type: "VACATION", start, end, startPart: "FULL", endPart: "FULL", note: "" }}
       />
     </div>
   );

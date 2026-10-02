@@ -20,13 +20,14 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
     orderBy: { startDate: "asc" },
   });
 
-  const holidays = await loadHolidays(workspace.id);
+  // Staffing counts use the team's main region; each person's own allowance uses theirs.
+  const holidays = await loadHolidays(workspace.id, settings.holidayRegion ?? "");
   const memberCount = await db.membership.count({ where: { workspaceId: workspace.id, removedAt: null } });
   const rows = await Promise.all(
     pending.map(async (b) => {
       const span = spanOf(b);
       const [summary, others] = await Promise.all([
-        allowanceSummary(b.membership, settings, Number(span.start.slice(0, 4)) || year, holidays),
+        allowanceSummary(b.membership, settings, Number(span.start.slice(0, 4)) || year),
         activeBookingsBetween(workspace.id, span.start, span.end),
       ]);
       const days = eachDay(span.start, span.end);

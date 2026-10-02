@@ -6,7 +6,7 @@ import { countDays, portionOn, validateSpan, type BookingSpan } from "@/lib/book
 import { eachDay, formatDate, formatRange, type ISODate } from "@/lib/dates";
 import { understaffedDays } from "@/lib/staffing";
 
-type Member = { id: string; name: string; allowance: number | null; takenThisYear: number };
+type Member = { id: string; name: string; allowance: number | null; takenThisYear: number; region: string };
 type TeamBooking = BookingSpan & { id: string; membershipId: string; name: string };
 
 export type BookingFormProps = {
@@ -14,7 +14,8 @@ export type BookingFormProps = {
   members: Member[];
   canChooseMember: boolean;
   settings: { countWeekends: boolean; allowHalfDays: boolean; approvalsEnabled: boolean; minPeoplePresent: number | null };
-  holidays: { date: ISODate; name: string }[];
+  /** Every region's holidays; only the booked person's apply. */
+  holidays: { date: ISODate; name: string; region: string }[];
   memberCount: number;
   isAdmin: boolean;
   currentYear: number;
@@ -62,14 +63,19 @@ export function BookingForm(props: BookingFormProps) {
       }
     : { start, end, startPart: startsPm ? "PM" : "FULL", endPart: endsAm ? "AM" : "FULL" };
 
+  const member = props.members.find((m) => m.id === membershipId);
+  const region = member?.region ?? "";
+  const holidays = useMemo(
+    () => props.holidays.filter((h) => h.region === "" || h.region === region),
+    [props.holidays, region],
+  );
   const rules = useMemo(
-    () => ({ countWeekends: settings.countWeekends, holidays: new Set(props.holidays.map((h) => h.date)) }),
-    [settings.countWeekends, props.holidays],
+    () => ({ countWeekends: settings.countWeekends, holidays: new Set(holidays.map((h) => h.date)) }),
+    [settings.countWeekends, holidays],
   );
   const problem = start && end ? validateSpan(span, settings) : null;
   const days = start && end && !problem ? countDays(span, rules) : 0;
-  const holidaysInRange = start && end ? props.holidays.filter((h) => h.date >= start && h.date <= end) : [];
-  const member = props.members.find((m) => m.id === membershipId);
+  const holidaysInRange = start && end ? holidays.filter((h) => h.date >= start && h.date <= end) : [];
   const year = props.currentYear;
   const daysThisYear =
     start && end && !problem ? countDays(span, rules, { from: `${year}-01-01`, to: `${year}-12-31` }) : 0;
