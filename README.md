@@ -19,7 +19,7 @@ Without `AUTH_RESEND_KEY`, sign-in links are printed to the dev server console i
 
 ## Deploy on Vercel
 
-1. **Import the repo** at vercel.com/new and pick `Shekey/vacation-planner`. The framework is detected; leave build settings as they are. The `vercel-build` script runs database migrations before every build. The first deploy fails with "No database URL is set" because there is no database yet; that is expected.
+1. **Import the repo** at vercel.com/new and pick `Shekey/vacation-planner`. The framework is detected; leave build settings as they are. The `vercel-build` script runs database migrations before every build. The first deploy fails with "No database URL is set" because there is no database yet; that is expected. Preview deploys without their own database still build, but skip migrations and can't sign anyone in.
 2. **Add a database**: in the Vercel project, open *Storage* → *Create Database* → *Neon* (Postgres) and connect it to the project. Tick all environments (Development, Preview, Production). This sets `DATABASE_URL` and `DATABASE_URL_UNPOOLED` (or `POSTGRES_URL` and `POSTGRES_URL_NON_POOLING`, both work) for you. Leave the custom prefix empty.
 3. **Set environment variables** (*Settings* → *Environment Variables*):
    | Name | Value |
