@@ -27,7 +27,7 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
           Book time off
         </Link>
       </div>
-      <nav className="-mx-4 flex gap-1 overflow-x-auto whitespace-nowrap border-b border-black/10 px-3 pb-2 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 dark:border-white/15">
+      <nav aria-label="Workspace" className="-mx-4 flex gap-1 overflow-x-auto whitespace-nowrap border-b border-black/10 px-3 pb-2 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 dark:border-white/15">
         <NavLink href={base} exact>
           Overview
         </NavLink>
@@ -39,8 +39,9 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
           <NavLink href={`${base}/approvals`}>
             Approvals
             {pendingCount > 0 && (
-              <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-white">
+              <span className="ml-1.5 rounded-full bg-amber-600 px-1.5 text-xs font-semibold text-white">
                 {pendingCount}
+                <span className="sr-only"> waiting</span>
               </span>
             )}
           </NavLink>

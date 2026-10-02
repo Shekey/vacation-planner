@@ -70,7 +70,10 @@ export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me"
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
-        <AllowanceCard summary={summary} />
+        <AllowanceCard
+          summary={summary}
+          editHref={membership.role === "ADMIN" ? `/w/${slug}/members#member-${membership.id}` : undefined}
+        />
         {(nextYear.used > 0 || nextYear.pending > 0) && <AllowanceCard summary={nextYear} />}
       </div>
 

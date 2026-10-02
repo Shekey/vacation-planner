@@ -54,8 +54,11 @@ export function ActionForm({
       <fieldset disabled={pending} className="contents">
         {children}
       </fieldset>
-      {state.error && <p className="mt-1 text-sm text-red-600">{state.error}</p>}
-      {state.ok && <p className="mt-1 text-sm text-green-700 dark:text-green-400">{state.ok}</p>}
+      {/* Always rendered so screen readers announce the message when it appears. */}
+      <div aria-live="polite" role="status">
+        {state.error && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{state.error}</p>}
+        {state.ok && <p className="mt-1 text-sm text-green-700 dark:text-green-400">{state.ok}</p>}
+      </div>
     </form>
   );
 }

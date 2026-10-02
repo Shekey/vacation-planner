@@ -40,6 +40,26 @@ body {
   }
 }
 
+/* A visible keyboard focus ring everywhere; mouse clicks don't show it. */
+:where(a, button, summary, [tabindex]):focus-visible,
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: 2px solid #0ea5e9;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Diagonal stripes mark bookings still waiting for approval. */
 .pending-stripes {
   background-image: repeating-linear-gradient(
