@@ -27,8 +27,8 @@ Without `AUTH_RESEND_KEY`, sign-in links are printed to the dev server console i
    | `AUTH_SECRET` | output of `npx auth secret` (or any long random string) |
    | `AUTH_RESEND_KEY` | API key from resend.com |
    | `EMAIL_FROM` | e.g. `Vacation Planner <vacations@yourdomain.com>` (a domain verified in Resend) |
-   | `AUTH_URL` | your site URL, e.g. `https://vacation-planner.vercel.app` |
    | `CRON_SECRET` | any long random string (enables the weekday Teams digest) |
+   Don't set `AUTH_URL` on Vercel unless you add a custom domain; then set it to exactly that address (e.g. `https://vacations.yourcompany.com`). A wrong `AUTH_URL` sends sign-in links and redirects to another site.
 4. **Redeploy** so the variables apply. Open the site, sign in with your email and create your workspace.
 
 Without a verified domain, Resend only delivers to the email address of your Resend account, which is enough to try it yourself. Verify a domain in Resend before inviting the team.
@@ -59,5 +59,5 @@ Without a verified domain, Resend only delivers to the email address of your Res
 ## Notes
 
 - Migrations add constraints Prisma can't express: `endDate >= startDate`, and an exclusion constraint (in half-day units, via `booking_halfday_range`) so one member can't have overlapping pending/approved bookings. Keep them when editing migrations.
-- Set `AUTH_URL` in production so links in emails use the right domain.
+- Outside Vercel, set `AUTH_URL` in production so links in emails use the right domain. On Vercel the production domain is used automatically.
 - Workspace pages respond 404 to non-members so workspaces can't be discovered by slug.
