@@ -50,8 +50,9 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
           <NavLink href={`${base}/approvals`}>
             Approvals
             {pendingCount > 0 && (
-              <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-white" aria-label={`${pendingCount} waiting`}>
+              <span className="ml-1.5 rounded-full bg-amber-600 px-1.5 text-xs font-semibold text-white" aria-label={`${pendingCount} waiting`}>
                 {pendingCount}
+                <span className="sr-only"> waiting</span>
               </span>
             )}
           </NavLink>

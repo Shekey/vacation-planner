@@ -55,8 +55,8 @@ export default async function HolidaysPage({ params, searchParams }: PageProps<"
 
       {regions.length > 0 && (
         <ActionForm action={setMyRegionAction.bind(null, slug)} className="card flex flex-wrap items-center gap-2 text-sm">
-          <span className="font-medium">I work in</span>
-          <select name="region" defaultValue={membership.holidayRegion ?? ""} className="input w-auto py-1">
+          <label htmlFor="my-region" className="font-medium">I work in</label>
+          <select id="my-region" name="region" defaultValue={membership.holidayRegion ?? ""} className="input w-auto py-1">
             <option value="">
               {settings.holidayRegion ? `Team default (${regionName(settings.holidayRegion)})` : "Nationwide holidays only"}
             </option>

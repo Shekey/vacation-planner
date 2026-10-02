@@ -6,7 +6,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "Vacation Planner", template: "%s · Vacation Planner" },
-  description: "Plan and book team vacations",
+  description:
+    "Team vacation planning with yearly allowances, half days, regional public holidays, approvals and Microsoft Teams updates.",
 };
 
 export const viewport: Viewport = {
@@ -22,12 +23,23 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-foreground focus:px-3 focus:py-2 focus:text-background"
+        >
+          Skip to content
+        </a>
         <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-2.5">
             <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
               <LogoMark />
               <span>Vacation Planner</span>
             </Link>
+            {!session?.user && (
+              <Link href="/sign-in" className="btn py-1.5 text-sm">
+                Sign in
+              </Link>
+            )}
             {session?.user && (
               <form
                 action={async () => {
@@ -49,7 +61,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             )}
           </div>
         </header>
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:py-8">{children}</main>
+        <main id="main" tabIndex={-1} className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 outline-none sm:py-8">{children}</main>
       </body>
     </html>
   );

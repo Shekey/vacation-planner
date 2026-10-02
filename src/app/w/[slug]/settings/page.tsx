@@ -52,6 +52,10 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
           />
           <span className="block text-xs opacity-60">Leave empty to not track allowances by default. You can override it per member.</span>
         </label>
+        <label className="flex cursor-pointer items-center gap-2 text-sm">
+          <input type="checkbox" name="applyAllowanceToAll" className="h-4 w-4" />
+          Also set it for everyone already in the workspace, you included
+        </label>
         <label className="block space-y-1">
           <span className="text-sm font-medium">Carry over unused days (max)</span>
           <input

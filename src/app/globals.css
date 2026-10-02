@@ -49,11 +49,6 @@ body {
   font-feature-settings: "cv11", "ss01";
 }
 
-:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
 @layer components {
   .input {
     @apply w-full rounded-lg border border-border bg-surface px-3 py-2 shadow-xs outline-none transition-shadow placeholder:text-muted/70 focus:border-primary focus:ring-3 focus:ring-primary/20 dark:bg-white/5;
@@ -79,6 +74,26 @@ body {
   }
 }
 
+/* A visible keyboard focus ring everywhere; mouse clicks don't show it. */
+:where(a, button, summary, [tabindex]):focus-visible,
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Diagonal stripes mark bookings still waiting for approval. */
 .pending-stripes {
   background-image: repeating-linear-gradient(
@@ -86,13 +101,4 @@ body {
     rgb(255 255 255 / 0.55) 0 3px,
     transparent 3px 7px
   );
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
-  }
 }

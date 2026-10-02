@@ -158,7 +158,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 font-medium">
                         <span className="truncate">{name(b)}</span>
-                        <TypeDot type={b.type} />
+                        <TypeDot type={b.type} decorative={portion === "FULL"} />
                       </div>
                       <div className="text-muted">
                         {portion === "AM" ? "Morning" : portion === "PM" ? "Afternoon" : typeLabel(b.type)}

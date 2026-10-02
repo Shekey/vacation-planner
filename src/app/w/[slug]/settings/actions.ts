@@ -50,8 +50,10 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
     teamsWebhookUrl: parsed.data.teamsWebhookUrl,
   };
   const wasApprovals = settingsOf(ctx.workspace).approvalsEnabled;
+  // The default is copied when someone joins, so people who joined earlier need an explicit update.
+  const applyToAll = formData.get("applyAllowanceToAll") === "on";
 
-  await db.workspace.update({
+  const updateWorkspace = db.workspace.update({
     where: { id: ctx.workspace.id },
     data: {
       name: parsed.data.name,
@@ -64,11 +66,16 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
       },
     },
   });
+  const applyAllowance = db.membership.updateMany({
+    where: { workspaceId: ctx.workspace.id, removedAt: null },
+    data: { annualAllowanceDays: flags.defaultAllowanceDays },
+  });
+  const [, applied] = applyToAll ? await db.$transaction([updateWorkspace, applyAllowance]) : [await updateWorkspace];
 
-  let note = "";
+  let note = applied ? ` Allowance set for ${applied.count} ${applied.count === 1 ? "person" : "people"}.` : "";
   if (wasApprovals && !flags.approvalsEnabled) {
     const { count } = await approveAllPending(ctx.workspace.id, ctx.user.id);
-    if (count) note = ` ${count} pending request${count === 1 ? " was" : "s were"} approved.`;
+    if (count) note += ` ${count} pending request${count === 1 ? " was" : "s were"} approved.`;
   }
   revalidatePath(`/w/${slug}`, "layout");
   return { ok: `Saved.${note}` };
