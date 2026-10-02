@@ -4,6 +4,8 @@ import { saveBooking } from "./actions";
 import { BookingForm } from "./booking-form";
 import { loadBookingFormData } from "./load";
 
+export const metadata = { title: "Book time off" };
+
 export default async function BookPage({ params, searchParams }: PageProps<"/w/[slug]/book">) {
   const { slug } = await params;
   const query = await searchParams;

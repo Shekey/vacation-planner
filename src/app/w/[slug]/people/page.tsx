@@ -6,6 +6,8 @@ import { db } from "@/lib/db";
 import { requireMembership } from "@/lib/session";
 import { PeopleSearch, type PersonRow } from "./people-search";
 
+export const metadata = { title: "People" };
+
 export default async function PeoplePage({ params }: PageProps<"/w/[slug]/people">) {
   const { slug } = await params;
   const { workspace } = await requireMembership(slug);

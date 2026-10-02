@@ -14,6 +14,8 @@ function Toggle({ name, label, hint, defaultChecked }: { name: string; label: st
   );
 }
 
+export const metadata = { title: "Settings" };
+
 export default async function SettingsPage({ params }: PageProps<"/w/[slug]/settings">) {
   const { slug } = await params;
   const { workspace } = await requireAdmin(slug);

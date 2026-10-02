@@ -9,8 +9,11 @@ import { db } from "@/lib/db";
 import { requireMembership, settingsOf } from "@/lib/session";
 import { cancelBookingAction } from "../book/actions";
 import { CopyField } from "@/components/copy-field";
+import { EmptyState } from "@/components/ui";
 import { appOrigin } from "@/lib/url";
 import { disableCalendarFeedAction, resetCalendarFeedAction } from "./actions";
+
+export const metadata = { title: "My time off" };
 
 export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me">) {
   const { slug } = await params;
@@ -55,11 +58,11 @@ export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me"
         </div>
         {editable && active && (
           <div className="flex items-center gap-3 text-sm">
-            <Link href={`/w/${slug}/book/${b.id}`} className="underline">
+            <Link href={`/w/${slug}/book/${b.id}`} className="btn-secondary px-3 py-1">
               Change
             </Link>
             <ActionForm action={cancelBookingAction.bind(null, slug, b.id)} confirm="Cancel this booking?">
-              <button className="text-red-600 underline">Cancel</button>
+              <button className="rounded-lg px-2 py-1 text-red-600 hover:bg-red-500/10">Cancel</button>
             </ActionForm>
           </div>
         )}
@@ -74,17 +77,17 @@ export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me"
         {(nextYear.used > 0 || nextYear.pending > 0) && <AllowanceCard summary={nextYear} />}
       </div>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold">Upcoming</h2>
+      <section className="card space-y-2">
+        <h2 className="font-medium">Upcoming</h2>
         {upcoming.length === 0 ? (
-          <p className="text-sm opacity-70">
-            Nothing planned.{" "}
-            <Link href={`/w/${slug}/book`} className="underline">
+          <EmptyState icon="🏝️">
+            Nothing planned yet.{" "}
+            <Link href={`/w/${slug}/book`} className="font-medium text-primary hover:underline">
               Book time off
             </Link>
-          </p>
+          </EmptyState>
         ) : (
-          <ul className="divide-y divide-black/5 dark:divide-white/10">{upcoming.map((b) => row(b, true))}</ul>
+          <ul className="divide-y divide-border">{upcoming.map((b) => row(b, true))}</ul>
         )}
       </section>
 
@@ -115,9 +118,9 @@ export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me"
       </section>
 
       {past.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-lg font-semibold">Past</h2>
-          <ul className="divide-y divide-black/5 opacity-80 dark:divide-white/10">{past.map((b) => row(b, false))}</ul>
+        <section className="card space-y-2">
+          <h2 className="font-medium">Past</h2>
+          <ul className="divide-y divide-border opacity-80">{past.map((b) => row(b, false))}</ul>
         </section>
       )}
     </div>

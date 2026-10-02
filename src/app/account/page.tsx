@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { saveNameAction } from "./actions";
 
+export const metadata = { title: "Your profile" };
+
 export default async function AccountPage({ searchParams }: PageProps<"/account">) {
   const { id } = await requireUser();
   const { next } = await searchParams;

@@ -1,4 +1,5 @@
 import { ActionForm } from "@/components/action-form";
+import { Avatar } from "@/components/ui";
 import { db } from "@/lib/db";
 import { HOLIDAY_REGIONS } from "@/lib/holiday-regions";
 import { requireAdmin } from "@/lib/session";
@@ -9,6 +10,8 @@ import {
   revokeInviteAction,
   updateMemberAction,
 } from "./actions";
+
+export const metadata = { title: "Members" };
 
 export default async function MembersPage({ params }: PageProps<"/w/[slug]/members">) {
   const { slug } = await params;
@@ -64,10 +67,10 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
                 </span>
                 <span className="flex gap-3">
                   <ActionForm action={resendInviteAction.bind(null, slug, i.id)}>
-                    <button className="underline">Resend</button>
+                    <button className="text-primary hover:underline">Resend</button>
                   </ActionForm>
                   <ActionForm action={revokeInviteAction.bind(null, slug, i.id)}>
-                    <button className="text-red-600 underline">Revoke</button>
+                    <button className="text-red-600 hover:underline">Revoke</button>
                   </ActionForm>
                 </span>
               </li>
@@ -76,17 +79,20 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
         </section>
       )}
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold">Members ({members.length})</h2>
-        <ul className="divide-y divide-black/5 dark:divide-white/10">
+      <section className="card space-y-2">
+        <h2 className="font-medium">Members ({members.length})</h2>
+        <ul className="divide-y divide-border">
           {members.map((m) => (
             <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-              <div>
-                <div className="font-medium">
-                  {m.user.name ?? m.user.email}
-                  {m.id === me.id && <span className="font-normal opacity-60"> (you)</span>}
+              <div className="flex min-w-0 items-center gap-2.5">
+                <Avatar label={m.user.name ?? m.user.email} seed={m.user.email} className="size-9 text-sm" />
+                <div className="min-w-0">
+                  <div className="font-medium">
+                    {m.user.name ?? m.user.email}
+                    {m.id === me.id && <span className="font-normal opacity-60"> (you)</span>}
+                  </div>
+                  {m.user.name && <div className="truncate text-sm opacity-60">{m.user.email}</div>}
                 </div>
-                {m.user.name && <div className="text-sm opacity-60">{m.user.email}</div>}
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <ActionForm action={updateMemberAction.bind(null, slug, m.id)} className="flex flex-wrap items-center gap-2 text-sm">
@@ -123,14 +129,14 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
                       ))}
                     </select>
                   )}
-                  <button className="rounded-md border border-black/20 px-2 py-1 dark:border-white/25">Save</button>
+                  <button className="btn-secondary px-3 py-1">Save</button>
                 </ActionForm>
                 {m.id !== me.id && (
                   <ActionForm
                     action={removeMemberAction.bind(null, slug, m.id)}
                     confirm={`Remove ${m.user.name ?? m.user.email}? Their future bookings will be cancelled.`}
                   >
-                    <button className="text-sm text-red-600 underline">Remove</button>
+                    <button className="rounded-lg px-2 py-1 text-sm text-red-600 hover:bg-red-500/10">Remove</button>
                   </ActionForm>
                 )}
               </div>

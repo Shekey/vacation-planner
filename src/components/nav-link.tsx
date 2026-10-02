@@ -10,8 +10,9 @@ export function NavLink({ href, children, exact }: { href: string; children: Rea
   return (
     <Link
       href={href}
-      className={`rounded-md px-3 py-1.5 text-sm ${
-        active ? "bg-foreground text-background" : "hover:bg-black/5 dark:hover:bg-white/10"
+      aria-current={active ? "page" : undefined}
+      className={`inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+        active ? "bg-primary/10 text-primary" : "text-muted hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10"
       }`}
     >
       {children}

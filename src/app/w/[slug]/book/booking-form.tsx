@@ -111,7 +111,7 @@ export function BookingForm(props: BookingFormProps) {
       : [];
 
   return (
-    <form onSubmit={(e) => submitKeepingInput(e, formAction)} className="max-w-xl space-y-5">
+    <form onSubmit={(e) => submitKeepingInput(e, formAction)} className="card max-w-xl space-y-5">
       <input type="hidden" name="startPart" value={span.startPart} />
       <input type="hidden" name="endPart" value={span.endPart} />
 
@@ -136,8 +136,8 @@ export function BookingForm(props: BookingFormProps) {
           {(["VACATION", "SICK", "OTHER"] as const).map((t) => (
             <label
               key={t}
-              className={`cursor-pointer rounded-md border px-3 py-1.5 text-sm ${
-                type === t ? "border-foreground bg-foreground text-background" : "border-black/20 dark:border-white/25"
+              className={`cursor-pointer rounded-lg border px-3 py-1.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40 text-sm ${
+                type === t ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-surface hover:border-primary/50"
               }`}
             >
               <input type="radio" name="type" value={t} checked={type === t} onChange={() => setType(t)} className="sr-only" />
@@ -174,8 +174,8 @@ export function BookingForm(props: BookingFormProps) {
             {(["FULL", "MORNING", "AFTERNOON"] as const).map((p) => (
               <label
                 key={p}
-                className={`cursor-pointer rounded-md border px-3 py-1.5 ${
-                  singlePart === p ? "border-foreground bg-foreground text-background" : "border-black/20 dark:border-white/25"
+                className={`cursor-pointer rounded-lg border px-3 py-1.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40 ${
+                  singlePart === p ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-surface hover:border-primary/50"
                 }`}
               >
                 <input type="radio" className="sr-only" checked={singlePart === p} onChange={() => setSinglePart(p)} />
@@ -202,7 +202,7 @@ export function BookingForm(props: BookingFormProps) {
         <textarea className="input" name="note" rows={2} maxLength={500} defaultValue={initial.note} placeholder="Beach week 🏖" />
       </label>
 
-      <div className="card space-y-1 text-sm" aria-live="polite">
+      <div className="space-y-1 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm" aria-live="polite">
         {problem ? (
           <p className="text-red-600">{problem}</p>
         ) : start && end ? (

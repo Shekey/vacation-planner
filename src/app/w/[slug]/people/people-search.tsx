@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Avatar } from "@/components/ui";
 
 export type PersonRow = {
   id: string;
@@ -37,13 +38,16 @@ export function PeopleSearch({ people }: { people: PersonRow[] }) {
       {shown.length === 0 ? (
         <p className="opacity-70">Nobody matches &ldquo;{query}&rdquo;.</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="grid gap-3 md:grid-cols-2">
           {shown.map((p) => (
             <li key={p.id} className="card space-y-2">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <div>
-                  <div className="font-medium">{p.name}</div>
-                  {p.name !== p.email && <div className="text-xs opacity-60">{p.email}</div>}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <Avatar label={p.name} seed={p.email} className="size-9 text-sm" />
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{p.name}</div>
+                    {p.name !== p.email && <div className="truncate text-xs opacity-60">{p.email}</div>}
+                  </div>
                 </div>
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-sm ${
