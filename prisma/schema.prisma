@@ -95,6 +95,8 @@ model WorkspaceSettings {
   approvalsEnabled Boolean @default(false)
   countWeekends    Boolean @default(false)
   allowHalfDays    Boolean @default(true)
+  // Yearly allowance given to new members; null means allowances are not tracked by default.
+  defaultAllowanceDays Decimal? @default(20) @db.Decimal(4, 1)
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
