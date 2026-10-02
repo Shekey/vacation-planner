@@ -29,7 +29,7 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 | #4 | Vercel deploy (build runs migrations, daily digest cron), People search, display names, mobile and dark mode polish |
 | #5 | Database URL under any Vercel/Neon name, preview builds without a database, sign-in errors shown on /sign-in |
 | #6 | Long-weekend tips, use-it-or-lose-it nudge, regional holidays picked per person, monthly holiday refresh cron |
-| #7 | Security hardening (headers, sign-in throttle, 1-hour magic links, safe redirects, constant-time cron check) and a refreshed look for the signed-in app (theme tokens, overview tiles, avatars) |
+| #8 | Security hardening (headers, sign-in throttle, 1-hour magic links, safe redirects, constant-time cron check) and a refreshed look for the signed-in app (theme tokens, overview tiles, avatars) |
 
 ## Where things live
 
