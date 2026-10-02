@@ -1,0 +1,27 @@
+import { db } from "@/lib/db";
+import { uniqueSlug } from "@/lib/slug";
+
+/** Creates a workspace with default settings and makes the creator its first admin. */
+export async function createWorkspace(input: { name: string; timezone: string; userId: string }) {
+  const slug = await uniqueSlug(input.name, async (s) =>
+    Boolean(await db.workspace.findUnique({ where: { slug: s }, select: { id: true } })),
+  );
+  return db.workspace.create({
+    data: {
+      name: input.name,
+      slug,
+      timezone: input.timezone,
+      createdById: input.userId,
+      settings: { create: {} },
+      memberships: { create: { userId: input.userId, role: "ADMIN" } },
+    },
+  });
+}
+
+export function listWorkspacesForUser(userId: string) {
+  return db.membership.findMany({
+    where: { userId, removedAt: null },
+    include: { workspace: true },
+    orderBy: { workspace: { name: "asc" } },
+  });
+}

@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Auth.js (do not rename fields, the adapter relies on them) ----------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts           Account[]
+  sessions           Session[]
+  memberships        Membership[]
+  createdWorkspaces  Workspace[]  @relation("WorkspaceCreator")
+  sentInvitations    Invitation[] @relation("InvitationSender")
+  createdBookings    Booking[]    @relation("BookingCreator")
+  decidedBookings    Booking[]    @relation("BookingDecider")
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// ---------- Domain ----------
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  // IANA timezone used for date math, e.g. "Europe/Sarajevo".
+  timezone    String   @default("UTC")
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy   User               @relation("WorkspaceCreator", fields: [createdById], references: [id])
+  settings    WorkspaceSettings?
+  memberships Membership[]
+  invitations Invitation[]
+  bookings    Booking[]
+}
+
+// Per-workspace feature flags.
+model WorkspaceSettings {
+  workspaceId      String  @id
+  approvalsEnabled Boolean @default(false)
+  countWeekends    Boolean @default(false)
+  allowHalfDays    Boolean @default(true)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Membership {
+  id                   String    @id @default(cuid())
+  workspaceId          String
+  userId               String
+  role                 Role      @default(MEMBER)
+  // Days per calendar year; null means the allowance is not tracked for this member.
+  annualAllowanceDays  Decimal?  @db.Decimal(4, 1)
+  joinedAt             DateTime  @default(now())
+  // Soft removal keeps booking history intact.
+  removedAt            DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings  Booking[]
+
+  @@unique([workspaceId, userId])
+}
+
+model Invitation {
+  id          String    @id @default(cuid())
+  workspaceId String
+  email       String
+  role        Role      @default(MEMBER)
+  // Only the hash is stored; the raw token is emailed.
+  tokenHash   String    @unique
+  invitedById String
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedBy User      @relation("InvitationSender", fields: [invitedById], references: [id])
+
+  @@index([workspaceId, email])
+}
+
+enum DayPart {
+  FULL
+  AM
+  PM
+}
+
+enum BookingType {
+  VACATION
+  SICK
+  OTHER
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model Booking {
+  id           String        @id @default(cuid())
+  workspaceId  String
+  membershipId String
+  startDate    DateTime      @db.Date
+  // Inclusive.
+  endDate      DateTime      @db.Date
+  // FULL or PM (starts after lunch).
+  startPart    DayPart       @default(FULL)
+  // FULL or AM (ends at lunch).
+  endPart      DayPart       @default(FULL)
+  type         BookingType   @default(VACATION)
+  note         String?
+  status       BookingStatus
+  daysCount    Decimal       @db.Decimal(4, 1)
+  createdById  String
+  decidedById  String?
+  decidedAt    DateTime?
+  decisionNote String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  workspace  Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  createdBy  User       @relation("BookingCreator", fields: [createdById], references: [id])
+  decidedBy  User?      @relation("BookingDecider", fields: [decidedById], references: [id])
+
+  @@index([workspaceId, startDate])
+  @@index([membershipId])
+}
