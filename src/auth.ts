@@ -6,7 +6,8 @@ import { db } from "@/lib/db";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db),
   session: { strategy: "database" },
-  pages: { signIn: "/sign-in", verifyRequest: "/sign-in?sent=1" },
+  // Errors land back on the sign-in page as ?error=<code> instead of Auth.js's bare error page.
+  pages: { signIn: "/sign-in", verifyRequest: "/sign-in?sent=1", error: "/sign-in" },
   providers: [
     Resend({
       from: process.env.EMAIL_FROM ?? "Vacation Planner <onboarding@resend.dev>",
