@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/components/action-form";
 import { BookingError, decideBooking } from "@/lib/bookings";
-import { actorOf, requireAdmin } from "@/lib/session";
+import { actorOf, requireAdmin, settingsOf } from "@/lib/session";
 import { appOrigin } from "@/lib/url";
 
 export async function decideAction(
@@ -17,6 +17,7 @@ export async function decideAction(
   try {
     await decideBooking({
       workspace: ctx.workspace,
+      settings: settingsOf(ctx.workspace),
       actor: actorOf(ctx),
       bookingId,
       approve: formData.get("decision") === "approve",

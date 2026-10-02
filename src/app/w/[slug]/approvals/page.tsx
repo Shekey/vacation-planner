@@ -1,8 +1,9 @@
 import { ActionForm } from "@/components/action-form";
 import { TypeDot, typeLabel } from "@/components/badges";
 import { halfDayLabel, portionOn } from "@/lib/booking-days";
-import { activeBookingsBetween, allowanceSummary, spanOf } from "@/lib/bookings";
-import { eachDay, formatRange, todayIn } from "@/lib/dates";
+import { activeBookingsBetween, allowanceSummary, loadHolidays, spanOf } from "@/lib/bookings";
+import { eachDay, formatDate, formatRange, todayIn } from "@/lib/dates";
+import { understaffedDays } from "@/lib/staffing";
 import { db } from "@/lib/db";
 import { requireAdmin, settingsOf } from "@/lib/session";
 import { decideAction } from "./actions";
@@ -19,11 +20,13 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
     orderBy: { startDate: "asc" },
   });
 
+  const holidays = await loadHolidays(workspace.id);
+  const memberCount = await db.membership.count({ where: { workspaceId: workspace.id, removedAt: null } });
   const rows = await Promise.all(
     pending.map(async (b) => {
       const span = spanOf(b);
       const [summary, others] = await Promise.all([
-        allowanceSummary(b.membership, settings, Number(span.start.slice(0, 4)) || year),
+        allowanceSummary(b.membership, settings, Number(span.start.slice(0, 4)) || year, holidays),
         activeBookingsBetween(workspace.id, span.start, span.end),
       ]);
       const days = eachDay(span.start, span.end);
@@ -34,7 +37,17 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
             .map((o) => o.membership.user.name ?? o.membership.user.email),
         ),
       ];
-      return { b, span, summary, clashes };
+      // Approved bookings only: other pending requests may still be declined.
+      const shortDays = understaffedDays({
+        candidate: { ...span, membershipId: b.membershipId },
+        team: others
+          .filter((o) => o.id !== b.id && o.membershipId !== b.membershipId && o.status === "APPROVED")
+          .map((o) => ({ ...spanOf(o), membershipId: o.membershipId })),
+        memberCount,
+        minPresent: settings.minPeoplePresent,
+        rules: { countWeekends: settings.countWeekends, holidays },
+      });
+      return { b, span, summary, clashes, shortDays };
     }),
   );
 
@@ -49,7 +62,7 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
         <p className="opacity-70">You&apos;re all caught up. 🎉</p>
       ) : (
         <ul className="space-y-3">
-          {rows.map(({ b, span, summary, clashes }) => {
+          {rows.map(({ b, span, summary, clashes, shortDays }) => {
             const half = halfDayLabel(span);
             return (
               <li key={b.id} className="card space-y-3">
@@ -70,6 +83,13 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
                       `${summary.remaining} of ${summary.allowance} days left in ${summary.year} incl. this`}
                   </div>
                 </div>
+                {shortDays.length > 0 && (
+                  <p className="text-sm text-red-600">
+                    Approving leaves only {shortDays[0].present} of {memberCount} in on{" "}
+                    {shortDays.slice(0, 3).map((d) => formatDate(d.day)).join(", ")}
+                    {shortDays.length > 3 && ` and ${shortDays.length - 3} more day${shortDays.length === 4 ? "" : "s"}`} (minimum {settings.minPeoplePresent}).
+                  </p>
+                )}
                 {clashes.length > 0 && (
                   <p className="text-sm text-amber-700 dark:text-amber-400">Also off then: {clashes.join(", ")}</p>
                 )}

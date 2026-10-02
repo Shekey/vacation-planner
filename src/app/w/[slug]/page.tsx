@@ -3,7 +3,7 @@ import { AllowanceCard } from "@/components/allowance-card";
 import { TypeDot, typeLabel } from "@/components/badges";
 import { halfDayLabel, portionOn } from "@/lib/booking-days";
 import { activeBookingsBetween, allowanceSummary, spanOf } from "@/lib/bookings";
-import { addDays, formatRange, fromISO, todayIn } from "@/lib/dates";
+import { addDays, formatRange, fromISO, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { requireMembership, settingsOf } from "@/lib/session";
 
@@ -14,7 +14,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
   const today = todayIn(workspace.timezone);
   const horizon = addDays(today, 14);
 
-  const [bookings, summary, pendingCount, myUpcoming] = await Promise.all([
+  const [bookings, summary, pendingCount, myUpcoming, nextHoliday] = await Promise.all([
     activeBookingsBetween(workspace.id, today, horizon),
     allowanceSummary(membership, settings, Number(today.slice(0, 4))),
     membership.role === "ADMIN" && settings.approvalsEnabled
@@ -23,6 +23,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
     db.booking.count({
       where: { membershipId: membership.id, status: { in: ["PENDING", "APPROVED"] }, endDate: { gte: fromISO(today) } },
     }),
+    db.holiday.findFirst({ where: { workspaceId: workspace.id, date: { gte: fromISO(today) } }, orderBy: { date: "asc" } }),
   ]);
 
   const offToday = bookings.filter((b) => portionOn(spanOf(b), today));
@@ -63,7 +64,15 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
         )}
       </section>
 
-      <AllowanceCard summary={summary} />
+      <div className="space-y-4">
+        <AllowanceCard summary={summary} />
+        {nextHoliday && (
+          <Link href={`/w/${slug}/holidays`} className="card block text-sm hover:bg-black/5 dark:hover:bg-white/5">
+            Next holiday: <span className="font-medium">{nextHoliday.name}</span>,{" "}
+            {formatRange(toISO(nextHoliday.date), toISO(nextHoliday.date))}
+          </Link>
+        )}
+      </div>
 
       <section className="card space-y-2 md:col-span-2">
         <div className="flex items-baseline justify-between">

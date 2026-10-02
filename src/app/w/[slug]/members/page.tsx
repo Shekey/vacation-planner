@@ -30,7 +30,7 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
     <div className="space-y-8">
       <section className="card space-y-3">
         <h2 className="font-medium">Invite people</h2>
-        <ActionForm action={inviteAction.bind(null, slug)} className="space-y-3">
+        <ActionForm action={inviteAction.bind(null, slug)} className="space-y-3" resetOnSuccess>
           <textarea
             name="emails"
             className="input"

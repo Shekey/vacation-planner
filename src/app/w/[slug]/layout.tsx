@@ -33,6 +33,7 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
         </NavLink>
         <NavLink href={`${base}/calendar`}>Calendar</NavLink>
         <NavLink href={`${base}/me`}>My time off</NavLink>
+        <NavLink href={`${base}/holidays`}>Holidays</NavLink>
         {isAdmin && settings.approvalsEnabled && (
           <NavLink href={`${base}/approvals`}>
             Approvals

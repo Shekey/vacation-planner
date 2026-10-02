@@ -50,6 +50,33 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
           />
           <span className="block text-xs opacity-60">Leave empty to not track allowances by default. You can override it per member.</span>
         </label>
+        <label className="block space-y-1">
+          <span className="text-sm font-medium">Carry over unused days (max)</span>
+          <input
+            name="maxCarryOver"
+            type="number"
+            min={0}
+            max={365}
+            step={0.5}
+            className="input w-32"
+            defaultValue={settings.maxCarryOverDays ?? ""}
+            placeholder="none"
+          />
+          <span className="block text-xs opacity-60">Unused vacation days, up to this many, are added to the next year.</span>
+        </label>
+        <label className="block space-y-1">
+          <span className="text-sm font-medium">Minimum people in</span>
+          <input
+            name="minPeoplePresent"
+            type="number"
+            min={1}
+            step={1}
+            className="input w-32"
+            defaultValue={settings.minPeoplePresent ?? ""}
+            placeholder="off"
+          />
+          <span className="block text-xs opacity-60">Warns when a booking would leave fewer people working on a day. It warns, it doesn&apos;t block.</span>
+        </label>
       </section>
 
       <section className="card space-y-4">
@@ -72,6 +99,21 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
           hint="Turn on if your team works weekends. Applies to new and changed bookings."
           defaultChecked={settings.countWeekends}
         />
+      </section>
+
+      <section className="card space-y-2">
+        <h2 className="font-medium">Microsoft Teams</h2>
+        <input
+          name="teamsWebhookUrl"
+          type="url"
+          className="input"
+          defaultValue={settings.teamsWebhookUrl ?? ""}
+          placeholder="https://…logic.azure.com/workflows/…"
+        />
+        <p className="text-xs opacity-60">
+          Posts to a Teams channel when someone books, requests or gets time off approved. In Teams, open the channel&apos;s ⋯ menu →
+          Workflows → &quot;Post to a channel when a webhook request is received&quot;, finish the setup, and paste the URL it gives you.
+        </p>
       </section>
 
       <button className="btn">Save settings</button>

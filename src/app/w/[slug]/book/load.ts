@@ -1,5 +1,5 @@
-import { activeBookingsBetween, allowanceSummary, spanOf } from "@/lib/bookings";
-import { addDays, todayIn } from "@/lib/dates";
+import { activeBookingsBetween, allowanceSummary, loadHolidays, spanOf } from "@/lib/bookings";
+import { addDays, fromISO, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import type { requireMembership } from "@/lib/session";
 import { settingsOf } from "@/lib/session";
@@ -14,6 +14,15 @@ export async function loadBookingFormData(ctx: Ctx) {
   const today = todayIn(workspace.timezone);
   const currentYear = Number(today.slice(0, 4));
 
+  const holidaySet = await loadHolidays(workspace.id);
+  const holidays = (
+    await db.holiday.findMany({
+      where: { workspaceId: workspace.id, date: { gte: fromISO(addDays(today, -366)), lte: fromISO(addDays(today, 731)) } },
+      orderBy: { date: "asc" },
+    })
+  ).map((h) => ({ date: toISO(h.date), name: h.name }));
+  const memberCount = await db.membership.count({ where: { workspaceId: workspace.id, removedAt: null } });
+
   const memberships = await db.membership.findMany({
     where: { workspaceId: workspace.id, removedAt: null, ...(isAdmin ? {} : { id: membership.id }) },
     include: { user: { select: { name: true, email: true } } },
@@ -21,7 +30,7 @@ export async function loadBookingFormData(ctx: Ctx) {
   });
   const members = await Promise.all(
     memberships.map(async (m) => {
-      const s = await allowanceSummary(m, settings, currentYear);
+      const s = await allowanceSummary(m, settings, currentYear, holidaySet);
       const label = m.user.name ?? m.user.email;
       return {
         id: m.id,
@@ -41,5 +50,5 @@ export async function loadBookingFormData(ctx: Ctx) {
     name: b.membership.user.name ?? b.membership.user.email,
   }));
 
-  return { settings, isAdmin, today, currentYear, members, team };
+  return { settings, isAdmin, today, currentYear, members, team, holidays, holidaySet, memberCount };
 }

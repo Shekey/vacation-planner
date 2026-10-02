@@ -11,7 +11,17 @@ export type BookingSpan = {
   endPart: DayPart;
 };
 
-export type DayRules = { countWeekends: boolean };
+export type DayRules = {
+  countWeekends: boolean;
+  /** Public holidays; they never count as days off. */
+  holidays?: ReadonlySet<ISODate>;
+};
+
+/** Whether a booking on this day costs anything. */
+export function isChargeable(day: ISODate, rules: DayRules): boolean {
+  if (!rules.countWeekends && isWeekend(day)) return false;
+  return !rules.holidays?.has(day);
+}
 
 /** Which part of `day` the booking covers, or null if none. */
 export function portionOn(span: BookingSpan, day: ISODate): "FULL" | "AM" | "PM" | null {
@@ -25,7 +35,7 @@ export function portionOn(span: BookingSpan, day: ISODate): "FULL" | "AM" | "PM"
 }
 
 /**
- * Days charged for a booking: weekends are skipped unless they count,
+ * Days charged for a booking: weekends (unless they count) and holidays are skipped,
  * half days count 0.5. `clip` limits counting to a window (e.g. one calendar year).
  */
 export function countDays(span: BookingSpan, rules: DayRules, clip?: { from: ISODate; to: ISODate }): number {
@@ -34,7 +44,7 @@ export function countDays(span: BookingSpan, rules: DayRules, clip?: { from: ISO
   if (from > to) return 0;
   let total = 0;
   for (const day of eachDay(from, to)) {
-    if (!rules.countWeekends && isWeekend(day)) continue;
+    if (!isChargeable(day, rules)) continue;
     const portion = portionOn(span, day);
     if (portion) total += portion === "FULL" ? 1 : 0.5;
   }
@@ -65,4 +75,10 @@ export function halfDayLabel(span: BookingSpan): string | null {
   if (span.startPart === "PM") parts.push("starts after lunch");
   if (span.endPart === "AM") parts.push("ends at lunch");
   return parts.length ? parts.join(", ") : null;
+}
+
+/** Unused days that roll into the next year, capped by the workspace setting. */
+export function carryOver(baseAllowance: number, takenLastYear: number, maxCarryOver: number | null): number {
+  if (!maxCarryOver || maxCarryOver <= 0) return 0;
+  return Math.max(0, Math.min(maxCarryOver, baseAllowance - takenLastYear));
 }

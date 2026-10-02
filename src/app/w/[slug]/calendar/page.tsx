@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Legend, typeColor } from "@/components/badges";
 import { portionOn } from "@/lib/booking-days";
 import { activeBookingsBetween, spanOf } from "@/lib/bookings";
-import { eachDay, fromISO, isWeekend, isYearMonth, monthBounds, shiftMonth, todayIn } from "@/lib/dates";
+import { eachDay, fromISO, isWeekend, isYearMonth, monthBounds, shiftMonth, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { requireMembership } from "@/lib/session";
 
@@ -16,13 +16,17 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
   const days = eachDay(start, end);
   const isAdmin = membership.role === "ADMIN";
 
-  const [members, bookings] = await Promise.all([
+  const [members, bookings, holidayRows] = await Promise.all([
     db.membership.findMany({
       where: { workspaceId: workspace.id, removedAt: null },
       include: { user: { select: { name: true, email: true } } },
     }),
     activeBookingsBetween(workspace.id, start, end),
+    db.holiday.findMany({ where: { workspaceId: workspace.id, date: { gte: fromISO(start), lte: fromISO(end) } } }),
   ]);
+  const holidays = new Map(holidayRows.map((h) => [toISO(h.date), h.name]));
+  const offDayClass = (d: string) =>
+    holidays.has(d) ? "bg-rose-500/10" : isWeekend(d) ? "bg-black/5 dark:bg-white/5" : "";
   // You first, then everyone else alphabetically.
   const label = (m: (typeof members)[number]) => m.user.name ?? m.user.email;
   members.sort((a, b) =>
@@ -65,7 +69,8 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
               {days.map((d) => (
                 <th
                   key={d}
-                  className={`min-w-6 p-1 text-center font-normal ${isWeekend(d) ? "bg-black/5 dark:bg-white/5" : ""} ${
+                  title={holidays.get(d)}
+                  className={`min-w-6 p-1 text-center font-normal ${offDayClass(d)} ${
                     d === today ? "text-sky-600 font-bold dark:text-sky-400" : "opacity-70"
                   }`}
                 >
@@ -90,7 +95,7 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
                     const hits = own
                       .map((b) => ({ b, portion: portionOn(spanOf(b), d) }))
                       .filter((h): h is { b: (typeof own)[number]; portion: "FULL" | "AM" | "PM" } => h.portion !== null);
-                    const weekendClass = isWeekend(d) ? "bg-black/5 dark:bg-white/5" : "";
+                    const weekendClass = offDayClass(d);
                     const todayClass = d === today ? "ring-1 ring-inset ring-sky-500/60" : "";
                     const title = hits
                       .map(
@@ -99,6 +104,7 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
                             b.status === "PENDING" ? ", pending" : ""
                           }${b.note ? ` – ${b.note}` : ""}`,
                       )
+                      .concat(holidays.has(d) ? [`Holiday: ${holidays.get(d)}`] : [])
                       .join("\n");
                     return (
                       <td key={d} title={title || undefined} className={`relative h-8 p-0 ${weekendClass} ${todayClass}`}>

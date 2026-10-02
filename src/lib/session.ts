@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import { auth } from "@/auth";
+import type { Settings } from "@/lib/bookings";
 import { db } from "@/lib/db";
 
 /** The signed-in user, or a redirect to sign in. */
@@ -32,11 +33,24 @@ export async function requireAdmin(slug: string) {
   return ctx;
 }
 
-export function settingsOf(workspace: { settings: { approvalsEnabled: boolean; countWeekends: boolean; allowHalfDays: boolean } | null }) {
+type SettingsRow = {
+  approvalsEnabled: boolean;
+  countWeekends: boolean;
+  allowHalfDays: boolean;
+  maxCarryOverDays: { toString(): string } | null;
+  minPeoplePresent: number | null;
+  teamsWebhookUrl: string | null;
+};
+
+export function settingsOf(workspace: { settings: SettingsRow | null }): Settings {
+  const s = workspace.settings;
   return {
-    approvalsEnabled: workspace.settings?.approvalsEnabled ?? false,
-    countWeekends: workspace.settings?.countWeekends ?? false,
-    allowHalfDays: workspace.settings?.allowHalfDays ?? true,
+    approvalsEnabled: s?.approvalsEnabled ?? false,
+    countWeekends: s?.countWeekends ?? false,
+    allowHalfDays: s?.allowHalfDays ?? true,
+    maxCarryOverDays: s?.maxCarryOverDays == null ? null : Number(s.maxCarryOverDays),
+    minPeoplePresent: s?.minPeoplePresent ?? null,
+    teamsWebhookUrl: s?.teamsWebhookUrl ?? null,
   };
 }
 

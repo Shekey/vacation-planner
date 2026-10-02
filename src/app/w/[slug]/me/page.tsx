@@ -8,6 +8,9 @@ import { formatRange, fromISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { requireMembership, settingsOf } from "@/lib/session";
 import { cancelBookingAction } from "../book/actions";
+import { CopyField } from "@/components/copy-field";
+import { appOrigin } from "@/lib/url";
+import { disableCalendarFeedAction, resetCalendarFeedAction } from "./actions";
 
 export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me">) {
   const { slug } = await params;
@@ -27,6 +30,7 @@ export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me"
       take: 100,
     }),
   ]);
+  const feedUrl = membership.calendarToken ? `${await appOrigin()}/api/calendar/${membership.calendarToken}.ics` : null;
   const upcoming = bookings.filter((b) => b.endDate >= fromISO(today)).reverse();
   const past = bookings.filter((b) => b.endDate < fromISO(today));
 
@@ -81,6 +85,32 @@ export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me"
           </p>
         ) : (
           <ul className="divide-y divide-black/5 dark:divide-white/10">{upcoming.map((b) => row(b, true))}</ul>
+        )}
+      </section>
+
+      <section className="card space-y-3">
+        <h2 className="font-medium">Team calendar in your calendar app</h2>
+        {feedUrl ? (
+          <>
+            <p className="text-sm opacity-70">
+              Subscribe to this link in Google Calendar (Other calendars → From URL), Outlook or Apple Calendar. It shows everyone&apos;s time off
+              and holidays. Keep it private: anyone with the link can see the team calendar.
+            </p>
+            <CopyField value={feedUrl} />
+            <div className="flex gap-4 text-sm">
+              <ActionForm action={resetCalendarFeedAction.bind(null, slug)} confirm="Make a new link? The current one will stop working.">
+                <button className="underline">Make a new link</button>
+              </ActionForm>
+              <ActionForm action={disableCalendarFeedAction.bind(null, slug)}>
+                <button className="text-red-600 underline">Turn off</button>
+              </ActionForm>
+            </div>
+          </>
+        ) : (
+          <ActionForm action={resetCalendarFeedAction.bind(null, slug)} className="flex flex-wrap items-center gap-3">
+            <p className="text-sm opacity-70">See the team&apos;s time off and holidays next to your meetings.</p>
+            <button className="btn">Get a calendar link</button>
+          </ActionForm>
         )}
       </section>
 

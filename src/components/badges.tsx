@@ -42,6 +42,9 @@ export function Legend() {
         <span className="pending-stripes inline-block h-2.5 w-4 rounded-sm bg-sky-500" /> Pending
       </span>
       <span className="flex items-center gap-1.5">
+        <span className="inline-block h-2.5 w-4 rounded-sm bg-rose-500/20" /> Holiday
+      </span>
+      <span className="flex items-center gap-1.5">
         <span className="inline-block h-2.5 w-4 rounded-sm bg-gradient-to-r from-sky-500 from-50% to-transparent to-50% ring-1 ring-sky-500/40" />{" "}
         Half day
       </span>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { submitKeepingInput } from "@/components/action-form";
 import { createWorkspaceAction } from "./actions";
 
 export function NewWorkspaceForm({ timezones }: { timezones: string[] }) {
@@ -14,7 +15,7 @@ export function NewWorkspaceForm({ timezones }: { timezones: string[] }) {
   }, []);
 
   return (
-    <form action={action} className="max-w-md space-y-4">
+    <form onSubmit={(e) => submitKeepingInput(e, action)} className="max-w-md space-y-4">
       <label className="block space-y-1">
         <span className="text-sm font-medium">Name</span>
         <input className="input" name="name" required minLength={2} maxLength={60} placeholder="Acme Engineering" />
