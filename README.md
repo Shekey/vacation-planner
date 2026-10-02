@@ -36,7 +36,7 @@ Without `AUTH_RESEND_KEY`, sign-in links are printed to the dev server console i
 - **Carry-over**: up to a set number of unused vacation days roll into the next year.
 - **Minimum staffing**: booking and approval screens warn when fewer than N people would be in.
 - **Calendar feed**: each member can get a private iCal link to subscribe to the team calendar in Google Calendar, Outlook or Apple Calendar.
-- **Slack**: optional incoming webhook that posts bookings, requests and approvals to a channel.
+- **Microsoft Teams**: optional channel webhook (Teams Workflows "Post to a channel when a webhook request is received") that posts bookings, requests and approvals as Adaptive Cards.
 - **Team calendar** (month view, click a day to book), an overview with who's out today and the next two weeks, and email notifications for invites, requests and decisions.
 
 ## Notes

@@ -5,7 +5,7 @@ ALTER TABLE "Membership" ADD COLUMN     "calendarToken" TEXT;
 ALTER TABLE "WorkspaceSettings" ADD COLUMN     "holidayCountry" TEXT,
 ADD COLUMN     "maxCarryOverDays" DECIMAL(4,1),
 ADD COLUMN     "minPeoplePresent" INTEGER,
-ADD COLUMN     "slackWebhookUrl" TEXT;
+ADD COLUMN     "teamsWebhookUrl" TEXT;
 
 -- CreateTable
 CREATE TABLE "Holiday" (

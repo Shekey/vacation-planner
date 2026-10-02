@@ -116,8 +116,8 @@ model WorkspaceSettings {
   minPeoplePresent     Int?
   // ISO 3166 country code last used to import public holidays, e.g. "BA".
   holidayCountry       String?
-  // Slack incoming webhook for booking notifications.
-  slackWebhookUrl      String?
+  // Microsoft Teams webhook (Workflows or connector) for booking notifications.
+  teamsWebhookUrl      String?
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }

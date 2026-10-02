@@ -3,7 +3,7 @@ import { carryOver, countDays, validateSpan, type BookingSpan, type DayRules } f
 import { formatRange, fromISO, toISO, type ISODate } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
-import { postToSlack } from "@/lib/slack";
+import { postToTeams } from "@/lib/teams";
 
 export const ACTIVE_STATUSES: BookingStatus[] = ["PENDING", "APPROVED"];
 
@@ -13,7 +13,7 @@ export type Settings = {
   allowHalfDays: boolean;
   maxCarryOverDays: number | null;
   minPeoplePresent: number | null;
-  slackWebhookUrl: string | null;
+  teamsWebhookUrl: string | null;
 };
 
 /** Public holiday dates of a workspace, for day counting. */
@@ -109,23 +109,25 @@ export async function createBooking(opts: {
   );
 
   if (status === "PENDING") await notifyAdminsOfRequest(workspace, target.user, booking, opts.origin);
-  await announce(settings, target.user, booking, status === "PENDING" ? "requested time off" : "is off");
+  await announce(settings, target.user, booking, status === "PENDING" ? "requested time off" : "is off", `${opts.origin}/w/${workspace.slug}/calendar`);
   return booking;
 }
 
-/** Posts a one-line summary to the workspace's Slack channel, if one is set. */
+/** Posts a one-line summary to the workspace's Teams channel, if one is set. */
 async function announce(
   settings: Settings,
   person: { name: string | null; email: string },
   booking: { startDate: Date; endDate: Date; daysCount: Prisma.Decimal | number; type: BookingType },
   verb: string,
+  calendarUrl: string,
 ) {
   const kind = { VACATION: "vacation", SICK: "sick leave", OTHER: "time off" }[booking.type];
-  await postToSlack(
-    settings.slackWebhookUrl,
+  await postToTeams(
+    settings.teamsWebhookUrl,
     `${person.name ?? person.email} ${verb}: ${formatRange(toISO(booking.startDate), toISO(booking.endDate))} (${Number(
       booking.daysCount,
     )} days, ${kind})`,
+    { title: "Open team calendar", url: `${calendarUrl}?month=${toISO(booking.startDate).slice(0, 7)}` },
   );
 }
 
@@ -161,7 +163,13 @@ export async function updateBooking(opts: {
     }),
   );
   if (status === "PENDING") await notifyAdminsOfRequest(workspace, existing.membership.user, booking, opts.origin);
-  await announce(settings, existing.membership.user, booking, status === "PENDING" ? "changed a request" : "changed time off");
+  await announce(
+    settings,
+    existing.membership.user,
+    booking,
+    status === "PENDING" ? "changed a request" : "changed time off",
+    `${opts.origin}/w/${workspace.slug}/calendar`,
+  );
   return booking;
 }
 
@@ -210,7 +218,9 @@ export async function decideBooking(opts: {
       opts.approve ? "approved" : "declined"
     }.${opts.note ? `\n\nNote: ${opts.note}` : ""}\n\n${opts.origin}/w/${opts.workspace.slug}/me`,
   });
-  if (opts.approve) await announce(opts.settings, booking.membership.user, booking, "is off");
+  if (opts.approve) {
+    await announce(opts.settings, booking.membership.user, booking, "is off", `${opts.origin}/w/${opts.workspace.slug}/calendar`);
+  }
 }
 
 /** Approves everything still pending, used when approvals are switched off. */

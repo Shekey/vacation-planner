@@ -102,16 +102,17 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
       </section>
 
       <section className="card space-y-2">
-        <h2 className="font-medium">Slack</h2>
+        <h2 className="font-medium">Microsoft Teams</h2>
         <input
-          name="slackWebhookUrl"
+          name="teamsWebhookUrl"
           type="url"
           className="input"
-          defaultValue={settings.slackWebhookUrl ?? ""}
-          placeholder="https://hooks.slack.com/services/…"
+          defaultValue={settings.teamsWebhookUrl ?? ""}
+          placeholder="https://…logic.azure.com/workflows/…"
         />
         <p className="text-xs opacity-60">
-          Posts to a channel when someone books, requests or gets time off approved. Create an incoming webhook in Slack and paste its URL.
+          Posts to a Teams channel when someone books, requests or gets time off approved. In Teams, open the channel&apos;s ⋯ menu →
+          Workflows → &quot;Post to a channel when a webhook request is received&quot;, finish the setup, and paste the URL it gives you.
         </p>
       </section>
 

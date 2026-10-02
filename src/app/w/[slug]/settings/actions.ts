@@ -6,7 +6,7 @@ import type { ActionResult } from "@/components/action-form";
 import { approveAllPending } from "@/lib/bookings";
 import { db } from "@/lib/db";
 import { requireAdmin, settingsOf } from "@/lib/session";
-import { isSlackWebhookUrl } from "@/lib/slack";
+import { isTeamsWebhookUrl } from "@/lib/teams";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(60),
@@ -26,11 +26,14 @@ const schema = z.object({
     .trim()
     .transform((s) => (s === "" ? null : Number(s)))
     .refine((n) => n === null || (Number.isInteger(n) && n >= 1 && n <= 10000), "Minimum people must be a whole number"),
-  slackWebhookUrl: z
+  teamsWebhookUrl: z
     .string()
     .trim()
     .transform((s) => s || null)
-    .refine((u) => u === null || isSlackWebhookUrl(u), "That isn't a Slack incoming webhook URL (https://hooks.slack.com/services/…)."),
+    .refine(
+      (u) => u === null || isTeamsWebhookUrl(u),
+      "That isn't a Microsoft Teams webhook URL. Copy the URL from the Teams workflow \"Post to a channel when a webhook request is received\".",
+    ),
 });
 
 export async function saveSettingsAction(slug: string, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -44,7 +47,7 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
     defaultAllowanceDays: parsed.data.defaultAllowance,
     maxCarryOverDays: parsed.data.maxCarryOver,
     minPeoplePresent: parsed.data.minPeoplePresent,
-    slackWebhookUrl: parsed.data.slackWebhookUrl,
+    teamsWebhookUrl: parsed.data.teamsWebhookUrl,
   };
   const wasApprovals = settingsOf(ctx.workspace).approvalsEnabled;
 
