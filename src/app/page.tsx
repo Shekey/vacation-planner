@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/session";
 import { listWorkspacesForUser } from "@/lib/workspaces";
 
 export default async function HomePage() {
   const user = await requireUser();
+  // First visit: ask for a name so teammates don't see a bare email.
+  if (!user.name) redirect("/account?next=/");
   const memberships = await listWorkspacesForUser(user.id);
 
   return (

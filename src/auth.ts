@@ -10,11 +10,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Resend({
       from: process.env.EMAIL_FROM ?? "Vacation Planner <onboarding@resend.dev>",
-      // Without an API key (local development) print the link instead of emailing it.
+      // Without an API key, local development prints the link instead of emailing it.
       ...(process.env.AUTH_RESEND_KEY
         ? {}
         : {
             sendVerificationRequest: async ({ identifier, url }) => {
+              if (process.env.NODE_ENV === "production" && !process.env.ALLOW_CONSOLE_EMAIL) {
+                throw new Error("AUTH_RESEND_KEY is not set, so sign-in emails can't be sent.");
+              }
               console.log(`\n[auth] Magic link for ${identifier}:\n${url}\n`);
             },
           }),

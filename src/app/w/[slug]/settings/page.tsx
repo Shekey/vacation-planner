@@ -112,7 +112,8 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
         />
         <p className="text-xs opacity-60">
           Posts to a Teams channel when someone books, requests or gets time off approved. In Teams, open the channel&apos;s ⋯ menu →
-          Workflows → &quot;Post to a channel when a webhook request is received&quot;, finish the setup, and paste the URL it gives you.
+          Workflows → &quot;Post to a channel when a webhook request is received&quot;, finish the setup, and paste the URL it gives you. On weekdays
+          it also posts who&apos;s out, at 06:00 UTC.
         </p>
       </section>
 

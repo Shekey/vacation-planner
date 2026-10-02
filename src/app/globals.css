@@ -3,6 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Native controls (date pickers, selects, scrollbars) follow the theme. */
+  color-scheme: light dark;
 }
 
 @theme inline {
@@ -12,8 +14,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0f1115;
+    --foreground: #e8e8ea;
   }
 }
 
@@ -25,13 +27,16 @@ body {
 
 @layer components {
   .input {
-    @apply w-full rounded-md border border-black/20 bg-transparent px-3 py-2 dark:border-white/25;
+    @apply w-full rounded-md border border-black/20 bg-transparent px-3 py-2 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 dark:border-white/20 dark:bg-white/5;
+  }
+  .input option {
+    @apply bg-background text-foreground;
   }
   .btn {
-    @apply rounded-md bg-foreground px-4 py-2 font-medium text-background disabled:opacity-50;
+    @apply inline-flex items-center justify-center rounded-md bg-foreground px-4 py-2 font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50;
   }
   .card {
-    @apply rounded-lg border border-black/10 p-4 dark:border-white/15;
+    @apply rounded-lg border border-black/10 p-4 dark:border-white/10 dark:bg-white/[0.03];
   }
 }
 
