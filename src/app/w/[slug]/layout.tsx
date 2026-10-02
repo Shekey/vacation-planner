@@ -17,17 +17,28 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-baseline gap-3">
-          <h1 className="truncate text-xl font-semibold sm:text-2xl">{workspace.name}</h1>
-          <Link href="/" className="text-sm underline opacity-70">
-            Switch
-          </Link>
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            aria-hidden
+            className="hidden size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-sky-400 to-teal-500 text-lg font-semibold text-white shadow-sm sm:grid"
+          >
+            {workspace.name.trim()[0]?.toUpperCase()}
+          </span>
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">{workspace.name}</h1>
+            <Link href="/" className="text-sm text-muted hover:text-foreground hover:underline">
+              {isAdmin ? "Admin" : "Member"} · Switch workspace
+            </Link>
+          </div>
         </div>
         <Link href={`${base}/book`} className="btn shrink-0 whitespace-nowrap">
-          Book time off
+          <span aria-hidden>+</span> Book time off
         </Link>
       </div>
-      <nav aria-label="Workspace" className="-mx-4 flex gap-1 overflow-x-auto whitespace-nowrap border-b border-black/10 px-3 pb-2 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 dark:border-white/15">
+      <nav
+        aria-label="Workspace"
+        className="-mx-4 flex gap-1 overflow-x-auto whitespace-nowrap border-b border-border px-3 pb-2 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0"
+      >
         <NavLink href={base} exact>
           Overview
         </NavLink>
@@ -39,7 +50,7 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
           <NavLink href={`${base}/approvals`}>
             Approvals
             {pendingCount > 0 && (
-              <span className="ml-1.5 rounded-full bg-amber-600 px-1.5 text-xs font-semibold text-white">
+              <span className="ml-1.5 rounded-full bg-amber-600 px-1.5 text-xs font-semibold text-white" aria-label={`${pendingCount} waiting`}>
                 {pendingCount}
                 <span className="sr-only"> waiting</span>
               </span>

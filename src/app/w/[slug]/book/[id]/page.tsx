@@ -7,6 +7,8 @@ import { saveBooking } from "../actions";
 import { BookingForm } from "../booking-form";
 import { loadBookingFormData } from "../load";
 
+export const metadata = { title: "Change booking" };
+
 export default async function EditBookingPage({ params }: PageProps<"/w/[slug]/book/[id]">) {
   const { slug, id } = await params;
   const ctx = await requireMembership(slug);

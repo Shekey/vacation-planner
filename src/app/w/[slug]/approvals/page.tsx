@@ -1,5 +1,6 @@
 import { ActionForm } from "@/components/action-form";
 import { TypeDot, typeLabel } from "@/components/badges";
+import { Avatar, EmptyState } from "@/components/ui";
 import { halfDayLabel, portionOn } from "@/lib/booking-days";
 import { activeBookingsBetween, allowanceSummary, loadHolidays, spanOf } from "@/lib/bookings";
 import { eachDay, formatDate, formatRange, todayIn } from "@/lib/dates";
@@ -7,6 +8,8 @@ import { understaffedDays } from "@/lib/staffing";
 import { db } from "@/lib/db";
 import { requireAdmin, settingsOf } from "@/lib/session";
 import { decideAction } from "./actions";
+
+export const metadata = { title: "Approvals" };
 
 export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/approvals">) {
   const { slug } = await params;
@@ -60,7 +63,7 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Waiting for approval</h2>
       {rows.length === 0 ? (
-        <p className="opacity-70">You&apos;re all caught up. 🎉</p>
+        <EmptyState icon="🎉">You&apos;re all caught up. Nothing is waiting for you.</EmptyState>
       ) : (
         <ul className="space-y-3">
           {rows.map(({ b, span, summary, clashes, shortDays }) => {
@@ -70,8 +73,9 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2 font-medium">
-                      <TypeDot type={b.type} />
+                      <Avatar label={b.membership.user.name ?? b.membership.user.email} seed={b.membership.user.email} />
                       {b.membership.user.name ?? b.membership.user.email}
+                      <TypeDot type={b.type} />
                     </div>
                     <div className="text-sm">
                       {formatRange(span.start, span.end)} · {Number(b.daysCount)} days · {typeLabel(b.type)}
@@ -102,7 +106,7 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
                   <button
                     name="decision"
                     value="reject"
-                    className="rounded-md border border-red-600 px-4 py-1.5 font-medium text-red-600"
+                    className="rounded-lg border border-red-600/60 px-4 py-1.5 font-medium text-red-600 transition-colors hover:bg-red-500/10"
                   >
                     Decline
                   </button>

@@ -67,3 +67,22 @@ export function formatRange(start: ISODate, end: ISODate): string {
   const sameYear = start.slice(0, 4) === end.slice(0, 4);
   return `${formatDate(start, sameYear ? undefined : withYear)} – ${formatDate(end, withYear)}`;
 }
+
+/** Whole days from `from` to `to`; negative when `to` is earlier. */
+export function daysBetween(from: ISODate, to: ISODate): number {
+  return Math.round((fromISO(to).getTime() - fromISO(from).getTime()) / 86_400_000);
+}
+
+/** "today", "tomorrow", "in 5 days". */
+export function relativeDay(today: ISODate, day: ISODate): string {
+  const n = daysBetween(today, day);
+  if (n <= 0) return "today";
+  if (n === 1) return "tomorrow";
+  return `in ${n} days`;
+}
+
+/** "morning", "afternoon" or "evening" for the clock in that time zone. */
+export function partOfDay(timeZone: string, now = new Date()): "morning" | "afternoon" | "evening" {
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone }).format(now));
+  return hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
+}

@@ -1,4 +1,5 @@
 import { ActionForm } from "@/components/action-form";
+import { Avatar } from "@/components/ui";
 import { db } from "@/lib/db";
 import { HOLIDAY_REGIONS } from "@/lib/holiday-regions";
 import { requireAdmin } from "@/lib/session";
@@ -9,6 +10,8 @@ import {
   revokeInviteAction,
   updateMemberAction,
 } from "./actions";
+
+export const metadata = { title: "Members" };
 
 export default async function MembersPage({ params }: PageProps<"/w/[slug]/members">) {
   const { slug } = await params;
@@ -65,10 +68,10 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
                 </span>
                 <span className="flex gap-3">
                   <ActionForm action={resendInviteAction.bind(null, slug, i.id)}>
-                    <button className="underline">Resend</button>
+                    <button className="text-primary hover:underline">Resend</button>
                   </ActionForm>
                   <ActionForm action={revokeInviteAction.bind(null, slug, i.id)}>
-                    <button className="text-red-600 underline">Revoke</button>
+                    <button className="text-red-600 hover:underline">Revoke</button>
                   </ActionForm>
                 </span>
               </li>
@@ -77,19 +80,22 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
         </section>
       )}
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold">Members ({members.length})</h2>
-        <ul className="divide-y divide-black/5 dark:divide-white/10">
+      <section className="card space-y-2">
+        <h2 className="font-medium">Members ({members.length})</h2>
+        <ul className="divide-y divide-border">
           {members.map((m) => {
             const who = m.user.name ?? m.user.email;
             return (
-            <li key={m.id} id={`member-${m.id}`} className="flex scroll-mt-4 flex-wrap items-center justify-between gap-3 py-3 target:bg-sky-500/10">
-              <div>
-                <div className="font-medium">
-                  {m.user.name ?? m.user.email}
-                  {m.id === me.id && <span className="font-normal opacity-60"> (you)</span>}
+            <li key={m.id} id={`member-${m.id}`} className="flex scroll-mt-20 flex-wrap items-center justify-between gap-3 rounded-lg py-3 target:-mx-2 target:px-2 target:bg-primary/10">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <Avatar label={who} seed={m.user.email} className="size-9 text-sm" />
+                <div className="min-w-0">
+                  <div className="font-medium">
+                    {who}
+                    {m.id === me.id && <span className="font-normal opacity-60"> (you)</span>}
+                  </div>
+                  {m.user.name && <div className="truncate text-sm opacity-60">{m.user.email}</div>}
                 </div>
-                {m.user.name && <div className="text-sm opacity-60">{m.user.email}</div>}
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <ActionForm action={updateMemberAction.bind(null, slug, m.id)} className="flex flex-wrap items-center gap-2 text-sm">
@@ -126,10 +132,7 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
                       ))}
                     </select>
                   )}
-                  <button
-                    className="rounded-md border border-black/20 px-2 py-1 dark:border-white/25"
-                    aria-label={`Save changes for ${who}`}
-                  >
+                  <button className="btn-secondary px-3 py-1" aria-label={`Save changes for ${who}`}>
                     Save
                   </button>
                 </ActionForm>
@@ -138,7 +141,7 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
                     action={removeMemberAction.bind(null, slug, m.id)}
                     confirm={`Remove ${who}? Their future bookings will be cancelled.`}
                   >
-                    <button className="text-sm text-red-600 underline" aria-label={`Remove ${who}`}>
+                    <button className="rounded-lg px-2 py-1 text-sm text-red-600 hover:bg-red-500/10" aria-label={`Remove ${who}`}>
                       Remove
                     </button>
                   </ActionForm>

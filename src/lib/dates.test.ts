@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, isISODate, monthBounds, shiftMonth, todayIn } from "./dates";
+import { addDays, daysBetween, isISODate, monthBounds, partOfDay, relativeDay, shiftMonth, todayIn } from "./dates";
 
 describe("dates", () => {
   it("validates ISO dates", () => {
@@ -17,5 +17,29 @@ describe("dates", () => {
     const now = new Date("2026-10-02T23:30:00Z");
     expect(todayIn("UTC", now)).toBe("2026-10-02");
     expect(todayIn("Europe/Sarajevo", now)).toBe("2026-10-03");
+  });
+});
+
+describe("daysBetween and relativeDay", () => {
+  it("counts whole days across months", () => {
+    expect(daysBetween("2026-10-30", "2026-11-02")).toBe(3);
+    expect(daysBetween("2026-11-02", "2026-10-30")).toBe(-3);
+  });
+
+  it("reads naturally", () => {
+    expect(relativeDay("2026-10-02", "2026-10-02")).toBe("today");
+    expect(relativeDay("2026-10-02", "2026-10-03")).toBe("tomorrow");
+    expect(relativeDay("2026-10-02", "2026-10-12")).toBe("in 10 days");
+  });
+});
+
+describe("partOfDay", () => {
+  it("uses the workspace time zone", () => {
+    const now = new Date("2026-10-02T09:30:00Z");
+    expect(partOfDay("UTC", now)).toBe("morning");
+    expect(partOfDay("Europe/Berlin", now)).toBe("morning");
+    expect(partOfDay("America/Los_Angeles", now)).toBe("morning");
+    expect(partOfDay("Asia/Tokyo", now)).toBe("evening");
+    expect(partOfDay("Europe/Berlin", new Date("2026-10-02T12:00:00Z"))).toBe("afternoon");
   });
 });

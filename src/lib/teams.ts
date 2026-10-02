@@ -46,6 +46,8 @@ export async function postToTeams(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(teamsMessage(text, link)),
+      // A webhook that redirects elsewhere is refused rather than followed.
+      redirect: "error",
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) console.error("[teams] webhook error", res.status);

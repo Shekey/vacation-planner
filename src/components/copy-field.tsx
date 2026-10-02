@@ -9,7 +9,7 @@ export function CopyField({ value }: { value: string }) {
       <input readOnly value={value} className="input font-mono text-xs" onFocus={(e) => e.target.select()} />
       <button
         type="button"
-        className="rounded-md border border-black/20 px-3 text-sm dark:border-white/25"
+        className="btn-secondary px-3 py-0 text-sm"
         onClick={async () => {
           await navigator.clipboard.writeText(value);
           setCopied(true);

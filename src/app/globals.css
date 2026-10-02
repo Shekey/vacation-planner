@@ -1,42 +1,76 @@
 @import "tailwindcss";
 
+/*
+ * Theme tokens. Pages draw on `background`, cards on `surface`;
+ * `primary` is the one accent (buttons, active tab, focus), matching the vacation blue on the calendar.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f7fa;
+  --surface: #ffffff;
+  --foreground: #141821;
+  --muted: #5d6676;
+  --border: rgb(20 24 33 / 0.1);
+  --primary: #0284c7;
+  --primary-hover: #0369a1;
+  --primary-foreground: #ffffff;
   /* Native controls (date pickers, selects, scrollbars) follow the theme. */
   color-scheme: light dark;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0f1115;
-    --foreground: #e8e8ea;
+    --background: #0c0f14;
+    --surface: #151a22;
+    --foreground: #e8ebf0;
+    --muted: #9aa3b2;
+    --border: rgb(255 255 255 / 0.1);
+    --primary: #38bdf8;
+    --primary-hover: #7dd3fc;
+    --primary-foreground: #082032;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-family:
+    "Inter var", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-feature-settings: "cv11", "ss01";
 }
 
 @layer components {
   .input {
-    @apply w-full rounded-md border border-black/20 bg-transparent px-3 py-2 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 dark:border-white/20 dark:bg-white/5;
+    @apply w-full rounded-lg border border-border bg-surface px-3 py-2 shadow-xs outline-none transition-shadow placeholder:text-muted/70 focus:border-primary focus:ring-3 focus:ring-primary/20 dark:bg-white/5;
   }
   .input option {
-    @apply bg-background text-foreground;
+    @apply bg-surface text-foreground;
   }
   .btn {
-    @apply inline-flex items-center justify-center rounded-md bg-foreground px-4 py-2 font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover active:translate-y-px disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-4 py-2 font-medium shadow-xs transition-colors hover:bg-black/[0.03] disabled:opacity-50 dark:hover:bg-white/5;
   }
   .card {
-    @apply rounded-lg border border-black/10 p-4 dark:border-white/10 dark:bg-white/[0.03];
+    @apply rounded-xl border border-border bg-surface p-4 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_1px_8px_-2px_rgb(0_0_0/0.04)] sm:p-5;
+  }
+  /* A card that is itself a link. */
+  .card-link {
+    @apply transition-[border-color,box-shadow,transform] hover:-translate-y-px hover:border-primary/40 hover:shadow-md;
+  }
+  .eyebrow {
+    @apply text-xs font-medium tracking-wide text-muted uppercase;
   }
 }
 
@@ -44,7 +78,7 @@ body {
 :where(a, button, summary, [tabindex]):focus-visible,
 input[type="checkbox"]:focus-visible,
 input[type="radio"]:focus-visible {
-  outline: 2px solid #0ea5e9;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
   border-radius: 4px;
 }

@@ -8,6 +8,8 @@ import { requireMembership, settingsOf } from "@/lib/session";
 import { addHolidayAction, deleteHolidayAction, importHolidaysAction, setMyRegionAction } from "./actions";
 import { HolidayImportForm } from "./holiday-import-form";
 
+export const metadata = { title: "Holidays" };
+
 export default async function HolidaysPage({ params, searchParams }: PageProps<"/w/[slug]/holidays">) {
   const { slug } = await params;
   const query = await searchParams;
@@ -88,7 +90,7 @@ export default async function HolidaysPage({ params, searchParams }: PageProps<"
       {holidays.length === 0 ? (
         <p className="opacity-70">No holidays for {year} yet.{isAdmin && " Import your country's below, or add them one by one."}</p>
       ) : (
-        <ul className="divide-y divide-black/5 dark:divide-white/10">
+        <ul className="card divide-y divide-border py-1 sm:py-1">
           {holidays.map((h) => {
             const iso = toISO(h.date);
             return (
@@ -100,7 +102,7 @@ export default async function HolidaysPage({ params, searchParams }: PageProps<"
                 </span>
                 {isAdmin && (
                   <ActionForm action={deleteHolidayAction.bind(null, slug, h.id)}>
-                    <button className="text-sm text-red-600 underline">Remove</button>
+                    <button className="rounded-lg px-2 py-1 text-sm text-red-600 hover:bg-red-500/10">Remove</button>
                   </ActionForm>
                 )}
               </li>

@@ -2,6 +2,7 @@ import { portionOn } from "@/lib/booking-days";
 import { activeBookingsBetween, spanOf } from "@/lib/bookings";
 import { formatDate, fromISO, isWeekend, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
+import { isCronRequest } from "@/lib/security";
 import { postToTeams } from "@/lib/teams";
 import { appOrigin } from "@/lib/url";
 
@@ -10,10 +11,7 @@ import { appOrigin } from "@/lib/url";
  * Vercel Cron calls this daily (see vercel.json) with the CRON_SECRET bearer token.
  */
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  if (!isCronRequest(req)) return new Response("Unauthorized", { status: 401 });
 
   const origin = await appOrigin();
   const workspaces = await db.workspace.findMany({

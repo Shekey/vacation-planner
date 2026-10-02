@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { Legend, typeColor } from "@/components/badges";
 import { ScrollToToday } from "@/components/scroll-to-today";
+import { Avatar } from "@/components/ui";
 import { portionOn } from "@/lib/booking-days";
 import { activeBookingsBetween, regionOf, spanOf } from "@/lib/bookings";
 import { eachDay, fromISO, isWeekend, isYearMonth, monthBounds, shiftMonth, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { requireMembership, settingsOf } from "@/lib/session";
+
+export const metadata = { title: "Calendar" };
 
 export default async function CalendarPage({ params, searchParams }: PageProps<"/w/[slug]/calendar">) {
   const { slug } = await params;
@@ -49,15 +52,15 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Link href={nav(shiftMonth(month, -1))} className="rounded-md border border-black/20 px-2.5 py-1 dark:border-white/25" aria-label="Previous month">
+          <Link href={nav(shiftMonth(month, -1))} className="btn-secondary px-2.5 py-1" aria-label="Previous month">
             ←
           </Link>
           <h2 className="min-w-40 text-center text-lg font-semibold">{monthLabel}</h2>
-          <Link href={nav(shiftMonth(month, 1))} className="rounded-md border border-black/20 px-2.5 py-1 dark:border-white/25" aria-label="Next month">
+          <Link href={nav(shiftMonth(month, 1))} className="btn-secondary px-2.5 py-1" aria-label="Next month">
             →
           </Link>
           {month !== today.slice(0, 7) && (
-            <Link href={nav(today.slice(0, 7))} className="text-sm underline">
+            <Link href={nav(today.slice(0, 7))} className="text-sm text-primary hover:underline">
               Today
             </Link>
           )}
@@ -65,11 +68,11 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
         <Legend />
       </div>
 
-      <ScrollToToday className="overflow-x-auto overscroll-x-contain rounded-lg border border-black/10 dark:border-white/15">
+      <ScrollToToday className="overflow-x-auto overscroll-x-contain rounded-xl border border-border bg-surface shadow-sm">
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr>
-              <th scope="col" data-sticky className="sticky left-0 z-10 w-24 min-w-24 max-w-24 bg-background p-2 text-left font-medium sm:w-auto sm:min-w-28 sm:max-w-40">
+              <th scope="col" data-sticky className="sticky left-0 z-10 w-24 min-w-24 max-w-24 bg-surface p-2 text-left font-medium sm:w-auto sm:min-w-28 sm:max-w-40">
                 Member
               </th>
               {days.map((d) => (
@@ -98,9 +101,14 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
               const region = regionOf(m, settings);
               return (
                 <tr key={m.id} className="border-t border-black/5 dark:border-white/10">
-                  <th scope="row" className="sticky left-0 z-10 w-24 min-w-24 max-w-24 truncate bg-background p-2 text-left font-medium sm:w-auto sm:min-w-28 sm:max-w-40">
-                    {label(m)}
-                    {m.id === membership.id && <span className="font-normal opacity-60"> (you)</span>}
+                  <th scope="row" className="sticky left-0 z-10 w-24 min-w-24 max-w-24 truncate bg-surface p-2 text-left font-medium sm:w-auto sm:min-w-28 sm:max-w-40">
+                    <span className="flex items-center gap-1.5">
+                      <Avatar label={label(m)} seed={m.user.email} className="hidden size-5 text-[9px] sm:inline-grid" />
+                      <span className="truncate">
+                        {label(m)}
+                        {m.id === membership.id && <span className="font-normal opacity-60"> (you)</span>}
+                      </span>
+                    </span>
                   </th>
                   {days.map((d) => {
                     // Up to two bookings can share a day (a morning and an afternoon).
@@ -109,7 +117,7 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
                       .filter((h): h is { b: (typeof own)[number]; portion: "FULL" | "AM" | "PM" } => h.portion !== null);
                     const weekendClass = offDayClass(d, region);
                     const holiday = holidayName(d, region);
-                    const todayClass = d === today ? "ring-1 ring-inset ring-sky-500/60" : "";
+                    const todayClass = d === today && !weekendClass ? "bg-primary/[0.07]" : "";
                     const title = hits
                       .map(
                         ({ b, portion }) =>
