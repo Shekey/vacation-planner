@@ -24,3 +24,22 @@ export const requireMembership = cache(async (slug: string) => {
   if (!membership) notFound();
   return { user, membership, workspace: membership.workspace };
 });
+
+/** Like requireMembership, but only for admins; members get a 404. */
+export async function requireAdmin(slug: string) {
+  const ctx = await requireMembership(slug);
+  if (ctx.membership.role !== "ADMIN") notFound();
+  return ctx;
+}
+
+export function settingsOf(workspace: { settings: { approvalsEnabled: boolean; countWeekends: boolean; allowHalfDays: boolean } | null }) {
+  return {
+    approvalsEnabled: workspace.settings?.approvalsEnabled ?? false,
+    countWeekends: workspace.settings?.countWeekends ?? false,
+    allowHalfDays: workspace.settings?.allowHalfDays ?? true,
+  };
+}
+
+export function actorOf(ctx: { user: { id: string }; membership: { id: string; role: "ADMIN" | "MEMBER" } }) {
+  return { userId: ctx.user.id, membershipId: ctx.membership.id, role: ctx.membership.role };
+}

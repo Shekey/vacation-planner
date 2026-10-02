@@ -3,7 +3,7 @@ import { auth, signIn } from "@/auth";
 
 export default async function SignInPage({ searchParams }: PageProps<"/sign-in">) {
   if ((await auth())?.user) redirect("/");
-  const { sent, callbackUrl } = await searchParams;
+  const { sent, callbackUrl, email } = await searchParams;
 
   if (sent) {
     return (
@@ -25,8 +25,19 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
       }}
     >
       <h1 className="text-xl font-semibold">Sign in</h1>
-      <p className="opacity-80">We&apos;ll email you a link to sign in.</p>
-      <input className="input" name="email" type="email" required placeholder="you@company.com" />
+      <p className="opacity-80">
+        {redirectTo.startsWith("/invite/")
+          ? "Sign in to accept your invitation. We'll email you a link."
+          : "We'll email you a link to sign in."}
+      </p>
+      <input
+        className="input"
+        name="email"
+        type="email"
+        required
+        placeholder="you@company.com"
+        defaultValue={typeof email === "string" ? email : undefined}
+      />
       <button className="btn w-full">Email me a link</button>
     </form>
   );

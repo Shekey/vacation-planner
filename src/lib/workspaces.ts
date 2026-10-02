@@ -13,7 +13,7 @@ export async function createWorkspace(input: { name: string; timezone: string; u
       timezone: input.timezone,
       createdById: input.userId,
       settings: { create: {} },
-      memberships: { create: { userId: input.userId, role: "ADMIN" } },
+      memberships: { create: { userId: input.userId, role: "ADMIN", annualAllowanceDays: 20 } },
     },
   });
 }
