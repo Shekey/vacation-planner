@@ -10,6 +10,7 @@ export function NavLink({ href, children, exact }: { href: string; children: Rea
   return (
     <Link
       href={href}
+      aria-current={active ? "page" : undefined}
       className={`rounded-md px-3 py-1.5 text-sm ${
         active ? "bg-foreground text-background" : "hover:bg-black/5 dark:hover:bg-white/10"
       }`}

@@ -36,13 +36,14 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
         <ActionForm action={inviteAction.bind(null, slug)} className="space-y-3" resetOnSuccess>
           <textarea
             name="emails"
+            aria-label="Email addresses to invite"
             className="input"
             rows={2}
             required
             placeholder="anna@company.com, ben@company.com"
           />
           <div className="flex flex-wrap items-center gap-3">
-            <select name="role" className="input w-auto" defaultValue="MEMBER">
+            <select name="role" className="input w-auto" defaultValue="MEMBER" aria-label="Invite as">
               <option value="MEMBER">as members</option>
               <option value="ADMIN">as admins</option>
             </select>
@@ -79,8 +80,10 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Members ({members.length})</h2>
         <ul className="divide-y divide-black/5 dark:divide-white/10">
-          {members.map((m) => (
-            <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+          {members.map((m) => {
+            const who = m.user.name ?? m.user.email;
+            return (
+            <li key={m.id} id={`member-${m.id}`} className="flex scroll-mt-4 flex-wrap items-center justify-between gap-3 py-3 target:bg-sky-500/10">
               <div>
                 <div className="font-medium">
                   {m.user.name ?? m.user.email}
@@ -90,7 +93,7 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <ActionForm action={updateMemberAction.bind(null, slug, m.id)} className="flex flex-wrap items-center gap-2 text-sm">
-                  <select name="role" defaultValue={m.role} className="input w-auto py-1">
+                  <select name="role" defaultValue={m.role} className="input w-auto py-1" aria-label={`Role for ${who}`}>
                     <option value="MEMBER">Member</option>
                     <option value="ADMIN">Admin</option>
                   </select>
@@ -104,7 +107,7 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
                       defaultValue={m.annualAllowanceDays === null ? "" : Number(m.annualAllowanceDays)}
                       placeholder="–"
                       className="input w-20 py-1"
-                      aria-label="Yearly allowance in days"
+                      aria-label={`Yearly allowance for ${who}, in days`}
                     />
                     <span className="opacity-60">days/yr</span>
                   </label>
@@ -113,7 +116,7 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
                       name="region"
                       defaultValue={m.holidayRegion ?? ""}
                       className="input w-auto max-w-48 py-1"
-                      aria-label="Works in (for public holidays)"
+                      aria-label={`Where ${who} works, for public holidays`}
                     >
                       <option value="">{defaultRegion ? `Team default (${defaultRegion})` : "Nationwide holidays only"}</option>
                       {regions.map((r) => (
@@ -123,21 +126,29 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
                       ))}
                     </select>
                   )}
-                  <button className="rounded-md border border-black/20 px-2 py-1 dark:border-white/25">Save</button>
+                  <button
+                    className="rounded-md border border-black/20 px-2 py-1 dark:border-white/25"
+                    aria-label={`Save changes for ${who}`}
+                  >
+                    Save
+                  </button>
                 </ActionForm>
                 {m.id !== me.id && (
                   <ActionForm
                     action={removeMemberAction.bind(null, slug, m.id)}
-                    confirm={`Remove ${m.user.name ?? m.user.email}? Their future bookings will be cancelled.`}
+                    confirm={`Remove ${who}? Their future bookings will be cancelled.`}
                   >
-                    <button className="text-sm text-red-600 underline">Remove</button>
+                    <button className="text-sm text-red-600 underline" aria-label={`Remove ${who}`}>
+                      Remove
+                    </button>
                   </ActionForm>
                 )}
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
-        <p className="text-xs opacity-60">Leave the allowance empty to not track it for that person.</p>
+        <p className="text-xs opacity-60">Change anyone&apos;s yearly allowance here, including people who joined before the default was set. Leave it empty to not track it for that person.</p>
       </section>
     </div>
   );

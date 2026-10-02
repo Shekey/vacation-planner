@@ -78,7 +78,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
               const portion = portionOn(spanOf(b), today);
               return (
                 <li key={b.id} className="flex items-center gap-2">
-                  <TypeDot type={b.type} />
+                  <TypeDot type={b.type} decorative />
                   <span className="font-medium">{name(b)}</span>
                   <span className="opacity-70">
                     {portion === "AM" ? "morning" : portion === "PM" ? "afternoon" : typeLabel(b.type).toLowerCase()}
@@ -92,7 +92,10 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
       </section>
 
       <div className="space-y-4">
-        <AllowanceCard summary={summary} />
+        <AllowanceCard
+          summary={summary}
+          editHref={membership.role === "ADMIN" ? `/w/${slug}/members#member-${membership.id}` : undefined}
+        />
         {atRisk > 0 && (
           <Link
             href={`/w/${slug}/book`}

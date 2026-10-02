@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { requireUser } from "@/lib/session";
 import { listWorkspacesForUser } from "@/lib/workspaces";
+import { Landing } from "./landing";
 
 export default async function HomePage() {
+  // Visitors who aren't signed in get the product page; everyone else their workspaces.
+  if (!(await auth())?.user) return <Landing />;
   const user = await requireUser();
   // First visit: ask for a name so teammates don't see a bare email.
   if (!user.name) redirect("/account?next=/");

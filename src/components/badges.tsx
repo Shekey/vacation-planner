@@ -10,8 +10,14 @@ export function typeColor(type: BookingTypeKey) {
   return typeStyles[type].className;
 }
 
-export function TypeDot({ type }: { type: BookingTypeKey }) {
-  return <span className={`inline-block h-2.5 w-2.5 rounded-full ${typeStyles[type].className}`} />;
+/** Colour dot for a booking type; screen readers hear the type unless `decorative` (the label is already next to it). */
+export function TypeDot({ type, decorative }: { type: BookingTypeKey; decorative?: boolean }) {
+  const className = `inline-block h-2.5 w-2.5 shrink-0 rounded-full ${typeStyles[type].className}`;
+  return decorative ? (
+    <span aria-hidden className={className} />
+  ) : (
+    <span role="img" aria-label={typeStyles[type].label} className={className} />
+  );
 }
 
 export function typeLabel(type: BookingTypeKey) {
@@ -35,7 +41,7 @@ export function Legend() {
     <div className="flex flex-wrap items-center gap-4 text-xs opacity-80">
       {(Object.keys(typeStyles) as BookingTypeKey[]).map((t) => (
         <span key={t} className="flex items-center gap-1.5">
-          <TypeDot type={t} /> {typeStyles[t].label}
+          <TypeDot type={t} decorative /> {typeStyles[t].label}
         </span>
       ))}
       <span className="flex items-center gap-1.5">

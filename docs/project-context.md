@@ -29,6 +29,7 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 | #4 | Vercel deploy (build runs migrations, daily digest cron), People search, display names, mobile and dark mode polish |
 | #5 | Database URL under any Vercel/Neon name, preview builds without a database, sign-in errors shown on /sign-in |
 | #6 | Long-weekend tips, use-it-or-lose-it nudge, regional holidays picked per person, monthly holiday refresh cron |
+| #7 | Public landing page at `/` for signed-out visitors (`src/app/landing.tsx`), accessibility pass (skip link, focus ring, labels, announced form messages, calendar readable by screen readers), Settings can apply the default allowance to existing members |
 
 ## Where things live
 
@@ -50,5 +51,6 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 
 - Confirm sign-in works on the live site after removing `AUTH_URL`.
 - Try Holidays → Germany → Import on the live site (it couldn't be tested from the build sandbox).
+- Selling it: plan in the Claude Doc "Vacation Planner: plan for selling it" (pricing, billing, GDPR, launch).
 - Known quirk: a new member gets carry-over as if they had an unused previous year.
 - Ideas not built yet: undo after cancel, day-before reminder, admin view of who has the most days left, calendar filter, range selection on the calendar.

@@ -69,20 +69,24 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr>
-              <th data-sticky className="sticky left-0 z-10 w-24 min-w-24 max-w-24 bg-background p-2 text-left font-medium sm:w-auto sm:min-w-28 sm:max-w-40">
+              <th scope="col" data-sticky className="sticky left-0 z-10 w-24 min-w-24 max-w-24 bg-background p-2 text-left font-medium sm:w-auto sm:min-w-28 sm:max-w-40">
                 Member
               </th>
               {days.map((d) => (
                 <th
                   key={d}
+                  scope="col"
                   data-today={d === today ? "" : undefined}
                   title={holidayName(d, "")}
                   className={`min-w-6 p-1 text-center font-normal ${offDayClass(d)} ${
                     d === today ? "text-sky-600 font-bold dark:text-sky-400" : "opacity-70"
                   }`}
                 >
-                  <div>{["S", "M", "T", "W", "T", "F", "S"][fromISO(d).getUTCDay()]}</div>
-                  <div>{Number(d.slice(8))}</div>
+                  <div aria-hidden>{["S", "M", "T", "W", "T", "F", "S"][fromISO(d).getUTCDay()]}</div>
+                  <div aria-hidden>{Number(d.slice(8))}</div>
+                  <span className="sr-only">
+                    {fromISO(d).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}
+                  </span>
                 </th>
               ))}
             </tr>
@@ -94,7 +98,7 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
               const region = regionOf(m, settings);
               return (
                 <tr key={m.id} className="border-t border-black/5 dark:border-white/10">
-                  <th className="sticky left-0 z-10 w-24 min-w-24 max-w-24 truncate bg-background p-2 text-left font-medium sm:w-auto sm:min-w-28 sm:max-w-40">
+                  <th scope="row" className="sticky left-0 z-10 w-24 min-w-24 max-w-24 truncate bg-background p-2 text-left font-medium sm:w-auto sm:min-w-28 sm:max-w-40">
                     {label(m)}
                     {m.id === membership.id && <span className="font-normal opacity-60"> (you)</span>}
                   </th>
@@ -124,6 +128,7 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
                             aria-label={`Book ${d} for ${label(m)}`}
                           />
                         )}
+                        {title && <span className="sr-only">{title}</span>}
                         {hits.map(({ b, portion }) => {
                           const block = (
                             <div
@@ -133,7 +138,7 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
                             />
                           );
                           return canBook ? (
-                            <Link key={b.id} href={`/w/${slug}/book/${b.id}`} aria-label={`Change ${label(m)}'s booking`}>
+                            <Link key={b.id} href={`/w/${slug}/book/${b.id}`} aria-label={`Change ${label(m)}'s booking on ${d}`}>
                               {block}
                             </Link>
                           ) : (

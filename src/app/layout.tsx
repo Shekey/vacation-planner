@@ -5,7 +5,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Vacation Planner",
-  description: "Plan and book team vacations",
+  description:
+    "Team vacation planning with yearly allowances, half days, regional public holidays, approvals and Microsoft Teams updates.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
@@ -13,11 +14,22 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-foreground focus:px-3 focus:py-2 focus:text-background"
+        >
+          Skip to content
+        </a>
         <header className="border-b border-black/10 dark:border-white/15">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
             <Link href="/" className="font-semibold">
               Vacation Planner
             </Link>
+            {!session?.user && (
+              <Link href="/sign-in" className="btn py-1.5 text-sm">
+                Sign in
+              </Link>
+            )}
             {session?.user && (
               <form
                 action={async () => {
@@ -34,7 +46,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             )}
           </div>
         </header>
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</main>
+        <main id="main" tabIndex={-1} className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 outline-none">{children}</main>
       </body>
     </html>
   );

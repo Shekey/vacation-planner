@@ -45,9 +45,14 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
           {ERRORS[error] ?? DEFAULT_ERROR}
         </p>
       )}
+      <label htmlFor="email" className="sr-only">
+        Email
+      </label>
       <input
+        id="email"
         className="input"
         name="email"
+        autoComplete="email"
         type="email"
         required
         placeholder="you@company.com"
