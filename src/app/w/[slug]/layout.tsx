@@ -16,22 +16,23 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-baseline gap-3">
-          <h1 className="text-2xl font-semibold">{workspace.name}</h1>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-baseline gap-3">
+          <h1 className="truncate text-xl font-semibold sm:text-2xl">{workspace.name}</h1>
           <Link href="/" className="text-sm underline opacity-70">
             Switch
           </Link>
         </div>
-        <Link href={`${base}/book`} className="btn">
+        <Link href={`${base}/book`} className="btn shrink-0 whitespace-nowrap">
           Book time off
         </Link>
       </div>
-      <nav className="-mx-1 flex flex-wrap gap-1 border-b border-black/10 pb-2 dark:border-white/15">
+      <nav className="-mx-4 flex gap-1 overflow-x-auto whitespace-nowrap border-b border-black/10 px-3 pb-2 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 dark:border-white/15">
         <NavLink href={base} exact>
           Overview
         </NavLink>
         <NavLink href={`${base}/calendar`}>Calendar</NavLink>
+        <NavLink href={`${base}/people`}>People</NavLink>
         <NavLink href={`${base}/me`}>My time off</NavLink>
         <NavLink href={`${base}/holidays`}>Holidays</NavLink>
         {isAdmin && settings.approvalsEnabled && (

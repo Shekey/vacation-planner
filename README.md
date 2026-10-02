@@ -17,6 +17,22 @@ npm run dev
 
 Without `AUTH_RESEND_KEY`, sign-in links are printed to the dev server console instead of emailed.
 
+## Deploy on Vercel
+
+1. **Import the repo** at vercel.com/new and pick `Shekey/vacation-planner`. The framework is detected; leave build settings as they are. The `vercel-build` script runs database migrations before every build.
+2. **Add a database**: in the Vercel project, open *Storage* → *Create Database* → *Neon* (Postgres) and connect it to the project. This sets `DATABASE_URL` and `DATABASE_URL_UNPOOLED` for you.
+3. **Set environment variables** (*Settings* → *Environment Variables*):
+   | Name | Value |
+   |---|---|
+   | `AUTH_SECRET` | output of `npx auth secret` (or any long random string) |
+   | `AUTH_RESEND_KEY` | API key from resend.com |
+   | `EMAIL_FROM` | e.g. `Vacation Planner <vacations@yourdomain.com>` (a domain verified in Resend) |
+   | `AUTH_URL` | your site URL, e.g. `https://vacation-planner.vercel.app` |
+   | `CRON_SECRET` | any long random string (enables the weekday Teams digest) |
+4. **Redeploy** so the variables apply. Open the site, sign in with your email and create your workspace.
+
+Without a verified domain, Resend only delivers to the email address of your Resend account, which is enough to try it yourself. Verify a domain in Resend before inviting the team.
+
 ## Scripts
 
 | Script | What it does |
@@ -36,7 +52,8 @@ Without `AUTH_RESEND_KEY`, sign-in links are printed to the dev server console i
 - **Carry-over**: up to a set number of unused vacation days roll into the next year.
 - **Minimum staffing**: booking and approval screens warn when fewer than N people would be in.
 - **Calendar feed**: each member can get a private iCal link to subscribe to the team calendar in Google Calendar, Outlook or Apple Calendar.
-- **Microsoft Teams**: optional channel webhook (Teams Workflows "Post to a channel when a webhook request is received") that posts bookings, requests and approvals as Adaptive Cards.
+- **People search**: type a name to see whether someone is out today and their upcoming time off.
+- **Microsoft Teams**: optional channel webhook (Teams Workflows "Post to a channel when a webhook request is received") that posts bookings, requests and approvals as Adaptive Cards, plus a weekday-morning "who's out today" digest.
 - **Team calendar** (month view, click a day to book), an overview with who's out today and the next two weeks, and email notifications for invites, requests and decisions.
 
 ## Notes

@@ -26,7 +26,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                 }}
                 className="flex items-center gap-3 text-sm"
               >
-                <span className="opacity-70">{session.user.email}</span>
+                <Link href="/account" className="max-w-40 truncate opacity-70 hover:underline sm:max-w-none">
+                  {session.user.name ?? session.user.email}
+                </Link>
                 <button className="underline">Sign out</button>
               </form>
             )}

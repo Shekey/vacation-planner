@@ -60,7 +60,7 @@ export default async function InvitePage({ params }: PageProps<"/invite/[token]"
       action={async () => {
         "use server";
         const slug = await acceptInvitation(token, user);
-        redirect(`/w/${slug}`);
+        redirect(session.user?.name ? `/w/${slug}` : `/account?next=/w/${slug}`);
       }}
     >
       <h1 className="text-xl font-semibold">Join {invitation.workspace.name}</h1>

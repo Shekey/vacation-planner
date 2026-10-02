@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Legend, typeColor } from "@/components/badges";
+import { ScrollToToday } from "@/components/scroll-to-today";
 import { portionOn } from "@/lib/booking-days";
 import { activeBookingsBetween, spanOf } from "@/lib/bookings";
 import { eachDay, fromISO, isWeekend, isYearMonth, monthBounds, shiftMonth, toISO, todayIn } from "@/lib/dates";
@@ -61,14 +62,17 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
         <Legend />
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-black/10 dark:border-white/15">
+      <ScrollToToday className="overflow-x-auto overscroll-x-contain rounded-lg border border-black/10 dark:border-white/15">
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 min-w-28 max-w-40 bg-background p-2 text-left font-medium">Member</th>
+              <th data-sticky className="sticky left-0 z-10 w-24 min-w-24 max-w-24 bg-background p-2 text-left font-medium sm:w-auto sm:min-w-28 sm:max-w-40">
+                Member
+              </th>
               {days.map((d) => (
                 <th
                   key={d}
+                  data-today={d === today ? "" : undefined}
                   title={holidays.get(d)}
                   className={`min-w-6 p-1 text-center font-normal ${offDayClass(d)} ${
                     d === today ? "text-sky-600 font-bold dark:text-sky-400" : "opacity-70"
@@ -86,7 +90,7 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
               const canBook = isAdmin || m.id === membership.id;
               return (
                 <tr key={m.id} className="border-t border-black/5 dark:border-white/10">
-                  <th className="sticky left-0 z-10 truncate bg-background p-2 text-left font-medium">
+                  <th className="sticky left-0 z-10 w-24 min-w-24 max-w-24 truncate bg-background p-2 text-left font-medium sm:w-auto sm:min-w-28 sm:max-w-40">
                     {label(m)}
                     {m.id === membership.id && <span className="font-normal opacity-60"> (you)</span>}
                   </th>
@@ -139,8 +143,10 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
             })}
           </tbody>
         </table>
-      </div>
-      <p className="text-xs opacity-60">Click an empty day to book it, or a booking to change it.</p>
+      </ScrollToToday>
+      <p className="text-xs opacity-60">
+        Tap an empty day to book it, or a booking to change it.<span className="sm:hidden"> Swipe sideways to see the whole month.</span>
+      </p>
     </div>
   );
 }
