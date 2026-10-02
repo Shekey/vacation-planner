@@ -87,6 +87,19 @@ model Workspace {
   memberships Membership[]
   invitations Invitation[]
   bookings    Booking[]
+  holidays    Holiday[]
+}
+
+// Days off for everyone; they don't count against allowances.
+model Holiday {
+  id          String   @id @default(cuid())
+  workspaceId String
+  date        DateTime @db.Date
+  name        String
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, date])
 }
 
 // Per-workspace feature flags.
@@ -97,6 +110,14 @@ model WorkspaceSettings {
   allowHalfDays    Boolean @default(true)
   // Yearly allowance given to new members; null means allowances are not tracked by default.
   defaultAllowanceDays Decimal? @default(20) @db.Decimal(4, 1)
+  // Most unused vacation days that roll into the next year; null or 0 means none.
+  maxCarryOverDays     Decimal? @db.Decimal(4, 1)
+  // Warn when fewer people than this would be working on a day; null turns the check off.
+  minPeoplePresent     Int?
+  // ISO 3166 country code last used to import public holidays, e.g. "BA".
+  holidayCountry       String?
+  // Slack incoming webhook for booking notifications.
+  slackWebhookUrl      String?
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
@@ -111,6 +132,8 @@ model Membership {
   joinedAt             DateTime  @default(now())
   // Soft removal keeps booking history intact.
   removedAt            DateTime?
+  // Secret for the personal iCal feed URL; null until the member turns the feed on.
+  calendarToken        String?   @unique
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)

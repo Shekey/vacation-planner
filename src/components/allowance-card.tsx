@@ -5,7 +5,7 @@ function fmt(n: number) {
 }
 
 export function AllowanceCard({ summary }: { summary: AllowanceSummary }) {
-  const { allowance, used, pending, remaining, year } = summary;
+  const { allowance, used, pending, remaining, year, carriedOver } = summary;
   const pct = (n: number) => (allowance ? Math.min(100, (n / allowance) * 100) : 0);
   return (
     <section className="card space-y-3">
@@ -30,6 +30,7 @@ export function AllowanceCard({ summary }: { summary: AllowanceSummary }) {
           </div>
           <p className="text-sm opacity-70">
             {fmt(used)} taken{pending ? `, ${fmt(pending)} pending` : ""}
+            {carriedOver > 0 && ` · includes ${fmt(carriedOver)} carried over from ${year - 1}`}
           </p>
         </>
       )}

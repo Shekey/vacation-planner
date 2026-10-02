@@ -32,6 +32,11 @@ Without `AUTH_RESEND_KEY`, sign-in links are printed to the dev server console i
 - **Bookings**: vacation, sick leave or other, with half days (morning/afternoon). Weekends aren't counted unless the workspace says so. A member can't double-book, but a morning and an afternoon can share a date.
 - **Yearly allowance** per member (default set per workspace), with days taken, pending and left shown while booking.
 - **Approvals** behind a per-workspace switch. With it on, members' bookings wait for an admin; admins' own bookings are confirmed. Switching it off approves everything pending.
+- **Public holidays** per workspace: import a country's from date.nager.at or add days by hand. They're skipped when counting days off.
+- **Carry-over**: up to a set number of unused vacation days roll into the next year.
+- **Minimum staffing**: booking and approval screens warn when fewer than N people would be in.
+- **Calendar feed**: each member can get a private iCal link to subscribe to the team calendar in Google Calendar, Outlook or Apple Calendar.
+- **Slack**: optional incoming webhook that posts bookings, requests and approvals to a channel.
 - **Team calendar** (month view, click a day to book), an overview with who's out today and the next two weeks, and email notifications for invites, requests and decisions.
 
 ## Notes

@@ -1,14 +1,26 @@
 import type { BookingStatus, BookingType, Prisma, Role } from "@/generated/prisma/client";
-import { countDays, validateSpan, type BookingSpan } from "@/lib/booking-days";
-import { fromISO, toISO, type ISODate } from "@/lib/dates";
+import { carryOver, countDays, validateSpan, type BookingSpan, type DayRules } from "@/lib/booking-days";
+import { formatRange, fromISO, toISO, type ISODate } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
+import { postToSlack } from "@/lib/slack";
 
 export const ACTIVE_STATUSES: BookingStatus[] = ["PENDING", "APPROVED"];
 
-export type Settings = { approvalsEnabled: boolean; countWeekends: boolean; allowHalfDays: boolean };
+export type Settings = {
+  approvalsEnabled: boolean;
+  countWeekends: boolean;
+  allowHalfDays: boolean;
+  maxCarryOverDays: number | null;
+  minPeoplePresent: number | null;
+  slackWebhookUrl: string | null;
+};
 
-export const DEFAULT_SETTINGS: Settings = { approvalsEnabled: false, countWeekends: false, allowHalfDays: true };
+/** Public holiday dates of a workspace, for day counting. */
+export async function loadHolidays(workspaceId: string): Promise<Set<ISODate>> {
+  const rows = await db.holiday.findMany({ where: { workspaceId }, select: { date: true } });
+  return new Set(rows.map((h) => toISO(h.date)));
+}
 
 export class BookingError extends Error {}
 
@@ -31,10 +43,10 @@ type Actor = { userId: string; membershipId: string; role: Role };
 
 type BookingInput = BookingSpan & { type: BookingType; note: string | null };
 
-function prepare(input: BookingInput, settings: Settings) {
+function prepare(input: BookingInput, settings: Settings, holidays: Set<ISODate>) {
   const error = validateSpan(input, settings);
   if (error) throw new BookingError(error);
-  const daysCount = countDays(input, settings);
+  const daysCount = countDays(input, { countWeekends: settings.countWeekends, holidays });
   if (daysCount === 0) throw new BookingError("That range has no working days in it.");
   return {
     startDate: fromISO(input.start),
@@ -80,10 +92,11 @@ export async function createBooking(opts: {
   if (!target) throw new BookingError("That member is not in this workspace.");
 
   const status = initialStatus(actor, settings);
+  const holidays = await loadHolidays(workspace.id);
   const booking = await write(() =>
     db.booking.create({
       data: {
-        ...prepare(input, settings),
+        ...prepare(input, settings, holidays),
         status,
         workspaceId: workspace.id,
         membershipId,
@@ -96,7 +109,24 @@ export async function createBooking(opts: {
   );
 
   if (status === "PENDING") await notifyAdminsOfRequest(workspace, target.user, booking, opts.origin);
+  await announce(settings, target.user, booking, status === "PENDING" ? "requested time off" : "is off");
   return booking;
+}
+
+/** Posts a one-line summary to the workspace's Slack channel, if one is set. */
+async function announce(
+  settings: Settings,
+  person: { name: string | null; email: string },
+  booking: { startDate: Date; endDate: Date; daysCount: Prisma.Decimal | number; type: BookingType },
+  verb: string,
+) {
+  const kind = { VACATION: "vacation", SICK: "sick leave", OTHER: "time off" }[booking.type];
+  await postToSlack(
+    settings.slackWebhookUrl,
+    `${person.name ?? person.email} ${verb}: ${formatRange(toISO(booking.startDate), toISO(booking.endDate))} (${Number(
+      booking.daysCount,
+    )} days, ${kind})`,
+  );
 }
 
 export async function updateBooking(opts: {
@@ -119,17 +149,19 @@ export async function updateBooking(opts: {
 
   // A member changing dates sends the booking back for approval.
   const status = initialStatus(actor, settings);
+  const holidays = await loadHolidays(workspace.id);
   const booking = await write(() =>
     db.booking.update({
       where: { id: existing.id },
       data: {
-        ...prepare(input, settings),
+        ...prepare(input, settings, holidays),
         status,
         ...(status === "PENDING" ? { decidedById: null, decidedAt: null, decisionNote: null } : {}),
       },
     }),
   );
   if (status === "PENDING") await notifyAdminsOfRequest(workspace, existing.membership.user, booking, opts.origin);
+  await announce(settings, existing.membership.user, booking, status === "PENDING" ? "changed a request" : "changed time off");
   return booking;
 }
 
@@ -146,6 +178,7 @@ export async function cancelBooking(opts: { workspaceId: string; actor: Actor; b
 
 export async function decideBooking(opts: {
   workspace: { id: string; name: string; slug: string };
+  settings: Settings;
   actor: Actor;
   bookingId: string;
   approve: boolean;
@@ -177,6 +210,7 @@ export async function decideBooking(opts: {
       opts.approve ? "approved" : "declined"
     }.${opts.note ? `\n\nNote: ${opts.note}` : ""}\n\n${opts.origin}/w/${opts.workspace.slug}/me`,
   });
+  if (opts.approve) await announce(opts.settings, booking.membership.user, booking, "is off");
 }
 
 /** Approves everything still pending, used when approvals are switched off. */
@@ -224,23 +258,21 @@ export function activeBookingsBetween(workspaceId: string, from: ISODate, to: IS
 
 export type AllowanceSummary = {
   year: number;
+  /** Total for the year, including carried-over days; null when not tracked. */
   allowance: number | null;
+  carriedOver: number;
   used: number;
   pending: number;
   remaining: number | null;
 };
 
-/** Vacation days used and pending in a calendar year; sick and other leave don't count. */
-export async function allowanceSummary(
-  membership: { id: string; annualAllowanceDays: Prisma.Decimal | null },
-  settings: Settings,
-  year: number,
-): Promise<AllowanceSummary> {
+/** Vacation days (approved, pending) inside one calendar year; sick and other leave don't count. */
+async function vacationDaysInYear(membershipId: string, rules: DayRules, year: number) {
   const from = `${year}-01-01`;
   const to = `${year}-12-31`;
   const bookings = await db.booking.findMany({
     where: {
-      membershipId: membership.id,
+      membershipId,
       type: "VACATION",
       status: { in: ACTIVE_STATUSES },
       startDate: { lte: fromISO(to) },
@@ -250,10 +282,33 @@ export async function allowanceSummary(
   let used = 0;
   let pending = 0;
   for (const b of bookings) {
-    const days = countDays(spanOf(b), settings, { from, to });
+    const days = countDays(spanOf(b), rules, { from, to });
     if (b.status === "APPROVED") used += days;
     else pending += days;
   }
-  const allowance = membership.annualAllowanceDays === null ? null : Number(membership.annualAllowanceDays);
-  return { year, allowance, used, pending, remaining: allowance === null ? null : allowance - used - pending };
+  return { used, pending };
+}
+
+export async function allowanceSummary(
+  membership: { id: string; workspaceId: string; annualAllowanceDays: Prisma.Decimal | null },
+  settings: Settings,
+  year: number,
+  holidays?: Set<ISODate>,
+): Promise<AllowanceSummary> {
+  const rules: DayRules = {
+    countWeekends: settings.countWeekends,
+    holidays: holidays ?? (await loadHolidays(membership.workspaceId)),
+  };
+  const { used, pending } = await vacationDaysInYear(membership.id, rules, year);
+  if (membership.annualAllowanceDays === null) {
+    return { year, allowance: null, carriedOver: 0, used, pending, remaining: null };
+  }
+  const base = Number(membership.annualAllowanceDays);
+  let carriedOver = 0;
+  if (settings.maxCarryOverDays) {
+    const last = await vacationDaysInYear(membership.id, rules, year - 1);
+    carriedOver = carryOver(base, last.used + last.pending, settings.maxCarryOverDays);
+  }
+  const allowance = base + carriedOver;
+  return { year, allowance, carriedOver, used, pending, remaining: allowance - used - pending };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countDays, halfDayLabel, portionOn, validateSpan, type BookingSpan } from "./booking-days";
+import { carryOver, countDays, halfDayLabel, portionOn, validateSpan, type BookingSpan } from "./booking-days";
 
 const span = (start: string, end: string, startPart = "FULL", endPart = "FULL") =>
   ({ start, end, startPart, endPart }) as BookingSpan;
@@ -19,6 +19,8 @@ describe("countDays", () => {
   });
   it("does not subtract a half day that falls on a weekend", () =>
     expect(countDays(span("2026-10-09", "2026-10-11", "FULL", "AM"), weekdays)).toBe(1));
+  it("skips public holidays", () =>
+    expect(countDays(span("2026-10-05", "2026-10-09"), { countWeekends: false, holidays: new Set(["2026-10-07"]) })).toBe(4));
   it("clips to a window", () => {
     const s = span("2026-12-28", "2027-01-08");
     expect(countDays(s, weekdays, { from: "2026-01-01", to: "2026-12-31" })).toBe(4);
@@ -55,5 +57,16 @@ describe("halfDayLabel", () => {
     expect(halfDayLabel(span("2026-10-05", "2026-10-05", "FULL", "AM"))).toBe("morning");
     expect(halfDayLabel(span("2026-10-05", "2026-10-05", "PM", "FULL"))).toBe("afternoon");
     expect(halfDayLabel(span("2026-10-05", "2026-10-05"))).toBeNull();
+  });
+});
+
+describe("carryOver", () => {
+  it("carries unused days up to the cap", () => {
+    expect(carryOver(20, 12, 5)).toBe(5);
+    expect(carryOver(20, 18, 5)).toBe(2);
+  });
+  it("never goes negative or applies without a cap", () => {
+    expect(carryOver(20, 25, 5)).toBe(0);
+    expect(carryOver(20, 0, null)).toBe(0);
   });
 });

@@ -1,9 +1,10 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import type { ActionResult } from "@/components/action-form";
+import { submitKeepingInput, type ActionResult } from "@/components/action-form";
 import { countDays, portionOn, validateSpan, type BookingSpan } from "@/lib/booking-days";
-import { eachDay, formatRange, type ISODate } from "@/lib/dates";
+import { eachDay, formatDate, formatRange, type ISODate } from "@/lib/dates";
+import { understaffedDays } from "@/lib/staffing";
 
 type Member = { id: string; name: string; allowance: number | null; takenThisYear: number };
 type TeamBooking = BookingSpan & { id: string; membershipId: string; name: string };
@@ -12,7 +13,9 @@ export type BookingFormProps = {
   action: (prev: ActionResult, formData: FormData) => Promise<ActionResult>;
   members: Member[];
   canChooseMember: boolean;
-  settings: { countWeekends: boolean; allowHalfDays: boolean; approvalsEnabled: boolean };
+  settings: { countWeekends: boolean; allowHalfDays: boolean; approvalsEnabled: boolean; minPeoplePresent: number | null };
+  holidays: { date: ISODate; name: string }[];
+  memberCount: number;
   isAdmin: boolean;
   currentYear: number;
   team: TeamBooking[];
@@ -59,12 +62,17 @@ export function BookingForm(props: BookingFormProps) {
       }
     : { start, end, startPart: startsPm ? "PM" : "FULL", endPart: endsAm ? "AM" : "FULL" };
 
+  const rules = useMemo(
+    () => ({ countWeekends: settings.countWeekends, holidays: new Set(props.holidays.map((h) => h.date)) }),
+    [settings.countWeekends, props.holidays],
+  );
   const problem = start && end ? validateSpan(span, settings) : null;
-  const days = start && end && !problem ? countDays(span, settings) : 0;
+  const days = start && end && !problem ? countDays(span, rules) : 0;
+  const holidaysInRange = start && end ? props.holidays.filter((h) => h.date >= start && h.date <= end) : [];
   const member = props.members.find((m) => m.id === membershipId);
   const year = props.currentYear;
   const daysThisYear =
-    start && end && !problem ? countDays(span, settings, { from: `${year}-01-01`, to: `${year}-12-31` }) : 0;
+    start && end && !problem ? countDays(span, rules, { from: `${year}-01-01`, to: `${year}-12-31` }) : 0;
   const remainingAfter =
     member?.allowance != null && type === "VACATION"
       ? member.allowance - (member.takenThisYear - (initial.ownDaysThisYear ?? 0)) - daysThisYear
@@ -85,8 +93,19 @@ export function BookingForm(props: BookingFormProps) {
 
   const willBePending = settings.approvalsEnabled && !props.isAdmin;
 
+  const shortDays =
+    start && end && !problem && eachDay(start, end).length <= 366
+      ? understaffedDays({
+          candidate: { ...span, membershipId },
+          team: props.team.filter((b) => b.id !== initial.bookingId && b.membershipId !== membershipId),
+          memberCount: props.memberCount,
+          minPresent: settings.minPeoplePresent,
+          rules,
+        })
+      : [];
+
   return (
-    <form action={formAction} className="max-w-xl space-y-5">
+    <form onSubmit={(e) => submitKeepingInput(e, formAction)} className="max-w-xl space-y-5">
       <input type="hidden" name="startPart" value={span.startPart} />
       <input type="hidden" name="endPart" value={span.endPart} />
 
@@ -185,13 +204,27 @@ export function BookingForm(props: BookingFormProps) {
             <p>
               <span className="font-medium">{fmt(days)}</span> {days === 1 ? "day" : "days"},{" "}
               {formatRange(start, end)}
-              {!settings.countWeekends && " (weekends not counted)"}
+              {!settings.countWeekends && (holidaysInRange.length ? " (weekends and holidays not counted)" : " (weekends not counted)")}
+              {settings.countWeekends && holidaysInRange.length > 0 && " (holidays not counted)"}
             </p>
             {remainingAfter !== null && (
               <p className={remainingAfter < 0 ? "text-red-600" : "opacity-70"}>
                 {remainingAfter < 0
                   ? `This is ${fmt(-remainingAfter)} days over the ${year} allowance.`
                   : `${fmt(remainingAfter)} vacation days left in ${year} after this.`}
+              </p>
+            )}
+            {holidaysInRange.length > 0 && (
+              <p className="opacity-70">
+                Holidays: {holidaysInRange.map((h) => `${h.name} (${formatDate(h.date)})`).join(", ")}
+              </p>
+            )}
+            {shortDays.length > 0 && (
+              <p className="text-red-600">
+                Only {shortDays[0].present} of {props.memberCount} would be in on{" "}
+                {shortDays.slice(0, 3).map((d) => formatDate(d.day)).join(", ")}
+                {shortDays.length > 3 && ` and ${shortDays.length - 3} more day${shortDays.length === 4 ? "" : "s"}`}. The team wants at least{" "}
+                {settings.minPeoplePresent} in.
               </p>
             )}
             {overlapping.length > 0 && (

@@ -25,6 +25,8 @@ export default async function BookPage({ params, searchParams }: PageProps<"/w/[
         isAdmin={data.isAdmin}
         currentYear={data.currentYear}
         team={data.team}
+        holidays={data.holidays}
+        memberCount={data.memberCount}
         initial={{ membershipId, type: "VACATION", start, end: start, startPart: "FULL", endPart: "FULL", note: "" }}
       />
     </div>

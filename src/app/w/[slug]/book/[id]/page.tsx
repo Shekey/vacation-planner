@@ -20,7 +20,7 @@ export default async function EditBookingPage({ params }: PageProps<"/w/[slug]/b
   const span = spanOf(booking);
   const ownDaysThisYear =
     booking.type === "VACATION"
-      ? countDays(span, data.settings, { from: `${data.currentYear}-01-01`, to: `${data.currentYear}-12-31` })
+      ? countDays(span, { countWeekends: data.settings.countWeekends, holidays: data.holidaySet }, { from: `${data.currentYear}-01-01`, to: `${data.currentYear}-12-31` })
       : 0;
 
   return (
@@ -34,6 +34,8 @@ export default async function EditBookingPage({ params }: PageProps<"/w/[slug]/b
         isAdmin={data.isAdmin}
         currentYear={data.currentYear}
         team={data.team}
+        holidays={data.holidays}
+        memberCount={data.memberCount}
         initial={{
           bookingId: booking.id,
           ownDaysThisYear,

@@ -6,6 +6,7 @@ import type { ActionResult } from "@/components/action-form";
 import { approveAllPending } from "@/lib/bookings";
 import { db } from "@/lib/db";
 import { requireAdmin, settingsOf } from "@/lib/session";
+import { isSlackWebhookUrl } from "@/lib/slack";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(60),
@@ -15,6 +16,21 @@ const schema = z.object({
     .trim()
     .transform((s) => (s === "" ? null : Number(s)))
     .refine((n) => n === null || (Number.isFinite(n) && n >= 0 && n <= 365), "Default allowance must be 0–365 days"),
+  maxCarryOver: z
+    .string()
+    .trim()
+    .transform((s) => (s === "" ? null : Number(s)))
+    .refine((n) => n === null || (Number.isFinite(n) && n >= 0 && n <= 365), "Carry-over must be 0–365 days"),
+  minPeoplePresent: z
+    .string()
+    .trim()
+    .transform((s) => (s === "" ? null : Number(s)))
+    .refine((n) => n === null || (Number.isInteger(n) && n >= 1 && n <= 10000), "Minimum people must be a whole number"),
+  slackWebhookUrl: z
+    .string()
+    .trim()
+    .transform((s) => s || null)
+    .refine((u) => u === null || isSlackWebhookUrl(u), "That isn't a Slack incoming webhook URL (https://hooks.slack.com/services/…)."),
 });
 
 export async function saveSettingsAction(slug: string, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -25,6 +41,10 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
     approvalsEnabled: formData.get("approvalsEnabled") === "on",
     allowHalfDays: formData.get("allowHalfDays") === "on",
     countWeekends: formData.get("countWeekends") === "on",
+    defaultAllowanceDays: parsed.data.defaultAllowance,
+    maxCarryOverDays: parsed.data.maxCarryOver,
+    minPeoplePresent: parsed.data.minPeoplePresent,
+    slackWebhookUrl: parsed.data.slackWebhookUrl,
   };
   const wasApprovals = settingsOf(ctx.workspace).approvalsEnabled;
 
@@ -35,8 +55,8 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
       timezone: parsed.data.timezone,
       settings: {
         upsert: {
-          create: { ...flags, defaultAllowanceDays: parsed.data.defaultAllowance },
-          update: { ...flags, defaultAllowanceDays: parsed.data.defaultAllowance },
+          create: flags,
+          update: flags,
         },
       },
     },
