@@ -24,7 +24,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
 
   const [bookings, summary, pendingCount, nextOff, nextHoliday, myBookings] = await Promise.all([
     activeBookingsBetween(workspace.id, today, horizon).then((bs) => forViewer(bs, { membershipId: membership.id, role: membership.role }, settings)),
-    allowanceSummary(membership, settings, year, holidays),
+    allowanceSummary(membership, settings, year, holidays, today),
     membership.role === "ADMIN" && settings.approvalsEnabled
       ? db.booking.count({ where: { workspaceId: workspace.id, status: "PENDING" } })
       : 0,
@@ -136,13 +136,26 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
         </Stat>
       </div>
 
+      {summary.carryOverLeft > 0 && summary.carryOverExpiresOn && (
+        <Link
+          href={`/w/${slug}/book`}
+          className="card card-link block border-amber-400/60 bg-amber-50 text-sm dark:bg-amber-900/20"
+        >
+          {fmt(summary.carryOverLeft)} {summary.carryOverLeft === 1 ? "day" : "days"} carried over from {year - 1} must be taken by{" "}
+          {formatDate(summary.carryOverExpiresOn)} ({relativeDay(today, summary.carryOverExpiresOn)}) or {summary.carryOverLeft === 1 ? "it is" : "they are"} lost. Plan
+          them now →
+        </Link>
+      )}
+
       {atRisk > 0 && (
         <Link
           href={`/w/${slug}/book`}
           className="card card-link block border-amber-400/60 bg-amber-50 text-sm dark:bg-amber-900/20"
         >
           {fmt(atRisk)} of your {fmt(summary.remaining!)} days left will be lost on 31 Dec
-          {settings.maxCarryOverDays ? ` (only ${fmt(settings.maxCarryOverDays)} carry over to ${year + 1})` : ""}. Plan them now →
+          {settings.maxCarryOverDays
+            ? ` (only ${fmt(settings.maxCarryOverDays)} carry over to ${year + 1}${settings.carryOverExpiry ? `, to be taken by ${formatDate(`${year + 1}-${settings.carryOverExpiry}`)}` : ""})`
+            : ""}. Plan them now →
         </Link>
       )}
 

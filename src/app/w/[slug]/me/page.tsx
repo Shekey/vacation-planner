@@ -23,8 +23,8 @@ export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me"
   const year = Number(today.slice(0, 4));
 
   const [summary, nextYear, bookings] = await Promise.all([
-    allowanceSummary(membership, settings, year),
-    allowanceSummary(membership, settings, year + 1),
+    allowanceSummary(membership, settings, year, undefined, today),
+    allowanceSummary(membership, settings, year + 1, undefined, today),
     db.booking.findMany({
       where: { membershipId: membership.id },
       include: { decidedBy: { select: { name: true, email: true } } },

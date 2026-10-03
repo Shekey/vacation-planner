@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { ActionResult } from "@/components/action-form";
+import { isMonthDay } from "@/lib/booking-days";
 import { approveAllPending } from "@/lib/bookings";
 import { db } from "@/lib/db";
 import { requireAdmin, settingsOf } from "@/lib/session";
@@ -23,6 +24,8 @@ const schema = z.object({
     .trim()
     .transform((s) => (s === "" ? null : Number(s)))
     .refine((n) => n === null || (Number.isFinite(n) && n >= 0 && n <= 365), "Carry-over must be 0–365 days"),
+  carryOverExpiryMonth: z.string().trim().default(""),
+  carryOverExpiryDay: z.string().trim().default(""),
   minPeoplePresent: z
     .string()
     .trim()
@@ -47,12 +50,16 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
   const ctx = await requireAdmin(slug);
   const parsed = schema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { carryOverExpiryMonth: month, carryOverExpiryDay: day } = parsed.data;
+  const carryOverExpiry = month ? `${month.padStart(2, "0")}-${(day || "1").padStart(2, "0")}` : null;
+  if (carryOverExpiry !== null && !isMonthDay(carryOverExpiry)) return { error: "That expiry day doesn't exist in that month." };
   const flags = {
     approvalsEnabled: formData.get("approvalsEnabled") === "on",
     allowHalfDays: formData.get("allowHalfDays") === "on",
     countWeekends: formData.get("countWeekends") === "on",
     defaultAllowanceDays: parsed.data.defaultAllowance,
     maxCarryOverDays: parsed.data.maxCarryOver,
+    carryOverExpiry,
     minPeoplePresent: parsed.data.minPeoplePresent,
     teamsWebhookUrl: parsed.data.teamsWebhookUrl,
     slackWebhookUrl: parsed.data.slackWebhookUrl,

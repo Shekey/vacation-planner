@@ -40,6 +40,7 @@ type SettingsRow = {
   countWeekends: boolean;
   allowHalfDays: boolean;
   maxCarryOverDays: { toString(): string } | null;
+  carryOverExpiry: string | null;
   minPeoplePresent: number | null;
   teamsWebhookUrl: string | null;
   slackWebhookUrl: string | null;
@@ -58,6 +59,7 @@ export function settingsOf(workspace: { settings: SettingsRow | null } & Billing
     countWeekends: s?.countWeekends ?? false,
     allowHalfDays: s?.allowHalfDays ?? true,
     maxCarryOverDays: s?.maxCarryOverDays == null ? null : Number(s.maxCarryOverDays),
+    carryOverExpiry: s?.carryOverExpiry ?? null,
     minPeoplePresent: s?.minPeoplePresent ?? null,
     teamsWebhookUrl: chat ? (s?.teamsWebhookUrl ?? null) : null,
     slackWebhookUrl: chat ? (s?.slackWebhookUrl ?? null) : null,

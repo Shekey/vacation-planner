@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  carriedOverStatus,
   carryOver,
   countDays,
   halfDayLabel,
+  isMonthDay,
   normalizeWorkDays,
   portionOn,
   proratedAllowance,
@@ -105,4 +107,28 @@ describe("proratedAllowance", () => {
   it("rounds up to a half day", () => expect(proratedAllowance(28, "2026-10-01", 2026)).toBe(7));
   it("gives nothing before employment starts", () => expect(proratedAllowance(30, "2027-02-01", 2026)).toBe(0));
   it("gives a full year after the start year", () => expect(proratedAllowance(30, "2026-07-15", 2027)).toBe(30));
+});
+
+describe("carriedOverStatus", () => {
+  it("keeps unused carried days usable before the deadline", () =>
+    expect(carriedOverStatus(5, 2, false)).toEqual({ used: 2, left: 3, expired: 0 }));
+  it("expires what wasn't taken by the deadline", () =>
+    expect(carriedOverStatus(5, 2, true)).toEqual({ used: 2, left: 0, expired: 3 }));
+  it("uses carried days first, so taking more than them loses nothing", () =>
+    expect(carriedOverStatus(5, 8, true)).toEqual({ used: 5, left: 0, expired: 0 }));
+  it("counts half days", () => expect(carriedOverStatus(2, 1.5, true)).toEqual({ used: 1.5, left: 0, expired: 0.5 }));
+});
+
+describe("isMonthDay", () => {
+  it("accepts real days", () => {
+    expect(isMonthDay("03-31")).toBe(true);
+    expect(isMonthDay("12-31")).toBe(true);
+    expect(isMonthDay("02-28")).toBe(true);
+  });
+  it("rejects days that don't exist every year", () => {
+    expect(isMonthDay("02-29")).toBe(false);
+    expect(isMonthDay("04-31")).toBe(false);
+    expect(isMonthDay("13-01")).toBe(false);
+    expect(isMonthDay("3-31")).toBe(false);
+  });
 });

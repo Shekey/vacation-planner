@@ -30,7 +30,7 @@ export async function loadBookingFormData(ctx: Ctx) {
   });
   const members = await Promise.all(
     memberships.map(async (m) => {
-      const s = await allowanceSummary(m, settings, currentYear);
+      const s = await allowanceSummary(m, settings, currentYear, undefined, today);
       const label = m.user.name ?? m.user.email;
       return {
         id: m.id,
