@@ -36,7 +36,7 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 | #8 | Security hardening (headers, sign-in throttle, 1-hour magic links, safe redirects, constant-time cron check) and a refreshed look for the signed-in app (theme tokens, overview tiles, avatars) |
 | #9 | Part-time work days and employment start date per member (Members → "Work days"), allowance pro-rated 1/12 per full month in the start year, no carry-over from a year before someone joined, sick leave shown as "Other" to colleagues (Settings toggle, default on), download my data, delete my account, delete workspace |
 | #11 | Plans and Stripe billing (Free up to 5, Team €15 up to 20, Business €35 up to 50; 30-day trial with everything; over the limit new bookings and invites stop), Billing page with Checkout and Customer Portal, Stripe webhook, Slack webhook next to Teams, getting-started checklist, invites from pasted Excel/Outlook rows, German legal pages (Impressum, Datenschutz, AGB, AVV) with footer links, pricing on the landing page, data-light mode: no sick-leave type, no booking notes, approval notes only emailed, monthly purge of bookings 3 years after they end, of removed members after 3 years and of finished invitations after 30 days |
-| #PRNUM | Carry-over deadline: admins pick a day (e.g. 31 March) by which carried-over days must be taken; they are used first and the rest expires after it. Overview nudges before the deadline, the allowance card shows what expired |
+| #12 | Carry-over deadline: admins pick a day (e.g. 31 March) by which carried-over days must be taken; they are used first and the rest expires after it. Overview nudges before the deadline, the allowance card shows what expired |
 
 ## Where things live
 
