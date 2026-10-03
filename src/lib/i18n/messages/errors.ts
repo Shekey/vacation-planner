@@ -5,6 +5,7 @@ export const errors = defineMessages({
   en: {
     overLimit: (plan: string, max: number, count: number) =>
       `${plan} covers up to ${max} people and this workspace has ${count}. An admin can upgrade under Billing.`,
+    trial: "The trial",
     noWorkingDays: "That range has no working days in it.",
     overlap: "This overlaps another booking for the same person.",
     onlyAdminsBookForOthers: "Only admins can book time off for someone else.",
@@ -36,6 +37,7 @@ export const errors = defineMessages({
   de: {
     overLimit: (plan: string, max: number, count: number) =>
       `${plan} gilt für bis zu ${max} Personen, dieser Workspace hat ${count}. Ein Admin kann unter Abrechnung upgraden.`,
+    trial: "Die Testphase",
     noWorkingDays: "In diesem Zeitraum liegen keine Arbeitstage.",
     overlap: "Das überschneidet sich mit einer anderen Buchung dieser Person.",
     onlyAdminsBookForOthers: "Nur Admins können Abwesenheiten für andere buchen.",

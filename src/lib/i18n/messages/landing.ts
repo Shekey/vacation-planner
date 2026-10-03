@@ -114,7 +114,7 @@ export const landing = defineMessages({
         },
         {
           q: "Where is our data stored?",
-          a: "In data centres in Frankfurt, in the EU. We sign a data processing agreement (AVV) with every customer and use no tracking cookies.",
+          a: "In data centres in Frankfurt, in the EU. We sign a data processing agreement (DPA) with every customer and use no tracking cookies.",
         },
         {
           q: "Does it work for part-time staff and new starters?",

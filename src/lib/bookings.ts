@@ -78,7 +78,7 @@ async function assertWithinPlan(workspaceId: string) {
   const access = accessOf(ws);
   if (isOverLimit(access, ws._count.memberships)) {
     const t = (await getMessages()).errors;
-    throw new BookingError(t.overLimit(access.name, access.maxMembers, ws._count.memberships));
+    throw new BookingError(t.overLimit(access.kind === "trial" ? t.trial : access.name, access.maxMembers, ws._count.memberships));
   }
 }
 
