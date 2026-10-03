@@ -6,6 +6,7 @@ import { normalizeWorkDays } from "@/lib/booking-days";
 import { fromISO, isISODate } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { isHolidayRegion } from "@/lib/holiday-regions";
+import { getMessages } from "@/lib/i18n/server";
 import { inviteMembers, parseEmailList, resendInvitation } from "@/lib/invitations";
 import { accessOf } from "@/lib/plans";
 import { requireAdmin } from "@/lib/session";
@@ -25,11 +26,12 @@ async function inviteContext(slug: string) {
 
 export async function inviteAction(slug: string, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const { invite } = await inviteContext(slug);
+  const t = (await getMessages()).members;
   const { valid, invalid } = parseEmailList(String(formData.get("emails") ?? ""));
   const role = formData.get("role") === "ADMIN" ? "ADMIN" : "MEMBER";
-  if (invalid.length) return { error: `Not a valid email: ${invalid.join(", ")}` };
-  if (valid.length === 0) return { error: "Enter at least one email." };
-  if (valid.length > 50) return { error: "Invite at most 50 people at a time." };
+  if (invalid.length) return { error: t.errors.invalidEmail(invalid.join(", ")) };
+  if (valid.length === 0) return { error: t.errors.noEmail };
+  if (valid.length > 50) return { error: t.errors.tooMany };
 
   // People already in, plus invitations still open, plus these must fit the plan.
   const access = accessOf(invite.workspace);
@@ -41,19 +43,17 @@ export async function inviteAction(slug: string, _prev: ActionResult, formData: 
   ]);
   if (members + open + valid.length > access.maxMembers) {
     const room = Math.max(0, access.maxMembers - members - open);
-    return {
-      error: `${access.name} covers up to ${access.maxMembers} people. You have room for ${room} more${open ? ` (counting ${open} open invitation${open === 1 ? "" : "s"})` : ""}. Upgrade under Billing to invite more.`,
-    };
+    return { error: t.errors.planLimit(access.name, access.maxMembers, room, open) };
   }
 
   const { invited, alreadyMembers, failed } = await inviteMembers(valid, role, invite);
   revalidatePath(`/w/${slug}/members`);
   const parts = [];
   const sent = invited.length - failed.length;
-  if (sent) parts.push(`Invited ${sent} ${sent === 1 ? "person" : "people"}.`);
-  if (alreadyMembers.length) parts.push(`Already members: ${alreadyMembers.join(", ")}.`);
+  if (sent) parts.push(t.invited(sent));
+  if (alreadyMembers.length) parts.push(t.alreadyMembers(alreadyMembers.join(", ")));
   if (failed.length) {
-    parts.push(`The email didn't go out to ${failed.map((f) => f.email).join(", ")}: ${failed[0].error}`);
+    parts.push(t.errors.emailFailedTo(failed.map((f) => f.email).join(", "), failed[0].error));
     return { error: parts.join(" ") };
   }
   return { ok: parts.join(" ") };
@@ -61,10 +61,11 @@ export async function inviteAction(slug: string, _prev: ActionResult, formData: 
 
 export async function resendInviteAction(slug: string, invitationId: string): Promise<ActionResult> {
   const { invite } = await inviteContext(slug);
+  const t = (await getMessages()).members;
   const sent = await resendInvitation(invitationId, invite);
   revalidatePath(`/w/${slug}/members`);
-  if (!sent) return { error: "That invitation is no longer pending." };
-  return sent.ok ? { ok: "Sent again." } : { error: `The email didn't go out: ${sent.error}` };
+  if (!sent) return { error: t.errors.notPending };
+  return sent.ok ? { ok: t.sentAgain } : { error: t.errors.emailFailed(sent.error) };
 }
 
 export async function revokeInviteAction(slug: string, invitationId: string): Promise<ActionResult> {
@@ -93,14 +94,15 @@ export async function updateMemberAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const { ctx } = await inviteContext(slug);
+  const t = (await getMessages()).members;
   const member = await db.membership.findFirst({
     where: { id: membershipId, workspaceId: ctx.workspace.id, removedAt: null },
   });
-  if (!member) return { error: "Member not found." };
+  if (!member) return { error: t.errors.memberNotFound };
 
   const role = formData.get("role") === "ADMIN" ? "ADMIN" : "MEMBER";
   if (role === "MEMBER" && member.role === "ADMIN" && (await wouldRemoveLastAdmin(ctx.workspace.id, member.id))) {
-    return { error: "A workspace needs at least one admin." };
+    return { error: t.errors.lastAdmin };
   }
 
   const rawAllowance = String(formData.get("allowance") ?? "").trim();
@@ -108,7 +110,7 @@ export async function updateMemberAction(
   if (rawAllowance !== "") {
     allowance = Number(rawAllowance);
     if (!Number.isFinite(allowance) || allowance < 0 || allowance > 365 || (allowance * 2) % 1 !== 0) {
-      return { error: "Allowance must be between 0 and 365, in half days." };
+      return { error: t.errors.allowance };
     }
   }
 
@@ -117,21 +119,21 @@ export async function updateMemberAction(
   let holidayRegion = member.holidayRegion;
   if (typeof region === "string") {
     const country = ctx.workspace.settings?.holidayCountry ?? "";
-    if (region && !isHolidayRegion(country, region)) return { error: "Pick a region from the list." };
+    if (region && !isHolidayRegion(country, region)) return { error: t.errors.region };
     holidayRegion = region || null;
   }
 
   let workDays = member.workDays;
   if (formData.has("workDays") || formData.has("employmentStart")) {
     const picked = formData.getAll("workDays").map(Number);
-    if (picked.length === 0) return { error: "Pick at least one work day." };
+    if (picked.length === 0) return { error: t.errors.workDays };
     workDays = normalizeWorkDays(picked, ctx.workspace.settings?.countWeekends ?? false);
   }
 
   let employmentStart = member.employmentStart;
   const rawStart = formData.get("employmentStart");
   if (typeof rawStart === "string") {
-    if (rawStart && !isISODate(rawStart)) return { error: "Enter a valid start date." };
+    if (rawStart && !isISODate(rawStart)) return { error: t.errors.startDate };
     employmentStart = rawStart ? fromISO(rawStart) : null;
   }
 
@@ -140,17 +142,18 @@ export async function updateMemberAction(
     data: { role, annualAllowanceDays: allowance, holidayRegion, workDays, employmentStart },
   });
   revalidatePath(`/w/${slug}`, "layout");
-  return { ok: "Saved." };
+  return { ok: t.saved };
 }
 
 export async function removeMemberAction(slug: string, membershipId: string): Promise<ActionResult> {
   const { ctx } = await inviteContext(slug);
+  const t = (await getMessages()).members;
   const member = await db.membership.findFirst({
     where: { id: membershipId, workspaceId: ctx.workspace.id, removedAt: null },
   });
-  if (!member) return { error: "Member not found." };
+  if (!member) return { error: t.errors.memberNotFound };
   if (member.role === "ADMIN" && (await wouldRemoveLastAdmin(ctx.workspace.id, member.id))) {
-    return { error: "A workspace needs at least one admin." };
+    return { error: t.errors.lastAdmin };
   }
   await db.$transaction([
     db.membership.update({ where: { id: member.id }, data: { removedAt: new Date() } }),

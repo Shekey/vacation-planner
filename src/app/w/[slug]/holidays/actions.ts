@@ -6,6 +6,7 @@ import { fromISO, isISODate } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { countryName, isHolidayCountry, isHolidayRegion } from "@/lib/holiday-regions";
 import { importHolidays } from "@/lib/holiday-import";
+import { getLocale, getMessages } from "@/lib/i18n/server";
 import { requireAdmin, requireMembership } from "@/lib/session";
 
 /**
@@ -25,18 +26,21 @@ function regionFrom(formData: FormData, country: string): string | null {
 export async function addHolidayAction(slug: string, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const { workspace } = await requireAdmin(slug);
   const date = String(formData.get("date") ?? "");
-  const name = String(formData.get("name") ?? "").trim().slice(0, 100);
+  const name = String(formData.get("name") ?? "")
+    .trim()
+    .slice(0, 100);
   const region = regionFrom(formData, workspace.settings?.holidayCountry ?? "");
-  if (!isISODate(date)) return { error: "Pick a date." };
-  if (!name) return { error: "Give the holiday a name." };
-  if (region === null) return { error: "Pick a region from the list." };
+  const t = (await getMessages()).holidays;
+  if (!isISODate(date)) return { error: t.pickDate };
+  if (!name) return { error: t.nameRequired };
+  if (region === null) return { error: t.pickRegion };
   await db.holiday.upsert({
     where: { workspaceId_date_region: { workspaceId: workspace.id, date: fromISO(date), region } },
     create: { workspaceId: workspace.id, date: fromISO(date), name, region },
     update: { name },
   });
   refresh(slug);
-  return { ok: "Added." };
+  return { ok: t.added };
 }
 
 export async function deleteHolidayAction(slug: string, holidayId: string): Promise<ActionResult> {
@@ -49,12 +53,15 @@ export async function deleteHolidayAction(slug: string, holidayId: string): Prom
 /** Imports nationwide and regional holidays for a country, and remembers the country and default region. */
 export async function importHolidaysAction(slug: string, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const { workspace } = await requireAdmin(slug);
-  const country = String(formData.get("country") ?? "").trim().toUpperCase();
+  const country = String(formData.get("country") ?? "")
+    .trim()
+    .toUpperCase();
   const year = Number(formData.get("year"));
-  if (!isHolidayCountry(country)) return { error: "Pick a country." };
+  const t = (await getMessages()).holidays;
+  if (!isHolidayCountry(country)) return { error: t.pickCountry };
   const region = regionFrom(formData, country);
-  if (region === null) return { error: "Pick a region from the list." };
-  if (!Number.isInteger(year) || year < 2000 || year > 2100) return { error: "Pick a year." };
+  if (region === null) return { error: t.pickRegion };
+  if (!Number.isInteger(year) || year < 2000 || year > 2100) return { error: t.pickYear };
 
   const result = await importHolidays(workspace.id, country, year);
   if ("error" in result) return result;
@@ -64,15 +71,16 @@ export async function importHolidaysAction(slug: string, _prev: ActionResult, fo
     data: { holidayCountry: country, holidayRegion: region || null },
   });
   refresh(slug);
-  return { ok: `Imported ${result.count} holidays for ${countryName(country)} ${year}. Existing ones were kept.` };
+  return { ok: t.imported(result.count, countryName(country, await getLocale()), year) };
 }
 
 /** A member says which region they work in; "" means the workspace default. */
 export async function setMyRegionAction(slug: string, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const { workspace, membership } = await requireMembership(slug);
   const region = regionFrom(formData, workspace.settings?.holidayCountry ?? "");
-  if (region === null) return { error: "Pick a region from the list." };
+  const t = (await getMessages()).holidays;
+  if (region === null) return { error: t.pickRegion };
   await db.membership.update({ where: { id: membership.id }, data: { holidayRegion: region || null } });
   refresh(slug);
-  return { ok: "Saved." };
+  return { ok: t.saved };
 }

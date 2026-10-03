@@ -1,4 +1,5 @@
 import { eachDay, isoWeekday, isWeekend, type ISODate } from "@/lib/dates";
+import { messagesFor, type Locale } from "@/lib/i18n";
 
 export type DayPart = "FULL" | "AM" | "PM";
 
@@ -58,29 +59,32 @@ export function countDays(span: BookingSpan, rules: DayRules, clip?: { from: ISO
   return total;
 }
 
-/** Returns an error message, or null when the span is valid. */
-export function validateSpan(span: BookingSpan, opts: { allowHalfDays: boolean }): string | null {
-  if (span.end < span.start) return "The end date is before the start date.";
-  if (span.startPart === "AM" || span.endPart === "PM") return "Invalid half-day selection.";
+export type SpanProblem = "endBeforeStart" | "invalidHalfDay" | "halfDaysOff" | "morningAndAfternoon";
+
+/** Returns what's wrong (a key into the `errors` messages), or null when the span is valid. */
+export function validateSpan(span: BookingSpan, opts: { allowHalfDays: boolean }): SpanProblem | null {
+  if (span.end < span.start) return "endBeforeStart";
+  if (span.startPart === "AM" || span.endPart === "PM") return "invalidHalfDay";
   if (!opts.allowHalfDays && (span.startPart !== "FULL" || span.endPart !== "FULL")) {
-    return "Half days are turned off in this workspace.";
+    return "halfDaysOff";
   }
   if (span.start === span.end && span.startPart === "PM" && span.endPart === "AM") {
-    return "A single day can be a morning or an afternoon, not both.";
+    return "morningAndAfternoon";
   }
   return null;
 }
 
 /** Labels a span for lists, e.g. "afternoon only" on single half days. */
-export function halfDayLabel(span: BookingSpan): string | null {
+export function halfDayLabel(span: BookingSpan, locale: Locale = "en"): string | null {
+  const t = messagesFor(locale).common.halfDay;
   if (span.start === span.end) {
-    if (span.endPart === "AM") return "morning";
-    if (span.startPart === "PM") return "afternoon";
+    if (span.endPart === "AM") return t.morning;
+    if (span.startPart === "PM") return t.afternoon;
     return null;
   }
   const parts = [];
-  if (span.startPart === "PM") parts.push("starts after lunch");
-  if (span.endPart === "AM") parts.push("ends at lunch");
+  if (span.startPart === "PM") parts.push(t.startsAfterLunch);
+  if (span.endPart === "AM") parts.push(t.endsAtLunch);
   return parts.length ? parts.join(", ") : null;
 }
 

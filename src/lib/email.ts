@@ -1,3 +1,6 @@
+import { messagesFor } from "@/lib/i18n";
+import { requestLocaleOr } from "@/lib/i18n/server";
+
 type Email = { to: string | string[]; subject: string; text: string };
 
 export type SendResult = { ok: true } | { ok: false; error: string };
@@ -38,10 +41,10 @@ export async function sendEmail({ to, subject, text }: Email): Promise<SendResul
     const body = await res.text();
     // Notifications must never break the action that triggered them, so callers decide what to show.
     console.error("[email] Resend error", res.status, body, usingTestSender() ? "(EMAIL_FROM is Resend's test sender)" : "");
-    return { ok: false, error: resendMessage(body) ?? `Resend answered ${res.status}.` };
+    return { ok: false, error: resendMessage(body) ?? messagesFor(await requestLocaleOr()).errors.resendStatus(res.status) };
   } catch (err) {
     console.error("[email] Resend request failed", err);
-    return { ok: false, error: "Couldn't reach Resend." };
+    return { ok: false, error: messagesFor(await requestLocaleOr()).errors.resendUnreachable };
   }
 }
 

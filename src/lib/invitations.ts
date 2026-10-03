@@ -2,6 +2,8 @@ import { createHash, randomBytes } from "node:crypto";
 import type { Role } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { sendEmail, type SendResult } from "@/lib/email";
+import { messagesFor } from "@/lib/i18n";
+import { getLocale, getMessages, localeOfEmail } from "@/lib/i18n/server";
 
 const INVITE_TTL_DAYS = 7;
 
@@ -53,10 +55,12 @@ async function issueInvitation(email: string, role: Role, ctx: InviteContext): P
     },
   });
   const inviter = ctx.invitedBy.name ?? ctx.invitedBy.email;
+  // Someone who already uses the app gets their language; a newcomer gets the inviting admin's.
+  const t = messagesFor((await localeOfEmail(email)) ?? (await getLocale())).email.invite;
   return sendEmail({
     to: email,
-    subject: `${inviter} invited you to ${ctx.workspace.name} on Vacation Planner`,
-    text: `${inviter} invited you to join ${ctx.workspace.name}.\n\nAccept the invitation: ${ctx.origin}/invite/${token}\n\nThe link expires in ${INVITE_TTL_DAYS} days.`,
+    subject: t.subject(inviter, ctx.workspace.name),
+    text: t.text(inviter, ctx.workspace.name, `${ctx.origin}/invite/${token}`, INVITE_TTL_DAYS),
   });
 }
 
@@ -102,10 +106,11 @@ export async function findInvitation(token: string): Promise<InvitationLookup> {
 /** Turns an invitation into a membership for the signed-in user. Returns the workspace slug. */
 export async function acceptInvitation(token: string, user: { id: string; email: string }) {
   const found = await findInvitation(token);
-  if (found.status !== "ok") throw new Error(`Invitation is ${found.status}.`);
+  const t = (await getMessages()).errors.invitation;
+  if (found.status !== "ok") throw new Error(t[found.status]);
   const { invitation } = found;
   if (normalizeEmail(user.email) !== invitation.email) {
-    throw new Error(`This invitation is for ${invitation.email}.`);
+    throw new Error(t.otherEmail(invitation.email));
   }
 
   const settings = await db.workspaceSettings.findUnique({ where: { workspaceId: invitation.workspace.id } });

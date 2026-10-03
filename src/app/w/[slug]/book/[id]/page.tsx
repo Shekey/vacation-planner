@@ -1,13 +1,17 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { countDays } from "@/lib/booking-days";
 import { ACTIVE_STATUSES, spanOf } from "@/lib/bookings";
 import { db } from "@/lib/db";
+import { getMessages } from "@/lib/i18n/server";
 import { requireMembership } from "@/lib/session";
 import { saveBooking } from "../actions";
 import { BookingForm } from "../booking-form";
 import { loadBookingFormData } from "../load";
 
-export const metadata = { title: "Change booking" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getMessages()).book.editTitle };
+}
 
 export default async function EditBookingPage({ params }: PageProps<"/w/[slug]/book/[id]">) {
   const { slug, id } = await params;
@@ -19,18 +23,23 @@ export default async function EditBookingPage({ params }: PageProps<"/w/[slug]/b
   if (booking.membershipId !== ctx.membership.id && ctx.membership.role !== "ADMIN") notFound();
 
   const data = await loadBookingFormData(ctx);
+  const t = (await getMessages()).book;
   const span = spanOf(booking);
   const member = data.members.find((m) => m.id === booking.membershipId);
   const region = member?.region ?? "";
   const holidaySet = new Set(data.holidays.filter((h) => h.region === "" || h.region === region).map((h) => h.date));
   const ownDaysThisYear =
     booking.type === "VACATION"
-      ? countDays(span, { countWeekends: data.settings.countWeekends, workDays: member?.workDays, holidays: holidaySet }, { from: `${data.currentYear}-01-01`, to: `${data.currentYear}-12-31` })
+      ? countDays(
+          span,
+          { countWeekends: data.settings.countWeekends, workDays: member?.workDays, holidays: holidaySet },
+          { from: `${data.currentYear}-01-01`, to: `${data.currentYear}-12-31` },
+        )
       : 0;
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Change booking</h2>
+      <h2 className="text-xl font-semibold">{t.editTitle}</h2>
       <BookingForm
         action={saveBooking.bind(null, slug, booking.id)}
         members={data.members.filter((m) => m.id === booking.membershipId)}

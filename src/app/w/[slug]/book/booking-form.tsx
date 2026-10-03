@@ -2,8 +2,10 @@
 
 import { useActionState, useMemo, useState } from "react";
 import { submitKeepingInput, type ActionResult } from "@/components/action-form";
+import { useI18n } from "@/components/i18n-provider";
 import { countDays, portionOn, validateSpan, type BookingSpan } from "@/lib/booking-days";
 import { eachDay, formatDate, formatRange, type ISODate } from "@/lib/dates";
+import { formatNumber } from "@/lib/i18n";
 import { understaffedDays } from "@/lib/staffing";
 
 type Member = {
@@ -44,12 +46,11 @@ export type BookingFormProps = {
 
 type SingleDayPart = "FULL" | "MORNING" | "AFTERNOON";
 
-function fmt(n: number) {
-  return Number.isInteger(n) ? String(n) : n.toFixed(1);
-}
-
 export function BookingForm(props: BookingFormProps) {
   const { initial, settings } = props;
+  const { locale, t: messages } = useI18n();
+  const t = messages.book;
+  const fmt = (n: number) => formatNumber(n, locale);
   const [state, formAction, pending] = useActionState(props.action, {});
   const [membershipId, setMembershipId] = useState(initial.membershipId);
   const [type, setType] = useState(initial.type === "SICK" ? "OTHER" : initial.type);
@@ -74,20 +75,17 @@ export function BookingForm(props: BookingFormProps) {
   const member = props.members.find((m) => m.id === membershipId);
   const region = member?.region ?? "";
   const workDays = member?.workDays;
-  const holidays = useMemo(
-    () => props.holidays.filter((h) => h.region === "" || h.region === region),
-    [props.holidays, region],
-  );
+  const holidays = useMemo(() => props.holidays.filter((h) => h.region === "" || h.region === region), [props.holidays, region]);
   const rules = useMemo(
     () => ({ countWeekends: settings.countWeekends, workDays, holidays: new Set(holidays.map((h) => h.date)) }),
     [settings.countWeekends, workDays, holidays],
   );
-  const problem = start && end ? validateSpan(span, settings) : null;
+  const problemKey = start && end ? validateSpan(span, settings) : null;
+  const problem = problemKey ? messages.errors[problemKey] : null;
   const days = start && end && !problem ? countDays(span, rules) : 0;
   const holidaysInRange = start && end ? holidays.filter((h) => h.date >= start && h.date <= end) : [];
   const year = props.currentYear;
-  const daysThisYear =
-    start && end && !problem ? countDays(span, rules, { from: `${year}-01-01`, to: `${year}-12-31` }) : 0;
+  const daysThisYear = start && end && !problem ? countDays(span, rules, { from: `${year}-01-01`, to: `${year}-12-31` }) : 0;
   const remainingAfter =
     member?.allowance != null && type === "VACATION"
       ? member.allowance - (member.takenThisYear - (initial.ownDaysThisYear ?? 0)) - daysThisYear
@@ -126,7 +124,7 @@ export function BookingForm(props: BookingFormProps) {
 
       {props.canChooseMember ? (
         <label className="block space-y-1">
-          <span className="text-sm font-medium">Who</span>
+          <span className="text-sm font-medium">{t.who}</span>
           <select className="input" name="membershipId" value={membershipId} onChange={(e) => setMembershipId(e.target.value)}>
             {props.members.map((m) => (
               <option key={m.id} value={m.id}>
@@ -140,18 +138,27 @@ export function BookingForm(props: BookingFormProps) {
       )}
 
       <fieldset className="space-y-1">
-        <legend className="text-sm font-medium">Type</legend>
+        <legend className="text-sm font-medium">{t.type}</legend>
         <div className="flex gap-2">
           {/* Sick leave isn't offered: it would be health data (Art. 9 GDPR). */}
-          {(["VACATION", "OTHER"] as const).map((t) => (
+          {(["VACATION", "OTHER"] as const).map((option) => (
             <label
-              key={t}
+              key={option}
               className={`cursor-pointer rounded-lg border px-3 py-1.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40 text-sm ${
-                type === t ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-surface hover:border-primary/50"
+                type === option
+                  ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                  : "border-border bg-surface hover:border-primary/50"
               }`}
             >
-              <input type="radio" name="type" value={t} checked={type === t} onChange={() => setType(t)} className="sr-only" />
-              {{ VACATION: "Vacation", OTHER: "Other time off" }[t]}
+              <input
+                type="radio"
+                name="type"
+                value={option}
+                checked={type === option}
+                onChange={() => setType(option)}
+                className="sr-only"
+              />
+              {t.typeOption[option]}
             </label>
           ))}
         </div>
@@ -159,7 +166,7 @@ export function BookingForm(props: BookingFormProps) {
 
       <div className="grid grid-cols-2 gap-3">
         <label className="block space-y-1">
-          <span className="text-sm font-medium">From</span>
+          <span className="text-sm font-medium">{t.from}</span>
           <input
             className="input"
             type="date"
@@ -173,23 +180,27 @@ export function BookingForm(props: BookingFormProps) {
           />
         </label>
         <label className="block space-y-1">
-          <span className="text-sm font-medium">To</span>
+          <span className="text-sm font-medium">{t.to}</span>
           <input className="input" type="date" name="end" required min={start} value={end} onChange={(e) => setEnd(e.target.value)} />
         </label>
       </div>
 
-      {settings.allowHalfDays && start && end && (
-        singleDay ? (
+      {settings.allowHalfDays &&
+        start &&
+        end &&
+        (singleDay ? (
           <fieldset className="flex gap-2 text-sm">
             {(["FULL", "MORNING", "AFTERNOON"] as const).map((p) => (
               <label
                 key={p}
                 className={`cursor-pointer rounded-lg border px-3 py-1.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40 ${
-                  singlePart === p ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-surface hover:border-primary/50"
+                  singlePart === p
+                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                    : "border-border bg-surface hover:border-primary/50"
                 }`}
               >
                 <input type="radio" className="sr-only" checked={singlePart === p} onChange={() => setSinglePart(p)} />
-                {{ FULL: "Full day", MORNING: "Morning", AFTERNOON: "Afternoon" }[p]}
+                {messages.common.dayPart[({ FULL: "FULL", MORNING: "AM", AFTERNOON: "PM" } as const)[p]]}
               </label>
             ))}
           </fieldset>
@@ -197,15 +208,14 @@ export function BookingForm(props: BookingFormProps) {
           <div className="flex flex-wrap gap-4 text-sm">
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={startsPm} onChange={(e) => setStartsPm(e.target.checked)} />
-              First day starts after lunch
+              {t.startsAfterLunch}
             </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={endsAm} onChange={(e) => setEndsAm(e.target.checked)} />
-              Last day ends at lunch
+              {t.endsAtLunch}
             </label>
           </div>
-        )
-      )}
+        ))}
 
       <div className="space-y-1 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm" aria-live="polite">
         {problem ? (
@@ -213,46 +223,47 @@ export function BookingForm(props: BookingFormProps) {
         ) : start && end ? (
           <>
             <p>
-              <span className="font-medium">{fmt(days)}</span> {days === 1 ? "day" : "days"},{" "}
-              {formatRange(start, end)}
+              <span className="font-medium">{fmt(days)}</span> {t.dayUnit(days)}, {formatRange(start, end, locale)}
               {workDays?.length
-                ? " (only work days counted)"
-                : !settings.countWeekends && (holidaysInRange.length ? " (weekends and holidays not counted)" : " (weekends not counted)")}
-              {(settings.countWeekends || workDays?.length) && holidaysInRange.length > 0 ? " (holidays not counted)" : null}
+                ? t.onlyWorkDays
+                : !settings.countWeekends && (holidaysInRange.length ? t.weekendsAndHolidaysNotCounted : t.weekendsNotCounted)}
+              {(settings.countWeekends || workDays?.length) && holidaysInRange.length > 0 ? t.holidaysNotCounted : null}
             </p>
             {remainingAfter !== null && (
               <p className={remainingAfter < 0 ? "text-red-600" : "opacity-70"}>
-                {remainingAfter < 0
-                  ? `This is ${fmt(-remainingAfter)} days over the ${year} allowance.`
-                  : `${fmt(remainingAfter)} vacation days left in ${year} after this.`}
+                {remainingAfter < 0 ? t.overAllowance(fmt(-remainingAfter), year) : t.daysLeftAfter(fmt(remainingAfter), year)}
               </p>
             )}
             {holidaysInRange.length > 0 && (
               <p className="opacity-70">
-                Holidays: {holidaysInRange.map((h) => `${h.name} (${formatDate(h.date)})`).join(", ")}
+                {t.holidaysList(holidaysInRange.map((h) => `${h.name} (${formatDate(h.date, undefined, locale)})`).join(", "))}
               </p>
             )}
             {shortDays.length > 0 && (
               <p className="text-red-600">
-                Only {shortDays[0].present} of {props.memberCount} would be in on{" "}
-                {shortDays.slice(0, 3).map((d) => formatDate(d.day)).join(", ")}
-                {shortDays.length > 3 && ` and ${shortDays.length - 3} more day${shortDays.length === 4 ? "" : "s"}`}. The team wants at least{" "}
-                {settings.minPeoplePresent} in.
+                {t.understaffed(
+                  shortDays[0].present,
+                  props.memberCount,
+                  shortDays
+                    .slice(0, 3)
+                    .map((d) => formatDate(d.day, undefined, locale))
+                    .join(", "),
+                  Math.max(0, shortDays.length - 3),
+                  settings.minPeoplePresent,
+                )}
               </p>
             )}
-            {overlapping.length > 0 && (
-              <p className="text-amber-700 dark:text-amber-400">Also off during these days: {overlapping.join(", ")}</p>
-            )}
-            {willBePending && <p className="opacity-70">An admin will need to approve this.</p>}
+            {overlapping.length > 0 && <p className="text-amber-700 dark:text-amber-400">{t.alsoOff(overlapping.join(", "))}</p>}
+            {willBePending && <p className="opacity-70">{t.needsApproval}</p>}
           </>
         ) : (
-          <p className="opacity-70">Pick your dates.</p>
+          <p className="opacity-70">{t.pickDates}</p>
         )}
       </div>
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
       <button className="btn" disabled={pending || Boolean(problem) || days === 0}>
-        {pending ? "Saving…" : initial.bookingId ? "Save changes" : willBePending ? "Request time off" : "Book time off"}
+        {pending ? t.saving : initial.bookingId ? t.saveChanges : willBePending ? t.requestTimeOff : t.bookTimeOff}
       </button>
     </form>
   );

@@ -1,12 +1,14 @@
 import Link from "next/link";
+import { getMessages } from "@/lib/i18n/server";
 
-export default function NotFound() {
+export default async function NotFound() {
+  const t = (await getMessages()).common.notFound;
   return (
     <div className="space-y-2">
-      <h1 className="text-xl font-semibold">Not found</h1>
-      <p className="opacity-80">This page doesn&apos;t exist, or you don&apos;t have access to it.</p>
+      <h1 className="text-xl font-semibold">{t.title}</h1>
+      <p className="opacity-80">{t.body}</p>
       <Link href="/" className="underline">
-        Back to your workspaces
+        {t.back}
       </Link>
     </div>
   );

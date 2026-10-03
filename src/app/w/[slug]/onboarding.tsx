@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ActionForm } from "@/components/action-form";
 import { db } from "@/lib/db";
+import { getMessages } from "@/lib/i18n/server";
 import { dismissOnboardingAction } from "./onboarding-actions";
 
 type Workspace = {
@@ -23,11 +24,12 @@ export async function Onboarding({ slug, workspace }: { slug: string; workspace:
     db.booking.count({ where: { workspaceId: workspace.id } }),
   ]);
   const base = `/w/${slug}`;
+  const t = (await getMessages()).workspace.onboarding;
   const steps = [
-    { done: Boolean(s?.holidayCountry), label: "Import public holidays for your state", href: `${base}/holidays` },
-    { done: members > 1 || invites > 0, label: "Invite your team (paste emails straight from Excel)", href: `${base}/members` },
-    { done: Boolean(s?.teamsWebhookUrl || s?.slackWebhookUrl), label: "Connect Microsoft Teams or Slack", href: `${base}/settings` },
-    { done: bookings > 0, label: "Book the first time off", href: `${base}/book` },
+    { done: Boolean(s?.holidayCountry), label: t.steps.holidays, href: `${base}/holidays` },
+    { done: members > 1 || invites > 0, label: t.steps.invite, href: `${base}/members` },
+    { done: Boolean(s?.teamsWebhookUrl || s?.slackWebhookUrl), label: t.steps.chat, href: `${base}/settings` },
+    { done: bookings > 0, label: t.steps.book, href: `${base}/book` },
   ];
   const left = steps.filter((x) => !x.done).length;
   if (left === 0) return null;
@@ -37,14 +39,12 @@ export async function Onboarding({ slug, workspace }: { slug: string; workspace:
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 id="onboarding-title" className="font-medium">
-            Get your team set up
+            {t.title}
           </h2>
-          <p className="text-sm text-muted">
-            {steps.length - left} of {steps.length} done
-          </p>
+          <p className="text-sm text-muted">{t.progress(steps.length - left, steps.length)}</p>
         </div>
         <ActionForm action={dismissOnboardingAction.bind(null, slug)}>
-          <button className="text-sm text-muted hover:text-foreground hover:underline">Hide</button>
+          <button className="text-sm text-muted hover:text-foreground hover:underline">{t.hide}</button>
         </ActionForm>
       </div>
       <ol className="space-y-2">
@@ -61,7 +61,7 @@ export async function Onboarding({ slug, workspace }: { slug: string; workspace:
             {step.done ? (
               <span className="text-muted line-through">
                 {step.label}
-                <span className="sr-only"> (done)</span>
+                <span className="sr-only">{t.done}</span>
               </span>
             ) : (
               <Link href={step.href} className="text-primary hover:underline">

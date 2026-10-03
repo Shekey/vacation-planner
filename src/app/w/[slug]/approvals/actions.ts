@@ -6,14 +6,12 @@ import { BookingError, decideBooking } from "@/lib/bookings";
 import { actorOf, requireAdmin, settingsOf } from "@/lib/session";
 import { appOrigin } from "@/lib/url";
 
-export async function decideAction(
-  slug: string,
-  bookingId: string,
-  _prev: ActionResult,
-  formData: FormData,
-): Promise<ActionResult> {
+export async function decideAction(slug: string, bookingId: string, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const ctx = await requireAdmin(slug);
-  const note = String(formData.get("note") ?? "").trim().slice(0, 500) || null;
+  const note =
+    String(formData.get("note") ?? "")
+      .trim()
+      .slice(0, 500) || null;
   try {
     await decideBooking({
       workspace: ctx.workspace,

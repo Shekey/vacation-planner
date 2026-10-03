@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useI18n } from "@/components/i18n-provider";
 import { Avatar } from "@/components/ui";
 
 export type PersonRow = {
@@ -19,6 +20,7 @@ function fold(text: string) {
 
 export function PeopleSearch({ people }: { people: PersonRow[] }) {
   const [query, setQuery] = useState("");
+  const t = useI18n().t.people;
   const shown = useMemo(() => {
     const q = fold(query.trim());
     return q ? people.filter((p) => fold(`${p.name} ${p.email}`).includes(q)) : people;
@@ -29,14 +31,14 @@ export function PeopleSearch({ people }: { people: PersonRow[] }) {
       <input
         type="search"
         className="input text-base"
-        placeholder="Search by name or email"
+        placeholder={t.searchPlaceholder}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         autoFocus
-        aria-label="Search people"
+        aria-label={t.searchLabel}
       />
       {shown.length === 0 ? (
-        <p className="opacity-70">Nobody matches &ldquo;{query}&rdquo;.</p>
+        <p className="opacity-70">{t.noMatch(query)}</p>
       ) : (
         <ul className="grid gap-3 md:grid-cols-2">
           {shown.map((p) => (
@@ -56,7 +58,7 @@ export function PeopleSearch({ people }: { people: PersonRow[] }) {
                       : "bg-green-100 text-green-900 dark:bg-green-900/40 dark:text-green-200"
                   }`}
                 >
-                  {p.todayStatus ?? "In today"}
+                  {p.todayStatus ?? t.inToday}
                 </span>
               </div>
               {p.upcoming.length > 0 ? (
@@ -67,13 +69,13 @@ export function PeopleSearch({ people }: { people: PersonRow[] }) {
                       <span className="font-medium">{u.label}</span>
                       <span className="opacity-70">
                         {u.detail}
-                        {u.pending && " · pending"}
+                        {u.pending && t.pending}
                       </span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm opacity-60">No time off planned.</p>
+                <p className="text-sm opacity-60">{t.noTimeOff}</p>
               )}
             </li>
           ))}

@@ -2,20 +2,27 @@ import { activeBookingsBetween, forViewer, regionOf, spanOf } from "@/lib/bookin
 import { halfDayLabel } from "@/lib/booking-days";
 import { addDays, fromISO, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
+import { isLocale, messagesFor } from "@/lib/i18n";
 import { buildCalendar, type CalendarEvent } from "@/lib/ical";
-
-const TYPE = { VACATION: "vacation", SICK: "sick leave", OTHER: "time off" } as const;
+import { holidayName } from "@/lib/holidays";
 
 /** Team calendar as an iCal feed. The URL token is the only credential, so it is long and revocable. */
 export async function GET(_req: Request, ctx: RouteContext<"/api/calendar/[token]">) {
   const { token } = await ctx.params;
   const membership = await db.membership.findUnique({
     where: { calendarToken: token.replace(/\.ics$/, "") },
-    include: { workspace: { include: { settings: true } } },
+    include: { workspace: { include: { settings: true } }, user: { select: { locale: true } } },
   });
   if (!membership || membership.removedAt) return new Response("Not found", { status: 404 });
 
   const { workspace } = membership;
+  // The feed owner's language, else the workspace's.
+  const locale = isLocale(membership.user.locale)
+    ? membership.user.locale
+    : isLocale(workspace.settings?.locale)
+      ? workspace.settings.locale
+      : "en";
+  const t = messagesFor(locale).chat.feed;
   const today = todayIn(workspace.timezone);
   const from = addDays(today, -90);
   const to = addDays(today, 400);
@@ -37,19 +44,19 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/calendar/[token
     ...bookings.map((b) => {
       const span = spanOf(b);
       const who = b.membership.user.name ?? b.membership.user.email;
-      const half = halfDayLabel(span);
+      const half = halfDayLabel(span, locale);
       return {
         uid: b.id,
         start: span.start,
         end: span.end,
-        summary: `${who}: ${TYPE[b.type]}${half ? ` (${half})` : ""}${b.status === "PENDING" ? " – pending" : ""}`,
+        summary: `${who}: ${t.type[b.type]}${half ? ` (${half})` : ""}${b.status === "PENDING" ? ` – ${t.pending}` : ""}`,
         description: b.note ?? undefined,
       };
     }),
-    ...holidays.map((h) => ({ uid: `holiday-${h.id}`, start: toISO(h.date), end: toISO(h.date), summary: `Holiday: ${h.name}` })),
+    ...holidays.map((h) => ({ uid: `holiday-${h.id}`, start: toISO(h.date), end: toISO(h.date), summary: t.holiday(holidayName(h, locale)) })),
   ];
 
-  return new Response(buildCalendar(`${workspace.name} time off`, events), {
+  return new Response(buildCalendar(t.title(workspace.name), events), {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
       "Content-Disposition": `inline; filename="${workspace.slug}.ics"`,

@@ -1,0 +1,63 @@
+import { defineMessages } from "../define";
+
+export const account = defineMessages({
+  en: {
+    title: "Your profile",
+    heading: "Your profile",
+    headingNoName: "What should your team call you?",
+    name: "Name",
+    namePlaceholder: "Your name",
+    nameHint: (email: string) => `Shown on the calendar instead of your email (${email}).`,
+    save: "Save",
+    language: "Language",
+    languageHint: "Used for the app on every device, and for the emails and notifications you get.",
+    languageSystem: (current: string) => `Browser language (${current})`,
+    yourData: "Your data",
+    yourDataBody: "Download everything stored about you: profile, workspaces, allowances and bookings, as a JSON file.",
+    download: "Download my data",
+    deleteHeading: "Delete my account",
+    deleteBody: "Removes your profile, your bookings and your place in every workspace. This can't be undone.",
+    aloneIn: (names: string, count: number) => ` You're the only member of ${names}, so ${count === 1 ? "it is" : "they are"} deleted too.`,
+    blockedBefore: "First make someone else an admin of",
+    blockedAfter: (count: number) => `, or delete ${count === 1 ? "that workspace" : "those workspaces"} in Settings.`,
+    typeToConfirm: (email: string) => `Type ${email} to confirm`,
+    deleteButton: "Delete my account",
+    errors: {
+      nameLength: "Use 2 to 60 characters.",
+      confirmEmail: "Type your email address to confirm.",
+      onlyAdmin: (names: string) => `You're the only admin of ${names}. Make someone else an admin, or delete the workspace, first.`,
+    },
+    saved: "Saved.",
+  },
+  de: {
+    title: "Dein Profil",
+    heading: "Dein Profil",
+    headingNoName: "Wie soll dein Team dich nennen?",
+    name: "Name",
+    namePlaceholder: "Dein Name",
+    nameHint: (email: string) => `Wird im Kalender statt deiner E-Mail-Adresse (${email}) angezeigt.`,
+    save: "Speichern",
+    language: "Sprache",
+    languageHint: "Gilt für die App auf allen Geräten und für die E-Mails und Benachrichtigungen, die du bekommst.",
+    languageSystem: (current: string) => `Browsersprache (${current})`,
+    yourData: "Deine Daten",
+    yourDataBody: "Lade alles herunter, was über dich gespeichert ist: Profil, Workspaces, Urlaubsansprüche und Buchungen, als JSON-Datei.",
+    download: "Meine Daten herunterladen",
+    deleteHeading: "Mein Konto löschen",
+    deleteBody:
+      "Entfernt dein Profil, deine Buchungen und deine Mitgliedschaft in allen Workspaces. Das lässt sich nicht rückgängig machen.",
+    aloneIn: (names: string, count: number) =>
+      ` Du bist das einzige Mitglied von ${names}, deshalb ${count === 1 ? "wird er" : "werden sie"} ebenfalls gelöscht.`,
+    blockedBefore: "Mach zuerst jemand anderen zum Admin von",
+    blockedAfter: (count: number) => ` oder lösche ${count === 1 ? "diesen Workspace" : "diese Workspaces"} in den Einstellungen.`,
+    typeToConfirm: (email: string) => `Gib zur Bestätigung ${email} ein`,
+    deleteButton: "Mein Konto löschen",
+    errors: {
+      nameLength: "Verwende 2 bis 60 Zeichen.",
+      confirmEmail: "Gib zur Bestätigung deine E-Mail-Adresse ein.",
+      onlyAdmin: (names: string) =>
+        `Du bist der einzige Admin von ${names}. Mach zuerst jemand anderen zum Admin oder lösche den Workspace.`,
+    },
+    saved: "Gespeichert.",
+  },
+});

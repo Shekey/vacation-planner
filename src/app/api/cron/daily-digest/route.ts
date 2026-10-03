@@ -3,6 +3,7 @@ import { activeBookingsBetween, spanOf } from "@/lib/bookings";
 import { formatDate, fromISO, isWeekend, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { isCronRequest } from "@/lib/security";
+import { messagesFor } from "@/lib/i18n";
 import { postToChannels } from "@/lib/notify";
 import { settingsOf } from "@/lib/session";
 import { appOrigin } from "@/lib/url";
@@ -31,6 +32,7 @@ export async function GET(req: Request) {
     });
     if (holiday) continue;
 
+    const t = messagesFor(channels.locale ?? "en").chat;
     const out = (await activeBookingsBetween(ws.id, today, today))
       .filter((b) => b.status === "APPROVED")
       .map((b) => {
@@ -38,13 +40,19 @@ export async function GET(req: Request) {
         const portion = portionOn(span, today);
         const who = b.membership.user.name ?? b.membership.user.email;
         const when =
-          portion === "AM" ? "morning" : portion === "PM" ? "afternoon" : span.end === today ? "today" : `until ${formatDate(span.end)}`;
+          portion === "AM"
+            ? t.digest.morning
+            : portion === "PM"
+              ? t.digest.afternoon
+              : span.end === today
+                ? t.digest.today
+                : t.digest.until(formatDate(span.end, undefined, channels.locale));
         return `• ${who} (${when})`;
       });
     if (out.length === 0) continue;
 
-    await postToChannels(channels, `Out today in ${ws.name}:\n\n${out.join("\n\n")}`, {
-      title: "Open team calendar",
+    await postToChannels(channels, `${t.digest.title(ws.name)}\n\n${out.join("\n\n")}`, {
+      title: t.openCalendar,
       url: `${origin}/w/${ws.slug}/calendar`,
     });
     posted++;

@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import type { Plan } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { PaidPlan } from "@/lib/plans";
+import { getLocale, getMessages } from "@/lib/i18n/server";
 
 /**
  * Stripe Billing: Checkout to subscribe, the Customer Portal to change plan, card or invoices,
@@ -47,7 +48,7 @@ export async function createCheckout(opts: {
 }): Promise<string> {
   const s = stripe();
   const price = priceId(opts.plan, opts.interval);
-  if (!s || !price) throw new Error("Payments aren't set up yet.");
+  if (!s || !price) throw new Error((await getMessages()).errors.paymentsNotSetUp);
   const session = await s.checkout.sessions.create({
     mode: "subscription",
     line_items: [{ price, quantity: 1 }],
@@ -63,17 +64,19 @@ export async function createCheckout(opts: {
     // Needs Stripe Tax turned on in the dashboard; prices are then net and VAT is added per country.
     ...(process.env.STRIPE_AUTOMATIC_TAX === "1" ? { automatic_tax: { enabled: true } } : {}),
     allow_promotion_codes: true,
+    // Stripe's pages in the app's language.
+    locale: await getLocale(),
     success_url: `${opts.returnUrl}?checkout=success`,
     cancel_url: opts.returnUrl,
   });
-  if (!session.url) throw new Error("Stripe didn't return a checkout link.");
+  if (!session.url) throw new Error((await getMessages()).errors.noCheckoutLink);
   return session.url;
 }
 
 export async function createPortal(customerId: string, returnUrl: string): Promise<string> {
   const s = stripe();
-  if (!s) throw new Error("Payments aren't set up yet.");
-  const session = await s.billingPortal.sessions.create({ customer: customerId, return_url: returnUrl });
+  if (!s) throw new Error((await getMessages()).errors.paymentsNotSetUp);
+  const session = await s.billingPortal.sessions.create({ customer: customerId, return_url: returnUrl, locale: await getLocale() });
   return session.url;
 }
 

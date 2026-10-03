@@ -1,7 +1,13 @@
 import { isISODate, type ISODate } from "@/lib/dates";
+import type { Locale } from "@/lib/i18n";
 
 /** `region` is an ISO 3166-2 code such as "DE-BE", or "" for a nationwide holiday. */
-export type HolidayInput = { date: ISODate; name: string; region: string };
+export type HolidayInput = { date: ISODate; name: string; englishName: string; region: string };
+
+/** The holiday's name for someone using the app in `locale`: English when known, else the local name. */
+export function holidayName(h: { name: string; englishName?: string | null }, locale: Locale): string {
+  return locale === "en" && h.englishName ? h.englishName : h.name;
+}
 
 type NagerHoliday = { date: string; localName?: string; name?: string; global?: boolean; counties?: string[] | null };
 
@@ -16,12 +22,13 @@ export function parseNagerHolidays(data: unknown): HolidayInput[] {
   for (const h of data as NagerHoliday[]) {
     if (!isISODate(h?.date)) continue;
     const name = (h.localName || h.name || "Holiday").slice(0, 100);
+    const englishName = (h.name || name).slice(0, 100);
     const regions = h.global === false ? (h.counties ?? []).filter((c) => typeof c === "string") : [""];
     for (const region of regions) {
       const key = `${h.date}|${region}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      result.push({ date: h.date, name, region });
+      result.push({ date: h.date, name, englishName, region });
     }
   }
   return result;
