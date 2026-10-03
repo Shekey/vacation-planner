@@ -78,11 +78,12 @@ model Workspace {
   slug        String   @unique
   // IANA timezone used for date math, e.g. "Europe/Sarajevo".
   timezone    String   @default("UTC")
-  createdById String
+  // Null once the creator deleted their account.
+  createdById String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy   User               @relation("WorkspaceCreator", fields: [createdById], references: [id])
+  createdBy   User?              @relation("WorkspaceCreator", fields: [createdById], references: [id], onDelete: SetNull)
   settings    WorkspaceSettings?
   memberships Membership[]
   invitations Invitation[]
@@ -122,6 +123,8 @@ model WorkspaceSettings {
   holidayRegion        String?
   // Microsoft Teams webhook (Workflows or connector) for booking notifications.
   teamsWebhookUrl      String?
+  // Colleagues see sick leave as "Other" without its note; admins and the person still see it as sick.
+  hideSickType         Boolean @default(true)
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
@@ -140,6 +143,10 @@ model Membership {
   calendarToken        String?   @unique
   // Where this member works, for regional holidays, e.g. "DE-NW"; null uses the workspace default.
   holidayRegion        String?
+  // ISO weekdays this member works (1 = Monday ... 7 = Sunday); empty means the workspace default.
+  workDays             Int[]     @default([])
+  // First day of employment; the allowance in that year is pro-rated. Null means no pro-rating.
+  employmentStart      DateTime? @db.Date
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -155,14 +162,15 @@ model Invitation {
   role        Role      @default(MEMBER)
   // Only the hash is stored; the raw token is emailed.
   tokenHash   String    @unique
-  invitedById String
+  // Null once the sender deleted their account.
+  invitedById String?
   expiresAt   DateTime
   acceptedAt  DateTime?
   revokedAt   DateTime?
   createdAt   DateTime  @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  invitedBy User      @relation("InvitationSender", fields: [invitedById], references: [id])
+  invitedBy User?     @relation("InvitationSender", fields: [invitedById], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, email])
 }
@@ -201,7 +209,8 @@ model Booking {
   note         String?
   status       BookingStatus
   daysCount    Decimal       @db.Decimal(4, 1)
-  createdById  String
+  // Null once the creator deleted their account.
+  createdById  String?
   decidedById  String?
   decidedAt    DateTime?
   decisionNote String?
@@ -210,8 +219,8 @@ model Booking {
 
   workspace  Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
-  createdBy  User       @relation("BookingCreator", fields: [createdById], references: [id])
-  decidedBy  User?      @relation("BookingDecider", fields: [decidedById], references: [id])
+  createdBy  User?      @relation("BookingCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  decidedBy  User?      @relation("BookingDecider", fields: [decidedById], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, startDate])
   @@index([membershipId])

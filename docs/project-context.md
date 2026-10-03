@@ -31,11 +31,13 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 | #6 | Long-weekend tips, use-it-or-lose-it nudge, regional holidays picked per person, monthly holiday refresh cron |
 | #7 | Public landing page at `/` for signed-out visitors (`src/app/landing.tsx`), accessibility pass (skip link, focus ring, labels, announced form messages, calendar readable by screen readers), Settings can apply the default allowance to existing members |
 | #8 | Security hardening (headers, sign-in throttle, 1-hour magic links, safe redirects, constant-time cron check) and a refreshed look for the signed-in app (theme tokens, overview tiles, avatars) |
+| #9 | Part-time work days and employment start date per member (Members → "Work days"), allowance pro-rated 1/12 per full month in the start year, no carry-over from a year before someone joined, sick leave shown as "Other" to colleagues (Settings toggle, default on), download my data, delete my account, delete workspace |
 
 ## Where things live
 
 - Schema: `prisma/schema.prisma`, migrations in `prisma/migrations/`.
-- Day counting and allowance: `src/lib/booking-days.ts`, `src/lib/bookings.ts` (`regionOf`, `loadHolidays`, `allowanceSummary`).
+- Day counting and allowance: `src/lib/booking-days.ts` (`proratedAllowance`, work days in `DayRules`), `src/lib/bookings.ts` (`regionOf`, `rulesFor`, `forViewer`, `loadHolidays`, `allowanceSummary`).
+- Account export and deletion: `src/lib/account.ts`, `/api/account/export`, `/account`.
 - Holidays: `src/lib/holidays.ts` (Nager parser), `src/lib/holiday-regions.ts` (country and region lists), `src/lib/holiday-import.ts`.
 - Tips: `src/lib/smart-days.ts`.
 - Pages: `src/app/w/[slug]/` (overview, book, calendar, approvals, members, people, holidays, settings, me).
@@ -53,5 +55,7 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 ## Open items
 
 - Selling it: plan in the Claude Doc "Vacation Planner: plan for selling it" (pricing, billing, GDPR, launch).
-- Known quirk: a new member gets carry-over as if they had an unused previous year.
+- Selling readiness and next rounds: Claude Doc "Vacation Planner: ready to sell? Next plan" (https://claude.ai/code/artifact/9d88c5b7-44ae-4c4a-9f0c-58e448840141). Round 1 is PR #9.
+- EU hosting (Neon and Vercel functions in Frankfurt): Ajdin will do this last; build as if it is done.
+- Carry-over for someone who joined the app mid-year but was employed earlier comes from their app bookings only; set their start date and adjust the allowance if needed.
 - Ideas not built yet: undo after cancel, day-before reminder, admin view of who has the most days left, calendar filter, range selection on the calendar.

@@ -49,7 +49,7 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
           .map((o) => ({ ...spanOf(o), membershipId: o.membershipId })),
         memberCount,
         minPresent: settings.minPeoplePresent,
-        rules: { countWeekends: settings.countWeekends, holidays },
+        rules: { countWeekends: settings.countWeekends, workDays: b.membership.workDays, holidays },
       });
       return { b, span, summary, clashes, shortDays };
     }),

@@ -20,11 +20,12 @@ export default async function EditBookingPage({ params }: PageProps<"/w/[slug]/b
 
   const data = await loadBookingFormData(ctx);
   const span = spanOf(booking);
-  const region = data.members.find((m) => m.id === booking.membershipId)?.region ?? "";
+  const member = data.members.find((m) => m.id === booking.membershipId);
+  const region = member?.region ?? "";
   const holidaySet = new Set(data.holidays.filter((h) => h.region === "" || h.region === region).map((h) => h.date));
   const ownDaysThisYear =
     booking.type === "VACATION"
-      ? countDays(span, { countWeekends: data.settings.countWeekends, holidays: holidaySet }, { from: `${data.currentYear}-01-01`, to: `${data.currentYear}-12-31` })
+      ? countDays(span, { countWeekends: data.settings.countWeekends, workDays: member?.workDays, holidays: holidaySet }, { from: `${data.currentYear}-01-01`, to: `${data.currentYear}-12-31` })
       : 0;
 
   return (

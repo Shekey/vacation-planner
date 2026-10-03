@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/components/action-form";
+import { normalizeWorkDays } from "@/lib/booking-days";
+import { fromISO, isISODate } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { isHolidayRegion } from "@/lib/holiday-regions";
 import { inviteMembers, parseEmailList, resendInvitation } from "@/lib/invitations";
@@ -97,9 +99,23 @@ export async function updateMemberAction(
     holidayRegion = region || null;
   }
 
+  let workDays = member.workDays;
+  if (formData.has("workDays") || formData.has("employmentStart")) {
+    const picked = formData.getAll("workDays").map(Number);
+    if (picked.length === 0) return { error: "Pick at least one work day." };
+    workDays = normalizeWorkDays(picked, ctx.workspace.settings?.countWeekends ?? false);
+  }
+
+  let employmentStart = member.employmentStart;
+  const rawStart = formData.get("employmentStart");
+  if (typeof rawStart === "string") {
+    if (rawStart && !isISODate(rawStart)) return { error: "Enter a valid start date." };
+    employmentStart = rawStart ? fromISO(rawStart) : null;
+  }
+
   await db.membership.update({
     where: { id: member.id },
-    data: { role, annualAllowanceDays: allowance, holidayRegion },
+    data: { role, annualAllowanceDays: allowance, holidayRegion, workDays, employmentStart },
   });
   revalidatePath(`/w/${slug}`, "layout");
   return { ok: "Saved." };

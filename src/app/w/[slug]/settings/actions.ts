@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { ActionResult } from "@/components/action-form";
 import { approveAllPending } from "@/lib/bookings";
@@ -44,6 +45,7 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
     approvalsEnabled: formData.get("approvalsEnabled") === "on",
     allowHalfDays: formData.get("allowHalfDays") === "on",
     countWeekends: formData.get("countWeekends") === "on",
+    hideSickType: formData.get("hideSickType") === "on",
     defaultAllowanceDays: parsed.data.defaultAllowance,
     maxCarryOverDays: parsed.data.maxCarryOver,
     minPeoplePresent: parsed.data.minPeoplePresent,
@@ -79,4 +81,14 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
   }
   revalidatePath(`/w/${slug}`, "layout");
   return { ok: `Saved.${note}` };
+}
+
+export async function deleteWorkspaceAction(slug: string, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  const ctx = await requireAdmin(slug);
+  if (String(formData.get("confirmName") ?? "").trim() !== ctx.workspace.name) {
+    return { error: "Type the workspace name exactly to confirm." };
+  }
+  // Memberships, bookings, invitations, holidays and settings cascade.
+  await db.workspace.delete({ where: { id: ctx.workspace.id } });
+  redirect("/");
 }

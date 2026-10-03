@@ -1,4 +1,4 @@
-import { activeBookingsBetween, regionOf, spanOf } from "@/lib/bookings";
+import { activeBookingsBetween, forViewer, regionOf, spanOf } from "@/lib/bookings";
 import { halfDayLabel } from "@/lib/booking-days";
 import { addDays, fromISO, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
@@ -20,7 +20,9 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/calendar/[token
   const from = addDays(today, -90);
   const to = addDays(today, 400);
   const [bookings, holidays] = await Promise.all([
-    activeBookingsBetween(workspace.id, from, to),
+    activeBookingsBetween(workspace.id, from, to).then((bs) =>
+      forViewer(bs, { membershipId: membership.id, role: membership.role }, { hideSickType: workspace.settings?.hideSickType ?? true }),
+    ),
     // The feed owner's holidays: nationwide plus their region's.
     db.holiday.findMany({
       where: {

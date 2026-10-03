@@ -41,6 +41,7 @@ type SettingsRow = {
   minPeoplePresent: number | null;
   teamsWebhookUrl: string | null;
   holidayRegion: string | null;
+  hideSickType: boolean;
 };
 
 export function settingsOf(workspace: { settings: SettingsRow | null }): Settings {
@@ -53,6 +54,7 @@ export function settingsOf(workspace: { settings: SettingsRow | null }): Setting
     minPeoplePresent: s?.minPeoplePresent ?? null,
     teamsWebhookUrl: s?.teamsWebhookUrl ?? null,
     holidayRegion: s?.holidayRegion ?? null,
+    hideSickType: s?.hideSickType ?? true,
   };
 }
 

@@ -6,7 +6,15 @@ import { countDays, portionOn, validateSpan, type BookingSpan } from "@/lib/book
 import { eachDay, formatDate, formatRange, type ISODate } from "@/lib/dates";
 import { understaffedDays } from "@/lib/staffing";
 
-type Member = { id: string; name: string; allowance: number | null; takenThisYear: number; region: string };
+type Member = {
+  id: string;
+  name: string;
+  allowance: number | null;
+  takenThisYear: number;
+  region: string;
+  /** Part-time work days (ISO weekdays); empty means the workspace default. */
+  workDays: number[];
+};
 type TeamBooking = BookingSpan & { id: string; membershipId: string; name: string };
 
 export type BookingFormProps = {
@@ -65,13 +73,14 @@ export function BookingForm(props: BookingFormProps) {
 
   const member = props.members.find((m) => m.id === membershipId);
   const region = member?.region ?? "";
+  const workDays = member?.workDays;
   const holidays = useMemo(
     () => props.holidays.filter((h) => h.region === "" || h.region === region),
     [props.holidays, region],
   );
   const rules = useMemo(
-    () => ({ countWeekends: settings.countWeekends, holidays: new Set(holidays.map((h) => h.date)) }),
-    [settings.countWeekends, holidays],
+    () => ({ countWeekends: settings.countWeekends, workDays, holidays: new Set(holidays.map((h) => h.date)) }),
+    [settings.countWeekends, workDays, holidays],
   );
   const problem = start && end ? validateSpan(span, settings) : null;
   const days = start && end && !problem ? countDays(span, rules) : 0;
@@ -210,8 +219,10 @@ export function BookingForm(props: BookingFormProps) {
             <p>
               <span className="font-medium">{fmt(days)}</span> {days === 1 ? "day" : "days"},{" "}
               {formatRange(start, end)}
-              {!settings.countWeekends && (holidaysInRange.length ? " (weekends and holidays not counted)" : " (weekends not counted)")}
-              {settings.countWeekends && holidaysInRange.length > 0 && " (holidays not counted)"}
+              {workDays?.length
+                ? " (only work days counted)"
+                : !settings.countWeekends && (holidaysInRange.length ? " (weekends and holidays not counted)" : " (weekends not counted)")}
+              {(settings.countWeekends || workDays?.length) && holidaysInRange.length > 0 ? " (holidays not counted)" : null}
             </p>
             {remainingAfter !== null && (
               <p className={remainingAfter < 0 ? "text-red-600" : "opacity-70"}>

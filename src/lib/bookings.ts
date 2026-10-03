@@ -1,5 +1,5 @@
 import type { BookingStatus, BookingType, Prisma, Role } from "@/generated/prisma/client";
-import { carryOver, countDays, validateSpan, type BookingSpan, type DayRules } from "@/lib/booking-days";
+import { carryOver, countDays, proratedAllowance, validateSpan, type BookingSpan, type DayRules } from "@/lib/booking-days";
 import { formatRange, fromISO, toISO, type ISODate } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
@@ -16,7 +16,33 @@ export type Settings = {
   teamsWebhookUrl: string | null;
   /** Default region for regional holidays, e.g. "DE-BE". */
   holidayRegion: string | null;
+  /** Show colleagues' sick leave as "Other", without its note. */
+  hideSickType: boolean;
 };
+
+/** Day-counting rules for one member: the workspace's weekend rule or their own work days, plus holidays. */
+export function rulesFor(
+  membership: { workDays?: readonly number[] | null },
+  settings: { countWeekends: boolean },
+  holidays: ReadonlySet<ISODate>,
+): DayRules {
+  return { countWeekends: settings.countWeekends, workDays: membership.workDays, holidays };
+}
+
+/**
+ * Hides other people's sick leave from a viewer who isn't an admin, when the workspace asks for it:
+ * the booking shows as "Other" and loses its note, since both can be health data.
+ */
+export function forViewer<T extends { type: BookingType; note: string | null; membershipId: string }>(
+  bookings: T[],
+  viewer: { membershipId: string; role: Role },
+  settings: { hideSickType: boolean },
+): T[] {
+  if (!settings.hideSickType || viewer.role === "ADMIN") return bookings;
+  return bookings.map((b) =>
+    b.type === "SICK" && b.membershipId !== viewer.membershipId ? { ...b, type: "OTHER" as const, note: null } : b,
+  );
+}
 
 /** The region whose holidays apply to a member: their own, else the workspace default, else nationwide only. */
 export function regionOf(membership: { holidayRegion?: string | null }, settings: { holidayRegion: string | null }): string {
@@ -53,10 +79,10 @@ type Actor = { userId: string; membershipId: string; role: Role };
 
 type BookingInput = BookingSpan & { type: BookingType; note: string | null };
 
-function prepare(input: BookingInput, settings: Settings, holidays: Set<ISODate>) {
+function prepare(input: BookingInput, settings: Settings, rules: DayRules) {
   const error = validateSpan(input, settings);
   if (error) throw new BookingError(error);
-  const daysCount = countDays(input, { countWeekends: settings.countWeekends, holidays });
+  const daysCount = countDays(input, rules);
   if (daysCount === 0) throw new BookingError("That range has no working days in it.");
   return {
     startDate: fromISO(input.start),
@@ -106,7 +132,7 @@ export async function createBooking(opts: {
   const booking = await write(() =>
     db.booking.create({
       data: {
-        ...prepare(input, settings, holidays),
+        ...prepare(input, settings, rulesFor(target, settings, holidays)),
         status,
         workspaceId: workspace.id,
         membershipId,
@@ -131,7 +157,9 @@ async function announce(
   verb: string,
   calendarUrl: string,
 ) {
-  const kind = { VACATION: "vacation", SICK: "sick leave", OTHER: "time off" }[booking.type];
+  // The channel is shared with colleagues, so private sick leave is posted as plain time off.
+  const type = settings.hideSickType && booking.type === "SICK" ? "OTHER" : booking.type;
+  const kind = { VACATION: "vacation", SICK: "sick leave", OTHER: "time off" }[type];
   await postToTeams(
     settings.teamsWebhookUrl,
     `${person.name ?? person.email} ${verb}: ${formatRange(toISO(booking.startDate), toISO(booking.endDate))} (${Number(
@@ -166,7 +194,7 @@ export async function updateBooking(opts: {
     db.booking.update({
       where: { id: existing.id },
       data: {
-        ...prepare(input, settings, holidays),
+        ...prepare(input, settings, rulesFor(existing.membership, settings, holidays)),
         status,
         ...(status === "PENDING" ? { decidedById: null, decidedAt: null, decisionNote: null } : {}),
       },
@@ -310,24 +338,37 @@ async function vacationDaysInYear(membershipId: string, rules: DayRules, year: n
 }
 
 export async function allowanceSummary(
-  membership: { id: string; workspaceId: string; annualAllowanceDays: Prisma.Decimal | null; holidayRegion?: string | null },
+  membership: {
+    id: string;
+    workspaceId: string;
+    annualAllowanceDays: Prisma.Decimal | null;
+    holidayRegion?: string | null;
+    workDays?: readonly number[] | null;
+    employmentStart?: Date | null;
+    joinedAt: Date;
+  },
   settings: Settings,
   year: number,
   holidays?: Set<ISODate>,
 ): Promise<AllowanceSummary> {
-  const rules: DayRules = {
-    countWeekends: settings.countWeekends,
-    holidays: holidays ?? (await loadHolidays(membership.workspaceId, regionOf(membership, settings))),
-  };
+  const rules = rulesFor(
+    membership,
+    settings,
+    holidays ?? (await loadHolidays(membership.workspaceId, regionOf(membership, settings))),
+  );
   const { used, pending } = await vacationDaysInYear(membership.id, rules, year);
   if (membership.annualAllowanceDays === null) {
     return { year, allowance: null, carriedOver: 0, used, pending, remaining: null };
   }
-  const base = Number(membership.annualAllowanceDays);
+  const yearly = Number(membership.annualAllowanceDays);
+  const employmentStart = membership.employmentStart ? toISO(membership.employmentStart) : null;
+  const base = proratedAllowance(yearly, employmentStart, year);
   let carriedOver = 0;
-  if (settings.maxCarryOverDays) {
+  // Nothing carries over from a year the person wasn't here yet (by start date, else by joining date).
+  const since = employmentStart ?? toISO(membership.joinedAt);
+  if (settings.maxCarryOverDays && Number(since.slice(0, 4)) < year) {
     const last = await vacationDaysInYear(membership.id, rules, year - 1);
-    carriedOver = carryOver(base, last.used + last.pending, settings.maxCarryOverDays);
+    carriedOver = carryOver(proratedAllowance(yearly, employmentStart, year - 1), last.used + last.pending, settings.maxCarryOverDays);
   }
   const allowance = base + carriedOver;
   return { year, allowance, carriedOver, used, pending, remaining: allowance - used - pending };

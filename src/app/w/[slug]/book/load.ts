@@ -38,6 +38,7 @@ export async function loadBookingFormData(ctx: Ctx) {
         allowance: s.allowance,
         takenThisYear: s.used + s.pending,
         region: regionOf(m, settings),
+        workDays: m.workDays,
       };
     }),
   );

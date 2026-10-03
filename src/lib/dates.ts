@@ -28,6 +28,11 @@ export function isWeekend(iso: ISODate): boolean {
   return day === 0 || day === 6;
 }
 
+/** ISO weekday: 1 = Monday ... 7 = Sunday. */
+export function isoWeekday(iso: ISODate): number {
+  return fromISO(iso).getUTCDay() || 7;
+}
+
 export function eachDay(start: ISODate, end: ISODate): ISODate[] {
   const days: ISODate[] = [];
   for (let d = start; d <= end; d = addDays(d, 1)) days.push(d);
