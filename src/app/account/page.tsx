@@ -1,7 +1,7 @@
 import { ActionForm } from "@/components/action-form";
 import { accountDeletionPlan } from "@/lib/account";
 import { db } from "@/lib/db";
-import { LOCALE_NAMES, LOCALES } from "@/lib/i18n";
+import { isLocale, LOCALE_NAMES, LOCALES } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { setLanguage } from "../language/actions";
 import { requireUser } from "@/lib/session";
@@ -17,11 +17,13 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const [user, plan] = await Promise.all([
     db.user.findUniqueOrThrow({
       where: { id },
-      select: { name: true, email: true },
+      select: { name: true, email: true, locale: true },
     }),
     accountDeletionPlan(id),
   ]);
   const locale = await getLocale();
+  // No saved choice means the app follows the browser's language.
+  const saved = isLocale(user.locale) ? user.locale : null;
   const t = (await getMessages()).account;
 
   return (
@@ -50,10 +52,13 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         <h2 className="font-medium">{t.language}</h2>
         <form action={setLanguage} className="flex flex-wrap items-center gap-2">
           {LOCALES.map((l) => (
-            <button key={l} name="locale" value={l} aria-pressed={l === locale} className={l === locale ? "btn" : "btn-secondary"}>
+            <button key={l} name="locale" value={l} aria-pressed={l === saved} className={l === saved ? "btn" : "btn-secondary"}>
               {LOCALE_NAMES[l]}
             </button>
           ))}
+          <button name="locale" value="system" aria-pressed={saved === null} className={saved === null ? "btn" : "btn-secondary"}>
+            {t.languageSystem(LOCALE_NAMES[locale])}
+          </button>
         </form>
         <p className="text-sm opacity-70">{t.languageHint}</p>
       </section>

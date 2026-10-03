@@ -20,7 +20,7 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 - Data minimization (Ajdin, 2026-10-03): no sick leave and no free-text notes are stored, to keep legal exposure low; bookings are deleted 3 years after they end (`src/lib/retention.ts`, run by the monthly holidays cron).
 - Payments: Stripe (Ajdin chose it over Paddle, 2026-10-03). Flat team prices: Free ≤5, Team €15 ≤20, Business €35 ≤50.
 - No CSV export.
-- Languages (Ajdin, 2026-10-03): English and German everywhere, picked by the user. First visit follows the browser language, falling back to English. EN/DE switch in the header (landing and app) and on the profile page; saved on the profile when signed in, in a `lang` cookie otherwise. The app UI uses informal "du". Legal pages: German is binding, English is a convenience translation (`?lang=de` / `?lang=en` switches one page).
+- Languages (Ajdin, 2026-10-03): English and German everywhere, picked by the user. First visit follows the browser language, falling back to English. EN/DE switch in the header (landing and app) and on the profile page, where "Browser language" clears the saved choice; saved on the profile when signed in, in a `lang` cookie otherwise. The app UI uses informal "du". Legal pages: German is binding, English is a convenience translation (`?lang=de` / `?lang=en` switches one page).
 - Public holidays come per country with a region (ISO 3166-2, e.g. `DE-BE`). Each person picks their own region; the workspace has a default. Focus is Germany: Berlin = `DE-BE`, Bielefeld = North Rhine-Westphalia = `DE-NW`.
 
 ## What's built
