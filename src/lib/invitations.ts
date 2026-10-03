@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { Role } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, type SendResult } from "@/lib/email";
 
 const INVITE_TTL_DAYS = 7;
 
@@ -35,7 +35,7 @@ type InviteContext = {
 };
 
 /** Creates (or refreshes) an invitation and emails the link. */
-async function issueInvitation(email: string, role: Role, ctx: InviteContext) {
+async function issueInvitation(email: string, role: Role, ctx: InviteContext): Promise<SendResult> {
   const token = randomBytes(32).toString("base64url");
   // Only one live invitation per email and workspace.
   await db.invitation.updateMany({
@@ -53,7 +53,7 @@ async function issueInvitation(email: string, role: Role, ctx: InviteContext) {
     },
   });
   const inviter = ctx.invitedBy.name ?? ctx.invitedBy.email;
-  await sendEmail({
+  return sendEmail({
     to: email,
     subject: `${inviter} invited you to ${ctx.workspace.name} on Vacation Planner`,
     text: `${inviter} invited you to join ${ctx.workspace.name}.\n\nAccept the invitation: ${ctx.origin}/invite/${token}\n\nThe link expires in ${INVITE_TTL_DAYS} days.`,
@@ -67,17 +67,20 @@ export async function inviteMembers(emails: string[], role: Role, ctx: InviteCon
   });
   const members = new Set(existing.map((m) => m.user.email));
   const toInvite = emails.filter((e) => !members.has(e));
-  for (const email of toInvite) await issueInvitation(email, role, ctx);
-  return { invited: toInvite, alreadyMembers: [...members] };
+  const failed: { email: string; error: string }[] = [];
+  for (const email of toInvite) {
+    const sent = await issueInvitation(email, role, ctx);
+    if (!sent.ok) failed.push({ email, error: sent.error });
+  }
+  return { invited: toInvite, alreadyMembers: [...members], failed };
 }
 
-export async function resendInvitation(invitationId: string, ctx: InviteContext) {
+export async function resendInvitation(invitationId: string, ctx: InviteContext): Promise<SendResult | null> {
   const invite = await db.invitation.findFirst({
     where: { id: invitationId, workspaceId: ctx.workspace.id, acceptedAt: null, revokedAt: null },
   });
-  if (!invite) return false;
-  await issueInvitation(invite.email, invite.role, ctx);
-  return true;
+  if (!invite) return null;
+  return issueInvitation(invite.email, invite.role, ctx);
 }
 
 export type InvitationLookup =

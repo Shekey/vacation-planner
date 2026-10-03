@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Resend from "next-auth/providers/resend";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db } from "@/lib/db";
+import { emailFrom } from "@/lib/email";
 import { MAGIC_LINK_MAX_AGE_SECONDS } from "@/lib/sign-in-limit";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -12,7 +13,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Resend({
       maxAge: MAGIC_LINK_MAX_AGE_SECONDS,
-      from: process.env.EMAIL_FROM ?? "Vacation Planner <onboarding@resend.dev>",
+      from: emailFrom(),
       // Without an API key, local development prints the link instead of emailing it.
       ...(process.env.AUTH_RESEND_KEY
         ? {}
