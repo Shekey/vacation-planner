@@ -4,6 +4,7 @@ import { addDays, fromISO, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { isLocale, messagesFor } from "@/lib/i18n";
 import { buildCalendar, type CalendarEvent } from "@/lib/ical";
+import { holidayName } from "@/lib/holidays";
 
 /** Team calendar as an iCal feed. The URL token is the only credential, so it is long and revocable. */
 export async function GET(_req: Request, ctx: RouteContext<"/api/calendar/[token]">) {
@@ -52,7 +53,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/calendar/[token
         description: b.note ?? undefined,
       };
     }),
-    ...holidays.map((h) => ({ uid: `holiday-${h.id}`, start: toISO(h.date), end: toISO(h.date), summary: t.holiday(h.name) })),
+    ...holidays.map((h) => ({ uid: `holiday-${h.id}`, start: toISO(h.date), end: toISO(h.date), summary: t.holiday(holidayName(h, locale)) })),
   ];
 
   return new Response(buildCalendar(t.title(workspace.name), events), {

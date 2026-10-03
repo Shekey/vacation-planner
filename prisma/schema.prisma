@@ -113,7 +113,10 @@ model Holiday {
   id          String   @id @default(cuid())
   workspaceId String
   date        DateTime @db.Date
+  // In the country's language, e.g. "Tag der Deutschen Einheit".
   name        String
+  // The English name from the holiday import, shown to people using the app in English; null for holidays added by hand.
+  englishName String?
   // ISO 3166-2 region the holiday applies to, e.g. "DE-BE"; empty for everyone in the workspace.
   region      String   @default("")
 

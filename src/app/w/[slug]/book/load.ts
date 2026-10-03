@@ -1,9 +1,10 @@
 import { activeBookingsBetween, allowanceSummary, regionOf, spanOf } from "@/lib/bookings";
 import { addDays, fromISO, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
-import { getMessages } from "@/lib/i18n/server";
+import { getLocale, getMessages } from "@/lib/i18n/server";
 import type { requireMembership } from "@/lib/session";
 import { settingsOf } from "@/lib/session";
+import { holidayName } from "@/lib/holidays";
 
 type Ctx = Awaited<ReturnType<typeof requireMembership>>;
 
@@ -13,6 +14,7 @@ export async function loadBookingFormData(ctx: Ctx) {
   const settings = settingsOf(workspace);
   const isAdmin = membership.role === "ADMIN";
   const today = todayIn(workspace.timezone);
+  const locale = await getLocale();
   const currentYear = Number(today.slice(0, 4));
   const t = (await getMessages()).book;
 
@@ -22,7 +24,7 @@ export async function loadBookingFormData(ctx: Ctx) {
       where: { workspaceId: workspace.id, date: { gte: fromISO(addDays(today, -366)), lte: fromISO(addDays(today, 731)) } },
       orderBy: { date: "asc" },
     })
-  ).map((h) => ({ date: toISO(h.date), name: h.name, region: h.region }));
+  ).map((h) => ({ date: toISO(h.date), name: holidayName(h, locale), region: h.region }));
   const memberCount = await db.membership.count({ where: { workspaceId: workspace.id, removedAt: null } });
 
   const memberships = await db.membership.findMany({

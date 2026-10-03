@@ -9,6 +9,7 @@ import { getLocale, getMessages } from "@/lib/i18n/server";
 import { requireMembership, settingsOf } from "@/lib/session";
 import { addHolidayAction, deleteHolidayAction, importHolidaysAction, setMyRegionAction } from "./actions";
 import { HolidayImportForm } from "./holiday-import-form";
+import { holidayName } from "@/lib/holidays";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getMessages()).holidays.title };
@@ -117,7 +118,7 @@ export default async function HolidaysPage({ params, searchParams }: PageProps<"
                   <span className="inline-block w-36 font-medium">
                     {formatDate(iso, { weekday: "short", day: "numeric", month: "short" }, locale)}
                   </span>
-                  <span>{h.name}</span>
+                  <span>{holidayName(h, locale)}</span>
                   {h.region && <span className="text-xs opacity-60">{t.regionOnly(regionName(h.region))}</span>}
                 </span>
                 {isAdmin && (

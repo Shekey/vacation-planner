@@ -9,7 +9,7 @@ describe("parseNagerHolidays", () => {
         { date: "2026-01-01", localName: "Duplicate", global: true },
         { date: "not-a-date", localName: "Bad" },
       ]),
-    ).toEqual([{ date: "2026-01-01", name: "Neujahr", region: "" }]);
+    ).toEqual([{ date: "2026-01-01", name: "Neujahr", englishName: "New Year's Day", region: "" }]);
   });
 
   it("splits regional holidays into one row per state", () => {
@@ -20,9 +20,9 @@ describe("parseNagerHolidays", () => {
         { date: "2026-06-05", localName: "No states listed", global: false, counties: null },
       ]),
     ).toEqual([
-      { date: "2026-03-08", name: "Internationaler Frauentag", region: "DE-BE" },
-      { date: "2026-03-08", name: "Internationaler Frauentag", region: "DE-MV" },
-      { date: "2026-06-04", name: "Fronleichnam", region: "DE-NW" },
+      { date: "2026-03-08", name: "Internationaler Frauentag", englishName: "Internationaler Frauentag", region: "DE-BE" },
+      { date: "2026-03-08", name: "Internationaler Frauentag", englishName: "Internationaler Frauentag", region: "DE-MV" },
+      { date: "2026-06-04", name: "Fronleichnam", englishName: "Fronleichnam", region: "DE-NW" },
     ]);
   });
 

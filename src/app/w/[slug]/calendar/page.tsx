@@ -9,6 +9,7 @@ import { db } from "@/lib/db";
 import { intlLocale } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { requireMembership, settingsOf } from "@/lib/session";
+import { holidayName } from "@/lib/holidays";
 
 export async function generateMetadata() {
   return { title: (await getMessages()).calendar.title };
@@ -38,10 +39,12 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
   ]);
   // Nationwide holidays shade the whole column; regional ones only the rows of people in that region.
   const settings = settingsOf(workspace);
-  const holidayName = (d: string, region: string) =>
-    holidayRows.find((h) => toISO(h.date) === d && (h.region === "" || h.region === region))?.name;
+  const holidayOn = (d: string, region: string) => {
+    const h = holidayRows.find((h) => toISO(h.date) === d && (h.region === "" || h.region === region));
+    return h && holidayName(h, locale);
+  };
   const offDayClass = (d: string, region = "") =>
-    holidayName(d, region) ? "bg-rose-500/10" : isWeekend(d) ? "bg-black/5 dark:bg-white/5" : "";
+    holidayOn(d, region) ? "bg-rose-500/10" : isWeekend(d) ? "bg-black/5 dark:bg-white/5" : "";
   // You first, then everyone else alphabetically.
   const label = (m: (typeof members)[number]) => m.user.name ?? m.user.email;
   members.sort((a, b) => (a.id === membership.id ? -1 : b.id === membership.id ? 1 : label(a).localeCompare(label(b))));
@@ -90,7 +93,7 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
                   key={d}
                   scope="col"
                   data-today={d === today ? "" : undefined}
-                  title={holidayName(d, "")}
+                  title={holidayOn(d, "")}
                   className={`min-w-6 p-1 text-center font-normal ${offDayClass(d)} ${
                     d === today ? "text-sky-600 font-bold dark:text-sky-400" : "opacity-70"
                   }`}
@@ -127,7 +130,7 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
                       .map((b) => ({ b, portion: portionOn(spanOf(b), d) }))
                       .filter((h): h is { b: (typeof own)[number]; portion: "FULL" | "AM" | "PM" } => h.portion !== null);
                     const weekendClass = offDayClass(d, region);
-                    const holiday = holidayName(d, region);
+                    const holiday = holidayOn(d, region);
                     const todayClass = d === today && !weekendClass ? "bg-primary/[0.07]" : "";
                     const title = hits
                       .map(

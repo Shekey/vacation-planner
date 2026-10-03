@@ -20,8 +20,15 @@ export async function importHolidays(
   }
   if (holidays.length === 0) return { error: t.noHolidaysFound(countryName(country, locale), year) };
   await db.holiday.createMany({
-    data: holidays.map((h) => ({ workspaceId, date: fromISO(h.date), name: h.name, region: h.region })),
+    data: holidays.map((h) => ({ workspaceId, date: fromISO(h.date), name: h.name, englishName: h.englishName, region: h.region })),
     skipDuplicates: true,
   });
+  // Holidays imported before English names were kept get theirs now.
+  for (const h of holidays) {
+    await db.holiday.updateMany({
+      where: { workspaceId, date: fromISO(h.date), region: h.region, name: h.name, englishName: null },
+      data: { englishName: h.englishName },
+    });
+  }
   return { count: holidays.length };
 }

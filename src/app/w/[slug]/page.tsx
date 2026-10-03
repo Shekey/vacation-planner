@@ -10,6 +10,7 @@ import { formatNumber, type Locale } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { requireMembership, settingsOf } from "@/lib/session";
 import { Onboarding } from "./onboarding";
+import { holidayName } from "@/lib/holidays";
 
 export async function generateMetadata() {
   return { title: (await getMessages()).overview.title };
@@ -132,7 +133,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
             <span className="text-sm text-primary">{t.planTimeOff}</span>
           )}
         </Stat>
-        <Stat label={t.nextHoliday} value={nextHoliday ? nextHoliday.name : t.noneAdded} href={`/w/${slug}/holidays`}>
+        <Stat label={t.nextHoliday} value={nextHoliday ? holidayName(nextHoliday, locale) : t.noneAdded} href={`/w/${slug}/holidays`}>
           <span className="text-sm text-muted">
             {nextHoliday
               ? `${formatDate(toISO(nextHoliday.date), { weekday: "short", day: "numeric", month: "short" }, locale)} · ${relativeDay(today, toISO(nextHoliday.date), locale)}`
