@@ -14,6 +14,13 @@ export const settings = defineMessages({
     carryOver: "Carry over unused days (max)",
     carryOverPlaceholder: "none",
     carryOverHint: "Unused vacation days, up to this many, are added to the next year.",
+    expiry: {
+      legend: "Carried-over days must be taken by",
+      day: "Day",
+      month: "Month",
+      never: "Never expire",
+      hint: "Carried-over days are used first. Whatever is left of them after this day is lost, e.g. 31 March as is common in Germany.",
+    },
     minPeople: "Minimum people in",
     minPeoplePlaceholder: "off",
     minPeopleHint: "Warns when a booking would leave fewer people working on a day. It warns, it doesn't block.",
@@ -39,6 +46,7 @@ export const settings = defineMessages({
     typeToConfirm: (name: string) => `Type ${name} to confirm`,
     deleteButton: "Delete workspace",
     errors: {
+      expiryDay: "That expiry day doesn't exist in that month.",
       nameLength: "Name must be at least 2 characters",
       timezone: "Unknown timezone",
       language: "Pick a language from the list",
@@ -68,6 +76,13 @@ export const settings = defineMessages({
     carryOver: "Übertrag ungenutzter Tage (max.)",
     carryOverPlaceholder: "keiner",
     carryOverHint: "Ungenutzte Urlaubstage werden bis zu dieser Anzahl ins nächste Jahr übertragen.",
+    expiry: {
+      legend: "Übertragene Tage müssen genommen werden bis",
+      day: "Tag",
+      month: "Monat",
+      never: "Verfallen nie",
+      hint: "Übertragene Tage werden zuerst verbraucht. Was nach diesem Tag davon übrig ist, verfällt, z. B. am 31. März, wie in Deutschland üblich.",
+    },
     minPeople: "Mindestbesetzung",
     minPeoplePlaceholder: "aus",
     minPeopleHint: "Warnt, wenn an einem Tag durch eine Buchung weniger Leute arbeiten würden. Es wird nur gewarnt, nicht blockiert.",
@@ -93,6 +108,7 @@ export const settings = defineMessages({
     typeToConfirm: (name: string) => `Gib zur Bestätigung ${name} ein`,
     deleteButton: "Workspace löschen",
     errors: {
+      expiryDay: "Diesen Tag gibt es in dem Monat nicht.",
       nameLength: "Der Name muss mindestens 2 Zeichen lang sein",
       timezone: "Unbekannte Zeitzone",
       language: "Wähle eine Sprache aus der Liste",

@@ -23,7 +23,8 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
   const locale = await getLocale();
   const messages = await getMessages();
   const t = messages.approvals;
-  const year = Number(todayIn(workspace.timezone).slice(0, 4));
+  const today = todayIn(workspace.timezone);
+  const year = Number(today.slice(0, 4));
 
   const pending = await db.booking.findMany({
     where: { workspaceId: workspace.id, status: "PENDING", membership: { removedAt: null } },
@@ -38,7 +39,7 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
     pending.map(async (b) => {
       const span = spanOf(b);
       const [summary, others] = await Promise.all([
-        allowanceSummary(b.membership, settings, Number(span.start.slice(0, 4)) || year),
+        allowanceSummary(b.membership, settings, Number(span.start.slice(0, 4)) || year, undefined, today),
         activeBookingsBetween(workspace.id, span.start, span.end),
       ]);
       const days = eachDay(span.start, span.end);

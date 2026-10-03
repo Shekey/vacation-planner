@@ -1,7 +1,7 @@
 import { ActionForm } from "@/components/action-form";
 import Link from "next/link";
-import { isLocale, LOCALE_NAMES, LOCALES } from "@/lib/i18n";
-import { getMessages } from "@/lib/i18n/server";
+import { intlLocale, isLocale, LOCALE_NAMES, LOCALES } from "@/lib/i18n";
+import { getLocale, getMessages } from "@/lib/i18n/server";
 import { accessOf } from "@/lib/plans";
 import { requireAdmin, settingsOf } from "@/lib/session";
 import { deleteWorkspaceAction, saveSettingsAction } from "./actions";
@@ -28,6 +28,11 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
   const settings = settingsOf(workspace);
   const t = (await getMessages()).settings;
   const locale = workspace.settings?.locale;
+  const [expiryMonth, expiryDay] = settings.carryOverExpiry ? settings.carryOverExpiry.split("-") : ["", ""];
+  const uiLocale = await getLocale();
+  const months = Array.from({ length: 12 }, (_, i) =>
+    new Intl.DateTimeFormat(intlLocale(uiLocale), { month: "long", timeZone: "UTC" }).format(new Date(Date.UTC(2026, i, 1))),
+  );
   // The raw values, so saving on a plan without chat doesn't wipe the webhooks.
   const teamsWebhookUrl = workspace.settings?.teamsWebhookUrl ?? "";
   const slackWebhookUrl = workspace.settings?.slackWebhookUrl ?? "";
@@ -94,6 +99,37 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
             />
             <span className="block text-xs opacity-60">{t.carryOverHint}</span>
           </label>
+          <fieldset className="space-y-1">
+            <legend className="text-sm font-medium">{t.expiry.legend}</legend>
+            <div className="flex gap-2">
+              <label className="sr-only" htmlFor="carryOverExpiryDay">
+                {t.expiry.day}
+              </label>
+              <input
+                id="carryOverExpiryDay"
+                name="carryOverExpiryDay"
+                type="number"
+                min={1}
+                max={31}
+                step={1}
+                className="input w-20"
+                defaultValue={expiryDay ? Number(expiryDay) : ""}
+                placeholder="31"
+              />
+              <label className="sr-only" htmlFor="carryOverExpiryMonth">
+                {t.expiry.month}
+              </label>
+              <select id="carryOverExpiryMonth" name="carryOverExpiryMonth" className="input w-auto" defaultValue={expiryMonth}>
+                <option value="">{t.expiry.never}</option>
+                {months.map((m, i) => (
+                  <option key={m} value={String(i + 1).padStart(2, "0")}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <span className="block text-xs opacity-60">{t.expiry.hint}</span>
+          </fieldset>
           <label className="block space-y-1">
             <span className="text-sm font-medium">{t.minPeople}</span>
             <input

@@ -19,8 +19,12 @@ export const overview = defineMessages({
     nextHoliday: "Next public holiday",
     noneAdded: "None added",
     seeHolidays: "See the holidays page",
-    atRisk: (risk: string, left: string, carry: string | null, nextYear: number) =>
-      `${risk} of your ${left} days left will be lost on 31 Dec${carry ? ` (only ${carry} carry over to ${nextYear})` : ""}. Plan them now →`,
+    atRisk: (risk: string, left: string, carry: string | null, nextYear: number, deadline: string | null) =>
+      `${risk} of your ${left} days left will be lost on 31 Dec${
+        carry ? ` (only ${carry} carry over to ${nextYear}${deadline ? `, to be taken by ${deadline}` : ""})` : ""
+      }. Plan them now →`,
+    carryOverDeadline: (n: string, one: boolean, fromYear: number, date: string, when: string) =>
+      `${n} ${one ? "day" : "days"} carried over from ${fromYear} must be taken by ${date} (${when}) or ${one ? "it is" : "they are"} lost. Plan them now →`,
     outToday: "Out today",
     everyoneIn: "Everyone's in today.",
     pendingParen: " (pending)",
@@ -58,10 +62,12 @@ export const overview = defineMessages({
     nextHoliday: "Nächster Feiertag",
     noneAdded: "Keine eingetragen",
     seeHolidays: "Zu den Feiertagen",
-    atRisk: (risk: string, left: string, carry: string | null, nextYear: number) =>
+    atRisk: (risk: string, left: string, carry: string | null, nextYear: number, deadline: string | null) =>
       `Von ${left === "1" ? "deinem 1 Tag" : `deinen ${left} Tagen`} Resturlaub ${risk === "1" ? "verfällt 1 Tag" : `verfallen ${risk} Tage`} am 31. Dezember${
-        carry ? ` (nur ${carry} ${carry === "1" ? "Tag wird" : "Tage werden"} nach ${nextYear} übertragen)` : ""
+        carry ? ` (nur ${carry} ${carry === "1" ? "Tag wird" : "Tage werden"} nach ${nextYear} übertragen${deadline ? ` und ${carry === "1" ? "muss" : "müssen"} bis ${deadline} genommen werden` : ""})` : ""
       }. Jetzt verplanen →`,
+    carryOverDeadline: (n: string, one: boolean, fromYear: number, date: string, when: string) =>
+      `${one ? "1 übertragener Tag" : `${n} übertragene Tage`} aus ${fromYear} ${one ? "muss" : "müssen"} bis ${date} (${when}) genommen werden, sonst ${one ? "verfällt er" : "verfallen sie"}. Jetzt verplanen →`,
     outToday: "Heute abwesend",
     everyoneIn: "Heute sind alle da.",
     pendingParen: " (offen)",

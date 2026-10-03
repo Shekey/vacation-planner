@@ -34,7 +34,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
     activeBookingsBetween(workspace.id, today, horizon).then((bs) =>
       forViewer(bs, { membershipId: membership.id, role: membership.role }, settings),
     ),
-    allowanceSummary(membership, settings, year, holidays),
+    allowanceSummary(membership, settings, year, holidays, today),
     membership.role === "ADMIN" && settings.approvalsEnabled
       ? db.booking.count({ where: { workspaceId: workspace.id, status: "PENDING" } })
       : 0,
@@ -142,9 +142,32 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
         </Stat>
       </div>
 
+      {summary.carryOverLeft > 0 && summary.carryOverExpiresOn && (
+        <Link
+          href={`/w/${slug}/book`}
+          className="card card-link block border-amber-400/60 bg-amber-50 text-sm dark:bg-amber-900/20"
+        >
+          {t.carryOverDeadline(
+            fmt(summary.carryOverLeft),
+            summary.carryOverLeft === 1,
+            year - 1,
+            formatDate(summary.carryOverExpiresOn, { day: "numeric", month: "long" }, locale),
+            relativeDay(today, summary.carryOverExpiresOn, locale),
+          )}
+        </Link>
+      )}
+
       {atRisk > 0 && (
         <Link href={`/w/${slug}/book`} className="card card-link block border-amber-400/60 bg-amber-50 text-sm dark:bg-amber-900/20">
-          {t.atRisk(fmt(atRisk), fmt(summary.remaining!), settings.maxCarryOverDays ? fmt(settings.maxCarryOverDays) : null, year + 1)}
+          {t.atRisk(
+            fmt(atRisk),
+            fmt(summary.remaining!),
+            settings.maxCarryOverDays ? fmt(settings.maxCarryOverDays) : null,
+            year + 1,
+            settings.maxCarryOverDays && settings.carryOverExpiry
+              ? formatDate(`${year + 1}-${settings.carryOverExpiry}`, { day: "numeric", month: "long" }, locale)
+              : null,
+          )}
         </Link>
       )}
 

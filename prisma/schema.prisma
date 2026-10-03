@@ -135,6 +135,8 @@ model WorkspaceSettings {
   defaultAllowanceDays Decimal? @default(20) @db.Decimal(4, 1)
   // Most unused vacation days that roll into the next year; null or 0 means none.
   maxCarryOverDays     Decimal? @db.Decimal(4, 1)
+  // "MM-DD" by which carried-over days must be taken, e.g. "03-31"; null means they never expire.
+  carryOverExpiry      String?
   // Warn when fewer people than this would be working on a day; null turns the check off.
   minPeoplePresent     Int?
   // ISO 3166 country code last used to import public holidays, e.g. "BA".

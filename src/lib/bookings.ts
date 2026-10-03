@@ -1,6 +1,6 @@
 import type { BookingStatus, BookingType, Prisma, Role } from "@/generated/prisma/client";
-import { carryOver, countDays, proratedAllowance, validateSpan, type BookingSpan, type DayRules } from "@/lib/booking-days";
-import { formatRange, fromISO, toISO, type ISODate } from "@/lib/dates";
+import { carriedOverStatus, carryOver, countDays, proratedAllowance, validateSpan, type BookingSpan, type DayRules } from "@/lib/booking-days";
+import { formatRange, fromISO, toISO, todayIn, type ISODate } from "@/lib/dates";
 import { getMessages } from "@/lib/i18n/server";
 import { formatNumber, isLocale, LOCALES, messagesFor, type Locale, type Messages } from "@/lib/i18n";
 import { db } from "@/lib/db";
@@ -15,6 +15,8 @@ export type Settings = {
   countWeekends: boolean;
   allowHalfDays: boolean;
   maxCarryOverDays: number | null;
+  /** "MM-DD" by which carried-over days must be taken; null means they never expire. */
+  carryOverExpiry: string | null;
   minPeoplePresent: number | null;
   /** Chat webhooks; null when not set or the plan doesn't include chat. */
   teamsWebhookUrl: string | null;
@@ -358,16 +360,21 @@ export type AllowanceSummary = {
   year: number;
   /** Total for the year, including carried-over days; null when not tracked. */
   allowance: number | null;
+  /** Days carried over from last year, before any expired. */
   carriedOver: number;
+  /** When carried-over days expire this year, if the workspace sets a deadline. */
+  carryOverExpiresOn: ISODate | null;
+  /** Carried-over days still to take before the deadline. */
+  carryOverLeft: number;
+  /** Carried-over days lost because they weren't taken by the deadline; not part of `allowance`. */
+  carryOverExpired: number;
   used: number;
   pending: number;
   remaining: number | null;
 };
 
-/** Vacation days (approved, pending) inside one calendar year; sick and other leave don't count. */
-async function vacationDaysInYear(membershipId: string, rules: DayRules, year: number) {
-  const from = `${year}-01-01`;
-  const to = `${year}-12-31`;
+/** Vacation days (approved, pending) between two dates; sick and other leave don't count. */
+async function vacationDaysBetween(membershipId: string, rules: DayRules, from: ISODate, to: ISODate) {
   const bookings = await db.booking.findMany({
     where: {
       membershipId,
@@ -387,6 +394,10 @@ async function vacationDaysInYear(membershipId: string, rules: DayRules, year: n
   return { used, pending };
 }
 
+function vacationDaysInYear(membershipId: string, rules: DayRules, year: number) {
+  return vacationDaysBetween(membershipId, rules, `${year}-01-01`, `${year}-12-31`);
+}
+
 export async function allowanceSummary(
   membership: {
     id: string;
@@ -400,11 +411,12 @@ export async function allowanceSummary(
   settings: Settings,
   year: number,
   holidays?: Set<ISODate>,
+  today: ISODate = todayIn("UTC"),
 ): Promise<AllowanceSummary> {
   const rules = rulesFor(membership, settings, holidays ?? (await loadHolidays(membership.workspaceId, regionOf(membership, settings))));
   const { used, pending } = await vacationDaysInYear(membership.id, rules, year);
   if (membership.annualAllowanceDays === null) {
-    return { year, allowance: null, carriedOver: 0, used, pending, remaining: null };
+    return { year, allowance: null, carriedOver: 0, carryOverExpiresOn: null, carryOverLeft: 0, carryOverExpired: 0, used, pending, remaining: null };
   }
   const yearly = Number(membership.annualAllowanceDays);
   const employmentStart = membership.employmentStart ? toISO(membership.employmentStart) : null;
@@ -416,6 +428,26 @@ export async function allowanceSummary(
     const last = await vacationDaysInYear(membership.id, rules, year - 1);
     carriedOver = carryOver(proratedAllowance(yearly, employmentStart, year - 1), last.used + last.pending, settings.maxCarryOverDays);
   }
-  const allowance = base + carriedOver;
-  return { year, allowance, carriedOver, used, pending, remaining: allowance - used - pending };
+  let carryOverExpiresOn: ISODate | null = null;
+  let carryOverLeft = 0;
+  let carryOverExpired = 0;
+  if (carriedOver > 0 && settings.carryOverExpiry) {
+    carryOverExpiresOn = `${year}-${settings.carryOverExpiry}`;
+    const byDeadline = await vacationDaysBetween(membership.id, rules, `${year}-01-01`, carryOverExpiresOn);
+    const status = carriedOverStatus(carriedOver, byDeadline.used + byDeadline.pending, today > carryOverExpiresOn);
+    carryOverLeft = status.left;
+    carryOverExpired = status.expired;
+  }
+  const allowance = base + carriedOver - carryOverExpired;
+  return {
+    year,
+    allowance,
+    carriedOver,
+    carryOverExpiresOn,
+    carryOverLeft,
+    carryOverExpired,
+    used,
+    pending,
+    remaining: allowance - used - pending,
+  };
 }
