@@ -30,19 +30,25 @@ export async function inviteAction(slug: string, _prev: ActionResult, formData: 
   if (valid.length === 0) return { error: "Enter at least one email." };
   if (valid.length > 50) return { error: "Invite at most 50 people at a time." };
 
-  const { invited, alreadyMembers } = await inviteMembers(valid, role, invite);
+  const { invited, alreadyMembers, failed } = await inviteMembers(valid, role, invite);
   revalidatePath(`/w/${slug}/members`);
   const parts = [];
-  if (invited.length) parts.push(`Invited ${invited.length} ${invited.length === 1 ? "person" : "people"}.`);
+  const sent = invited.length - failed.length;
+  if (sent) parts.push(`Invited ${sent} ${sent === 1 ? "person" : "people"}.`);
   if (alreadyMembers.length) parts.push(`Already members: ${alreadyMembers.join(", ")}.`);
+  if (failed.length) {
+    parts.push(`The email didn't go out to ${failed.map((f) => f.email).join(", ")}: ${failed[0].error}`);
+    return { error: parts.join(" ") };
+  }
   return { ok: parts.join(" ") };
 }
 
 export async function resendInviteAction(slug: string, invitationId: string): Promise<ActionResult> {
   const { invite } = await inviteContext(slug);
-  const ok = await resendInvitation(invitationId, invite);
+  const sent = await resendInvitation(invitationId, invite);
   revalidatePath(`/w/${slug}/members`);
-  return ok ? { ok: "Sent again." } : { error: "That invitation is no longer pending." };
+  if (!sent) return { error: "That invitation is no longer pending." };
+  return sent.ok ? { ok: "Sent again." } : { error: `The email didn't go out: ${sent.error}` };
 }
 
 export async function revokeInviteAction(slug: string, invitationId: string): Promise<ActionResult> {
