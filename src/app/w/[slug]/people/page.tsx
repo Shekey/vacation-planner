@@ -1,16 +1,16 @@
 import { typeColor, typeLabel } from "@/components/badges";
 import { halfDayLabel, portionOn } from "@/lib/booking-days";
-import { activeBookingsBetween, spanOf } from "@/lib/bookings";
+import { activeBookingsBetween, forViewer, spanOf } from "@/lib/bookings";
 import { addDays, formatDate, formatRange, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
-import { requireMembership } from "@/lib/session";
+import { requireMembership, settingsOf } from "@/lib/session";
 import { PeopleSearch, type PersonRow } from "./people-search";
 
 export const metadata = { title: "People" };
 
 export default async function PeoplePage({ params }: PageProps<"/w/[slug]/people">) {
   const { slug } = await params;
-  const { workspace } = await requireMembership(slug);
+  const { workspace, membership } = await requireMembership(slug);
   const today = todayIn(workspace.timezone);
 
   const [members, bookings] = await Promise.all([
@@ -18,7 +18,7 @@ export default async function PeoplePage({ params }: PageProps<"/w/[slug]/people
       where: { workspaceId: workspace.id, removedAt: null },
       include: { user: { select: { name: true, email: true } } },
     }),
-    activeBookingsBetween(workspace.id, today, addDays(today, 365)),
+    activeBookingsBetween(workspace.id, today, addDays(today, 365)).then((bs) => forViewer(bs, { membershipId: membership.id, role: membership.role }, settingsOf(workspace))),
   ]);
 
   const people: PersonRow[] = members

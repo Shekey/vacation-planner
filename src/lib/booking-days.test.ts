@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { carryOver, countDays, halfDayLabel, portionOn, validateSpan, type BookingSpan } from "./booking-days";
+import {
+  carryOver,
+  countDays,
+  halfDayLabel,
+  normalizeWorkDays,
+  portionOn,
+  proratedAllowance,
+  validateSpan,
+  type BookingSpan,
+} from "./booking-days";
 
 const span = (start: string, end: string, startPart = "FULL", endPart = "FULL") =>
   ({ start, end, startPart, endPart }) as BookingSpan;
@@ -69,4 +78,31 @@ describe("carryOver", () => {
     expect(carryOver(20, 25, 5)).toBe(0);
     expect(carryOver(20, 0, null)).toBe(0);
   });
+});
+
+describe("part-time work days", () => {
+  const monToThu = { countWeekends: false, workDays: [1, 2, 3, 4] };
+  it("charges only the days the person works", () => expect(countDays(span("2026-10-05", "2026-10-11"), monToThu)).toBe(4));
+  it("charges nothing on a day off", () => expect(countDays(span("2026-10-09", "2026-10-09"), monToThu)).toBe(0));
+  it("can include a weekend work day", () =>
+    expect(countDays(span("2026-10-05", "2026-10-11"), { countWeekends: false, workDays: [6, 7] })).toBe(2));
+  it("still skips holidays", () =>
+    expect(countDays(span("2026-10-05", "2026-10-09"), { ...monToThu, holidays: new Set(["2026-10-06"]) })).toBe(3));
+  it("falls back to the weekend rule when empty", () => expect(countDays(span("2026-10-05", "2026-10-11"), { countWeekends: false, workDays: [] })).toBe(5));
+  it("normalizes form input", () => {
+    expect(normalizeWorkDays([4, 1, 2, 2, 9, 3], false)).toEqual([1, 2, 3, 4]);
+    expect(normalizeWorkDays([5, 4, 3, 2, 1], false)).toEqual([]);
+    expect(normalizeWorkDays([1, 2, 3, 4, 5], true)).toEqual([1, 2, 3, 4, 5]);
+    expect(normalizeWorkDays([1, 2, 3, 4, 5, 6, 7], true)).toEqual([]);
+  });
+});
+
+describe("proratedAllowance", () => {
+  it("keeps the full allowance when employed before the year", () => expect(proratedAllowance(30, "2020-05-10", 2026)).toBe(30));
+  it("keeps the full allowance without a start date", () => expect(proratedAllowance(30, null, 2026)).toBe(30));
+  it("counts the start month when starting on the 1st", () => expect(proratedAllowance(30, "2026-07-01", 2026)).toBe(15));
+  it("skips a partial start month", () => expect(proratedAllowance(30, "2026-07-15", 2026)).toBe(12.5));
+  it("rounds up to a half day", () => expect(proratedAllowance(28, "2026-10-01", 2026)).toBe(7));
+  it("gives nothing before employment starts", () => expect(proratedAllowance(30, "2027-02-01", 2026)).toBe(0));
+  it("gives a full year after the start year", () => expect(proratedAllowance(30, "2026-07-15", 2027)).toBe(30));
 });

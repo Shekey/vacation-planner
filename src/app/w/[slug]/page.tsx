@@ -2,7 +2,7 @@ import Link from "next/link";
 import { TypeDot, typeLabel } from "@/components/badges";
 import { Avatar, EmptyState } from "@/components/ui";
 import { halfDayLabel, portionOn } from "@/lib/booking-days";
-import { activeBookingsBetween, allowanceSummary, loadHolidays, regionOf, spanOf } from "@/lib/bookings";
+import { activeBookingsBetween, allowanceSummary, forViewer, loadHolidays, regionOf, rulesFor, spanOf } from "@/lib/bookings";
 import { addDays, eachDay, formatDate, formatRange, fromISO, partOfDay, relativeDay, toISO, todayIn } from "@/lib/dates";
 import { daysAtRisk, longWeekendTips } from "@/lib/smart-days";
 import { db } from "@/lib/db";
@@ -22,7 +22,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
   const holidays = await loadHolidays(workspace.id, myRegion);
 
   const [bookings, summary, pendingCount, nextOff, nextHoliday, myBookings] = await Promise.all([
-    activeBookingsBetween(workspace.id, today, horizon),
+    activeBookingsBetween(workspace.id, today, horizon).then((bs) => forViewer(bs, { membershipId: membership.id, role: membership.role }, settings)),
     allowanceSummary(membership, settings, year, holidays),
     membership.role === "ADMIN" && settings.approvalsEnabled
       ? db.booking.count({ where: { workspaceId: workspace.id, status: "PENDING" } })
@@ -51,7 +51,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
   const tips = longWeekendTips({
     from: addDays(today, 1),
     to: tipsUntil,
-    rules: { countWeekends: settings.countWeekends, holidays },
+    rules: rulesFor(membership, settings, holidays),
     alreadyOff,
   }).slice(0, 3);
   // From October on, warn about days that won't carry over into next year.

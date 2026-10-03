@@ -1,4 +1,4 @@
-import { eachDay, isWeekend, type ISODate } from "@/lib/dates";
+import { eachDay, isoWeekday, isWeekend, type ISODate } from "@/lib/dates";
 
 export type DayPart = "FULL" | "AM" | "PM";
 
@@ -13,13 +13,20 @@ export type BookingSpan = {
 
 export type DayRules = {
   countWeekends: boolean;
+  /**
+   * ISO weekdays (1 = Monday ... 7 = Sunday) the person works, for part-time schedules.
+   * When set and not empty it replaces the weekend rule.
+   */
+  workDays?: readonly number[] | null;
   /** Public holidays; they never count as days off. */
   holidays?: ReadonlySet<ISODate>;
 };
 
 /** Whether a booking on this day costs anything. */
 export function isChargeable(day: ISODate, rules: DayRules): boolean {
-  if (!rules.countWeekends && isWeekend(day)) return false;
+  if (rules.workDays?.length) {
+    if (!rules.workDays.includes(isoWeekday(day))) return false;
+  } else if (!rules.countWeekends && isWeekend(day)) return false;
   return !rules.holidays?.has(day);
 }
 
@@ -81,4 +88,32 @@ export function halfDayLabel(span: BookingSpan): string | null {
 export function carryOver(baseAllowance: number, takenLastYear: number, maxCarryOver: number | null): number {
   if (!maxCarryOver || maxCarryOver <= 0) return 0;
   return Math.max(0, Math.min(maxCarryOver, baseAllowance - takenLastYear));
+}
+
+/**
+ * The allowance for `year` when employment starts during it: 1/12 per full month employed,
+ * rounded up to a half day (German practice under BUrlG section 5). Starting before the year
+ * keeps the full allowance; starting after it gives none.
+ */
+export function proratedAllowance(base: number, employmentStart: ISODate | null, year: number): number {
+  if (!employmentStart || employmentStart <= `${year}-01-01`) return base;
+  const startYear = Number(employmentStart.slice(0, 4));
+  if (startYear > year) return 0;
+  const month = Number(employmentStart.slice(5, 7));
+  const fullMonths = employmentStart.slice(8, 10) === "01" ? 13 - month : 12 - month;
+  return Math.ceil(((base * fullMonths) / 12) * 2) / 2;
+}
+
+/** The work days a workspace assumes when a member has none of their own. */
+export function defaultWorkDays(countWeekends: boolean): number[] {
+  return countWeekends ? [1, 2, 3, 4, 5, 6, 7] : [1, 2, 3, 4, 5];
+}
+
+/**
+ * Normalizes weekday picks from a form: unique ISO weekdays 1 to 7, sorted.
+ * Picking exactly the workspace default comes back empty, so later changes to the default apply.
+ */
+export function normalizeWorkDays(days: readonly number[], countWeekends: boolean): number[] {
+  const set = [...new Set(days.filter((d) => Number.isInteger(d) && d >= 1 && d <= 7))].sort((a, b) => a - b);
+  return set.join() === defaultWorkDays(countWeekends).join() ? [] : set;
 }

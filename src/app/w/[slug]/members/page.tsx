@@ -1,5 +1,7 @@
 import { ActionForm } from "@/components/action-form";
 import { Avatar } from "@/components/ui";
+import { defaultWorkDays } from "@/lib/booking-days";
+import { formatDate, toISO } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { HOLIDAY_REGIONS } from "@/lib/holiday-regions";
 import { requireAdmin } from "@/lib/session";
@@ -12,6 +14,17 @@ import {
 } from "./actions";
 
 export const metadata = { title: "Members" };
+
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+/** "Mon–Thu", "Mon, Wed, Fri" or null for the default. */
+function workDaysLabel(days: number[]): string | null {
+  if (days.length === 0) return null;
+  const contiguous = days.every((d, i) => i === 0 || d === days[i - 1] + 1);
+  return contiguous && days.length > 2
+    ? `${WEEKDAYS[days[0] - 1]}–${WEEKDAYS[days[days.length - 1] - 1]}`
+    : days.map((d) => WEEKDAYS[d - 1]).join(", ");
+}
 
 export default async function MembersPage({ params }: PageProps<"/w/[slug]/members">) {
   const { slug } = await params;
@@ -31,6 +44,7 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
   const now = new Date();
   const regions = HOLIDAY_REGIONS[workspace.settings?.holidayCountry ?? ""] ?? [];
   const defaultRegion = regions.find((r) => r.code === workspace.settings?.holidayRegion)?.name;
+  const teamWorkDays = defaultWorkDays(workspace.settings?.countWeekends ?? false);
 
   return (
     <div className="space-y-8">
@@ -85,6 +99,9 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
         <ul className="divide-y divide-border">
           {members.map((m) => {
             const who = m.user.name ?? m.user.email;
+            const partTime = workDaysLabel(m.workDays);
+            const started = m.employmentStart ? toISO(m.employmentStart) : "";
+            const workDays = m.workDays.length ? m.workDays : teamWorkDays;
             return (
             <li key={m.id} id={`member-${m.id}`} className="flex scroll-mt-20 flex-wrap items-center justify-between gap-3 rounded-lg py-3 target:-mx-2 target:px-2 target:bg-primary/10">
               <div className="flex min-w-0 items-center gap-2.5">
@@ -135,6 +152,35 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
                   <button className="btn-secondary px-3 py-1" aria-label={`Save changes for ${who}`}>
                     Save
                   </button>
+                  <details className="w-full">
+                    <summary className="cursor-pointer text-xs text-muted">
+                      {[partTime ? `Works ${partTime}` : "Work days", started ? `started ${formatDate(started, { day: "numeric", month: "short", year: "numeric" })}` : "start date"].join(" · ")}
+                    </summary>
+                    <div className="mt-2 space-y-2">
+                      <fieldset className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <legend className="sr-only">Days {who} works</legend>
+                        {WEEKDAYS.map((label, i) => (
+                          <label key={label} className="flex items-center gap-1">
+                            <input type="checkbox" name="workDays" value={i + 1} defaultChecked={workDays.includes(i + 1)} />
+                            {label}
+                          </label>
+                        ))}
+                      </fieldset>
+                      <label className="flex flex-wrap items-center gap-2">
+                        <span className="opacity-60">Started on</span>
+                        <input
+                          name="employmentStart"
+                          type="date"
+                          defaultValue={started}
+                          className="input w-auto py-1"
+                          aria-label={`First working day of ${who}`}
+                        />
+                      </label>
+                      <p className="text-xs opacity-60">
+                        Days off only count on the days someone works. In the year someone starts, their allowance is 1/12 per full month.
+                      </p>
+                    </div>
+                  </details>
                 </ActionForm>
                 {m.id !== me.id && (
                   <ActionForm

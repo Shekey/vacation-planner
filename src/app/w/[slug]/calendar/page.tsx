@@ -3,7 +3,7 @@ import { Legend, typeColor } from "@/components/badges";
 import { ScrollToToday } from "@/components/scroll-to-today";
 import { Avatar } from "@/components/ui";
 import { portionOn } from "@/lib/booking-days";
-import { activeBookingsBetween, regionOf, spanOf } from "@/lib/bookings";
+import { activeBookingsBetween, forViewer, regionOf, spanOf } from "@/lib/bookings";
 import { eachDay, fromISO, isWeekend, isYearMonth, monthBounds, shiftMonth, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { requireMembership, settingsOf } from "@/lib/session";
@@ -25,7 +25,7 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
       where: { workspaceId: workspace.id, removedAt: null },
       include: { user: { select: { name: true, email: true } } },
     }),
-    activeBookingsBetween(workspace.id, start, end),
+    activeBookingsBetween(workspace.id, start, end).then((bs) => forViewer(bs, { membershipId: membership.id, role: membership.role }, settingsOf(workspace))),
     db.holiday.findMany({ where: { workspaceId: workspace.id, date: { gte: fromISO(start), lte: fromISO(end) } } }),
   ]);
   // Nationwide holidays shade the whole column; regional ones only the rows of people in that region.
