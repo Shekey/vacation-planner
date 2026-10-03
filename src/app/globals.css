@@ -50,6 +50,20 @@ body {
 }
 
 @layer components {
+  /* German legal texts: plain document typography. */
+  .legal h2 {
+    @apply pt-2 text-lg font-semibold;
+  }
+  .legal ul {
+    @apply list-disc space-y-1 pl-5;
+  }
+  .legal a {
+    @apply text-primary underline;
+  }
+  .legal p,
+  .legal li {
+    @apply leading-relaxed;
+  }
   .input {
     @apply w-full rounded-lg border border-border bg-surface px-3 py-2 shadow-xs outline-none transition-shadow placeholder:text-muted/70 focus:border-primary focus:ring-3 focus:ring-primary/20 dark:bg-white/5;
   }

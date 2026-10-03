@@ -7,6 +7,7 @@ import { addDays, eachDay, formatDate, formatRange, fromISO, partOfDay, relative
 import { daysAtRisk, longWeekendTips } from "@/lib/smart-days";
 import { db } from "@/lib/db";
 import { requireMembership, settingsOf } from "@/lib/session";
+import { Onboarding } from "./onboarding";
 
 export const metadata = { title: "Overview" };
 
@@ -72,6 +73,8 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
         </h2>
         <p className="text-sm text-muted">{formatDate(today, { weekday: "long", day: "numeric", month: "long" })}</p>
       </div>
+
+      {membership.role === "ADMIN" && <Onboarding slug={slug} workspace={workspace} />}
 
       {pendingCount > 0 && (
         <Link

@@ -7,6 +7,7 @@ import { fromISO, isISODate } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { isHolidayRegion } from "@/lib/holiday-regions";
 import { inviteMembers, parseEmailList, resendInvitation } from "@/lib/invitations";
+import { accessOf } from "@/lib/plans";
 import { requireAdmin } from "@/lib/session";
 import { appOrigin } from "@/lib/url";
 
@@ -29,6 +30,21 @@ export async function inviteAction(slug: string, _prev: ActionResult, formData: 
   if (invalid.length) return { error: `Not a valid email: ${invalid.join(", ")}` };
   if (valid.length === 0) return { error: "Enter at least one email." };
   if (valid.length > 50) return { error: "Invite at most 50 people at a time." };
+
+  // People already in, plus invitations still open, plus these must fit the plan.
+  const access = accessOf(invite.workspace);
+  const [members, open] = await Promise.all([
+    db.membership.count({ where: { workspaceId: invite.workspace.id, removedAt: null } }),
+    db.invitation.count({
+      where: { workspaceId: invite.workspace.id, acceptedAt: null, revokedAt: null, expiresAt: { gt: new Date() }, email: { notIn: valid } },
+    }),
+  ]);
+  if (members + open + valid.length > access.maxMembers) {
+    const room = Math.max(0, access.maxMembers - members - open);
+    return {
+      error: `${access.name} covers up to ${access.maxMembers} people. You have room for ${room} more${open ? ` (counting ${open} open invitation${open === 1 ? "" : "s"})` : ""}. Upgrade under Billing to invite more.`,
+    };
+  }
 
   const { invited, alreadyMembers } = await inviteMembers(valid, role, invite);
   revalidatePath(`/w/${slug}/members`);

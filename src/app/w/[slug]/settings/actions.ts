@@ -7,6 +7,7 @@ import type { ActionResult } from "@/components/action-form";
 import { approveAllPending } from "@/lib/bookings";
 import { db } from "@/lib/db";
 import { requireAdmin, settingsOf } from "@/lib/session";
+import { isSlackWebhookUrl } from "@/lib/slack";
 import { isTeamsWebhookUrl } from "@/lib/teams";
 
 const schema = z.object({
@@ -35,6 +36,11 @@ const schema = z.object({
       (u) => u === null || isTeamsWebhookUrl(u),
       "That isn't a Microsoft Teams webhook URL. Copy the URL from the Teams workflow \"Post to a channel when a webhook request is received\".",
     ),
+  slackWebhookUrl: z
+    .string()
+    .trim()
+    .transform((s) => s || null)
+    .refine((u) => u === null || isSlackWebhookUrl(u), "That isn't a Slack webhook URL. It starts with https://hooks.slack.com/services/."),
 });
 
 export async function saveSettingsAction(slug: string, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -50,6 +56,7 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
     maxCarryOverDays: parsed.data.maxCarryOver,
     minPeoplePresent: parsed.data.minPeoplePresent,
     teamsWebhookUrl: parsed.data.teamsWebhookUrl,
+    slackWebhookUrl: parsed.data.slackWebhookUrl,
   };
   const wasApprovals = settingsOf(ctx.workspace).approvalsEnabled;
   // The default is copied when someone joins, so people who joined earlier need an explicit update.

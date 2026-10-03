@@ -15,7 +15,8 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 - Yearly allowance is tracked, with days left shown. Half-day bookings are allowed.
 - Approval workflow is an optional per-workspace flag. Admin-created bookings skip approval.
 - Stack: Next.js (App Router) + TypeScript, Postgres + Prisma, Auth.js magic links via Resend.
-- Notifications go to Microsoft Teams (webhook), not Slack.
+- Notifications go to Microsoft Teams (webhook); Slack was added as an option in round 2 (2026-10-03).
+- Payments: Stripe (Ajdin chose it over Paddle, 2026-10-03). Flat team prices: Free ≤5, Team €15 ≤20, Business €35 ≤50.
 - No CSV export.
 - Public holidays come per country with a region (ISO 3166-2, e.g. `DE-BE`). Each person picks their own region; the workspace has a default. Focus is Germany: Berlin = `DE-BE`, Bielefeld = North Rhine-Westphalia = `DE-NW`.
 
@@ -32,11 +33,15 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 | #7 | Public landing page at `/` for signed-out visitors (`src/app/landing.tsx`), accessibility pass (skip link, focus ring, labels, announced form messages, calendar readable by screen readers), Settings can apply the default allowance to existing members |
 | #8 | Security hardening (headers, sign-in throttle, 1-hour magic links, safe redirects, constant-time cron check) and a refreshed look for the signed-in app (theme tokens, overview tiles, avatars) |
 | #9 | Part-time work days and employment start date per member (Members → "Work days"), allowance pro-rated 1/12 per full month in the start year, no carry-over from a year before someone joined, sick leave shown as "Other" to colleagues (Settings toggle, default on), download my data, delete my account, delete workspace |
+| #10 | Plans and Stripe billing (Free up to 5, Team €15 up to 20, Business €35 up to 50; 30-day trial with everything; over the limit new bookings and invites stop), Billing page with Checkout and Customer Portal, Stripe webhook, Slack webhook next to Teams, getting-started checklist, invites from pasted Excel/Outlook rows, German legal pages (Impressum, Datenschutz, AGB, AVV) with footer links, pricing on the landing page |
 
 ## Where things live
 
 - Schema: `prisma/schema.prisma`, migrations in `prisma/migrations/`.
 - Day counting and allowance: `src/lib/booking-days.ts` (`proratedAllowance`, work days in `DayRules`), `src/lib/bookings.ts` (`regionOf`, `rulesFor`, `forViewer`, `loadHolidays`, `allowanceSummary`).
+- Plans and billing: `src/lib/plans.ts` (`accessOf`, limits), `src/lib/stripe.ts`, `/api/stripe/webhook`, `/w/[slug]/billing`. Chat is dropped in `settingsOf` when the plan has none.
+- Chat posts: `src/lib/notify.ts` sends to `src/lib/teams.ts` and `src/lib/slack.ts`.
+- Legal texts: `src/app/(legal)/`, operator details and subprocessors in `src/lib/legal.ts` (env `LEGAL_*`).
 - Account export and deletion: `src/lib/account.ts`, `/api/account/export`, `/account`.
 - Holidays: `src/lib/holidays.ts` (Nager parser), `src/lib/holiday-regions.ts` (country and region lists), `src/lib/holiday-import.ts`.
 - Tips: `src/lib/smart-days.ts`.

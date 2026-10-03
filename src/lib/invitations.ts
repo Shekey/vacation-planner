@@ -13,9 +13,16 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-/** Splits a free-form list ("a@x.com, b@y.com\nc@z.com") into unique, normalized emails. */
+/**
+ * Pulls unique, normalized emails out of free-form text: a typed list ("a@x.com, b@y.com"), or rows pasted
+ * from Excel or Outlook ("Anna Schmidt\tanna@x.com", "Ben <ben@y.com>"). Words without an @, like names, are skipped.
+ */
 export function parseEmailList(input: string): { valid: string[]; invalid: string[] } {
-  const items = input.split(/[\s,;]+/).map(normalizeEmail).filter(Boolean);
+  const items = input
+    .split(/[\s,;<>"'()[\]]+/)
+    .map(normalizeEmail)
+    .map((s) => s.replace(/^mailto:/, "").replace(/\.$/, ""))
+    .filter((s) => s.includes("@"));
   const unique = [...new Set(items)];
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return { valid: unique.filter((e) => re.test(e)), invalid: unique.filter((e) => !re.test(e)) };

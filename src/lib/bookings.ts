@@ -3,7 +3,8 @@ import { carryOver, countDays, proratedAllowance, validateSpan, type BookingSpan
 import { formatRange, fromISO, toISO, type ISODate } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
-import { postToTeams } from "@/lib/teams";
+import { postToChannels } from "@/lib/notify";
+import { accessOf, isOverLimit } from "@/lib/plans";
 
 export const ACTIVE_STATUSES: BookingStatus[] = ["PENDING", "APPROVED"];
 
@@ -13,7 +14,9 @@ export type Settings = {
   allowHalfDays: boolean;
   maxCarryOverDays: number | null;
   minPeoplePresent: number | null;
+  /** Chat webhooks; null when not set or the plan doesn't include chat. */
   teamsWebhookUrl: string | null;
+  slackWebhookUrl: string | null;
   /** Default region for regional holidays, e.g. "DE-BE". */
   holidayRegion: string | null;
   /** Show colleagues' sick leave as "Other", without its note. */
@@ -59,6 +62,20 @@ export async function loadHolidays(workspaceId: string, region = ""): Promise<Se
 }
 
 export class BookingError extends Error {}
+
+/** New and changed bookings stop when the team has more people than its plan allows. */
+async function assertWithinPlan(workspaceId: string) {
+  const ws = await db.workspace.findUniqueOrThrow({
+    where: { id: workspaceId },
+    select: { plan: true, billingStatus: true, trialEndsAt: true, _count: { select: { memberships: { where: { removedAt: null } } } } },
+  });
+  const access = accessOf(ws);
+  if (isOverLimit(access, ws._count.memberships)) {
+    throw new BookingError(
+      `${access.name} covers up to ${access.maxMembers} people and this workspace has ${ws._count.memberships}. An admin can upgrade under Billing.`,
+    );
+  }
+}
 
 /** Converts a Booking row into the date-only span used by the day math. */
 export function spanOf(b: { startDate: Date; endDate: Date; startPart: string; endPart: string }): BookingSpan {
@@ -121,6 +138,7 @@ export async function createBooking(opts: {
   if (membershipId !== actor.membershipId && actor.role !== "ADMIN") {
     throw new BookingError("Only admins can book time off for someone else.");
   }
+  await assertWithinPlan(workspace.id);
   const target = await db.membership.findFirst({
     where: { id: membershipId, workspaceId: workspace.id, removedAt: null },
     include: { user: true },
@@ -160,8 +178,8 @@ async function announce(
   // The channel is shared with colleagues, so private sick leave is posted as plain time off.
   const type = settings.hideSickType && booking.type === "SICK" ? "OTHER" : booking.type;
   const kind = { VACATION: "vacation", SICK: "sick leave", OTHER: "time off" }[type];
-  await postToTeams(
-    settings.teamsWebhookUrl,
+  await postToChannels(
+    settings,
     `${person.name ?? person.email} ${verb}: ${formatRange(toISO(booking.startDate), toISO(booking.endDate))} (${Number(
       booking.daysCount,
     )} days, ${kind})`,
@@ -183,6 +201,7 @@ export async function updateBooking(opts: {
     include: { membership: { include: { user: true } } },
   });
   if (!existing) throw new BookingError("Booking not found.");
+  await assertWithinPlan(workspace.id);
   if (existing.membershipId !== actor.membershipId && actor.role !== "ADMIN") {
     throw new BookingError("You can only change your own bookings.");
   }
