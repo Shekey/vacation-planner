@@ -1,3 +1,5 @@
+import type { Locale } from "@/lib/i18n/config";
+
 /** Countries date.nager.at has public holidays for (ISO 3166-1 alpha-2). */
 export const HOLIDAY_COUNTRIES = [
   "AD", "AL", "AM", "AR", "AT", "AU", "AX", "BA", "BB", "BE", "BG", "BJ", "BO", "BR", "BS", "BW", "BY", "BZ",
@@ -69,10 +71,54 @@ export function isHolidayRegion(country: string, region: string): boolean {
   return HOLIDAY_REGIONS[country]?.some((r) => r.code === region) ?? false;
 }
 
-export function countryName(code: string): string {
+export function countryName(code: string, locale: Locale = "en"): string {
   try {
-    return new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code;
+    return new Intl.DisplayNames([locale], { type: "region" }).of(code) ?? code;
   } catch {
     return code;
   }
+}
+
+/** German names where they differ from the English ones; other regions keep their English or local name. */
+const GERMAN_REGION_NAMES: Record<string, string> = {
+  "BA-BIH": "Föderation Bosnien und Herzegowina",
+  "BA-BRC": "Distrikt Brčko",
+  "DE-BY": "Bayern",
+  "DE-HE": "Hessen",
+  "DE-NI": "Niedersachsen",
+  "DE-NW": "Nordrhein-Westfalen",
+  "DE-RP": "Rheinland-Pfalz",
+  "DE-SN": "Sachsen",
+  "DE-ST": "Sachsen-Anhalt",
+  "DE-TH": "Thüringen",
+  "AT-2": "Kärnten",
+  "AT-3": "Niederösterreich",
+  "AT-4": "Oberösterreich",
+  "AT-6": "Steiermark",
+  "AT-7": "Tirol",
+  "AT-9": "Wien",
+  "CH-FR": "Freiburg",
+  "CH-GE": "Genf",
+  "CH-LU": "Luzern",
+  "CH-NE": "Neuenburg",
+  "CH-TI": "Tessin",
+  "CH-VD": "Waadt",
+  "CH-VS": "Wallis",
+  "CH-ZH": "Zürich",
+  "GB-SCT": "Schottland",
+  "GB-NIR": "Nordirland",
+};
+
+/** A region's name in that language, e.g. "DE-NW" → "Nordrhein-Westfalen" in German. */
+export function regionName(code: string, locale: Locale = "en"): string {
+  if (locale === "de" && GERMAN_REGION_NAMES[code]) return GERMAN_REGION_NAMES[code];
+  const country = code.split("-")[0];
+  return HOLIDAY_REGIONS[country]?.find((r) => r.code === code)?.name ?? code;
+}
+
+/** A country's regions with names in that language, sorted for a picker. */
+export function regionsOf(country: string, locale: Locale = "en"): { code: string; name: string }[] {
+  return (HOLIDAY_REGIONS[country] ?? [])
+    .map((r) => ({ code: r.code, name: regionName(r.code, locale) }))
+    .sort((a, b) => a.name.localeCompare(b.name, locale));
 }

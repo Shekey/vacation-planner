@@ -1,3 +1,5 @@
+import { intlLocale, messagesFor, type Locale } from "@/lib/i18n";
+
 /** Calendar dates are handled as ISO strings ("YYYY-MM-DD") to avoid timezone drift. */
 export type ISODate = string;
 
@@ -62,15 +64,19 @@ export function isYearMonth(value: unknown): value is YearMonth {
   return typeof value === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 }
 
-export function formatDate(iso: ISODate, opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" }) {
-  return new Intl.DateTimeFormat("en-GB", { ...opts, timeZone: "UTC" }).format(fromISO(iso));
+export function formatDate(
+  iso: ISODate,
+  opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" },
+  locale: Locale = "en",
+) {
+  return new Intl.DateTimeFormat(intlLocale(locale), { ...opts, timeZone: "UTC" }).format(fromISO(iso));
 }
 
-export function formatRange(start: ISODate, end: ISODate): string {
+export function formatRange(start: ISODate, end: ISODate, locale: Locale = "en"): string {
   const withYear = { day: "numeric", month: "short", year: "numeric" } as const;
-  if (start === end) return formatDate(start, withYear);
+  if (start === end) return formatDate(start, withYear, locale);
   const sameYear = start.slice(0, 4) === end.slice(0, 4);
-  return `${formatDate(start, sameYear ? undefined : withYear)} – ${formatDate(end, withYear)}`;
+  return `${formatDate(start, sameYear ? undefined : withYear, locale)} – ${formatDate(end, withYear, locale)}`;
 }
 
 /** Whole days from `from` to `to`; negative when `to` is earlier. */
@@ -78,12 +84,13 @@ export function daysBetween(from: ISODate, to: ISODate): number {
   return Math.round((fromISO(to).getTime() - fromISO(from).getTime()) / 86_400_000);
 }
 
-/** "today", "tomorrow", "in 5 days". */
-export function relativeDay(today: ISODate, day: ISODate): string {
+/** "today", "tomorrow", "in 5 days" (or "heute", "morgen", "in 5 Tagen"). */
+export function relativeDay(today: ISODate, day: ISODate, locale: Locale = "en"): string {
+  const t = messagesFor(locale).common;
   const n = daysBetween(today, day);
-  if (n <= 0) return "today";
-  if (n === 1) return "tomorrow";
-  return `in ${n} days`;
+  if (n <= 0) return t.today;
+  if (n === 1) return t.tomorrow;
+  return t.inDays(n);
 }
 
 /** "morning", "afternoon" or "evening" for the clock in that time zone. */

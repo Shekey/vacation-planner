@@ -1,5 +1,7 @@
 import { ActionForm } from "@/components/action-form";
 import Link from "next/link";
+import { isLocale, LOCALE_NAMES, LOCALES } from "@/lib/i18n";
+import { getMessages } from "@/lib/i18n/server";
 import { accessOf } from "@/lib/plans";
 import { requireAdmin, settingsOf } from "@/lib/session";
 import { deleteWorkspaceAction, saveSettingsAction } from "./actions";
@@ -16,12 +18,16 @@ function Toggle({ name, label, hint, defaultChecked }: { name: string; label: st
   );
 }
 
-export const metadata = { title: "Settings" };
+export async function generateMetadata() {
+  return { title: (await getMessages()).settings.title };
+}
 
 export default async function SettingsPage({ params }: PageProps<"/w/[slug]/settings">) {
   const { slug } = await params;
   const { workspace } = await requireAdmin(slug);
   const settings = settingsOf(workspace);
+  const t = (await getMessages()).settings;
+  const locale = workspace.settings?.locale;
   // The raw values, so saving on a plan without chat doesn't wipe the webhooks.
   const teamsWebhookUrl = workspace.settings?.teamsWebhookUrl ?? "";
   const slackWebhookUrl = workspace.settings?.slackWebhookUrl ?? "";
@@ -34,20 +40,31 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
       <ActionForm action={saveSettingsAction.bind(null, slug)} className="space-y-6">
         <section className="space-y-3">
           <label className="block space-y-1">
-            <span className="text-sm font-medium">Workspace name</span>
+            <span className="text-sm font-medium">{t.workspaceName}</span>
             <input name="name" className="input" defaultValue={workspace.name} required minLength={2} maxLength={60} />
           </label>
           <label className="block space-y-1">
-            <span className="text-sm font-medium">Timezone</span>
+            <span className="text-sm font-medium">{t.timezone}</span>
             <select name="timezone" className="input" defaultValue={workspace.timezone}>
               {timezones.map((tz) => (
                 <option key={tz}>{tz}</option>
               ))}
             </select>
-            <span className="block text-xs opacity-60">Decides what &quot;today&quot; is on the calendar.</span>
+            <span className="block text-xs opacity-60">{t.timezoneHint}</span>
           </label>
           <label className="block space-y-1">
-            <span className="text-sm font-medium">Default yearly allowance for new members</span>
+            <span className="text-sm font-medium">{t.language}</span>
+            <select name="locale" className="input" defaultValue={isLocale(locale) ? locale : "en"}>
+              {LOCALES.map((l) => (
+                <option key={l} value={l}>
+                  {LOCALE_NAMES[l]}
+                </option>
+              ))}
+            </select>
+            <span className="block text-xs opacity-60">{t.languageHint}</span>
+          </label>
+          <label className="block space-y-1">
+            <span className="text-sm font-medium">{t.defaultAllowance}</span>
             <input
               name="defaultAllowance"
               type="number"
@@ -57,16 +74,14 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
               className="input w-32"
               defaultValue={defaultAllowance == null ? "" : Number(defaultAllowance)}
             />
-            <span className="block text-xs opacity-60">
-              Leave empty to not track allowances by default. You can override it per member.
-            </span>
+            <span className="block text-xs opacity-60">{t.defaultAllowanceHint}</span>
           </label>
           <label className="flex cursor-pointer items-center gap-2 text-sm">
             <input type="checkbox" name="applyAllowanceToAll" className="h-4 w-4" />
-            Also set it for everyone already in the workspace, you included
+            {t.applyToAll}
           </label>
           <label className="block space-y-1">
-            <span className="text-sm font-medium">Carry over unused days (max)</span>
+            <span className="text-sm font-medium">{t.carryOver}</span>
             <input
               name="maxCarryOver"
               type="number"
@@ -75,12 +90,12 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
               step={0.5}
               className="input w-32"
               defaultValue={settings.maxCarryOverDays ?? ""}
-              placeholder="none"
+              placeholder={t.carryOverPlaceholder}
             />
-            <span className="block text-xs opacity-60">Unused vacation days, up to this many, are added to the next year.</span>
+            <span className="block text-xs opacity-60">{t.carryOverHint}</span>
           </label>
           <label className="block space-y-1">
-            <span className="text-sm font-medium">Minimum people in</span>
+            <span className="text-sm font-medium">{t.minPeople}</span>
             <input
               name="minPeoplePresent"
               type="number"
@@ -88,41 +103,24 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
               step={1}
               className="input w-32"
               defaultValue={settings.minPeoplePresent ?? ""}
-              placeholder="off"
+              placeholder={t.minPeoplePlaceholder}
             />
-            <span className="block text-xs opacity-60">
-              Warns when a booking would leave fewer people working on a day. It warns, it doesn&apos;t block.
-            </span>
+            <span className="block text-xs opacity-60">{t.minPeopleHint}</span>
           </label>
         </section>
 
         <section className="card space-y-4">
-          <h2 className="font-medium">Features</h2>
-          <Toggle
-            name="approvalsEnabled"
-            label="Require approval"
-            hint="Bookings by members wait for an admin to approve them. Turning this off approves everything pending."
-            defaultChecked={settings.approvalsEnabled}
-          />
-          <Toggle
-            name="allowHalfDays"
-            label="Allow half days"
-            hint="Members can book mornings or afternoons."
-            defaultChecked={settings.allowHalfDays}
-          />
-          <Toggle
-            name="countWeekends"
-            label="Count weekends as days off"
-            hint="Turn on if your team works weekends. Applies to new and changed bookings."
-            defaultChecked={settings.countWeekends}
-          />
+          <h2 className="font-medium">{t.features}</h2>
+          <Toggle name="approvalsEnabled" label={t.approvals} hint={t.approvalsHint} defaultChecked={settings.approvalsEnabled} />
+          <Toggle name="allowHalfDays" label={t.halfDays} hint={t.halfDaysHint} defaultChecked={settings.allowHalfDays} />
+          <Toggle name="countWeekends" label={t.weekends} hint={t.weekendsHint} defaultChecked={settings.countWeekends} />
         </section>
 
         {!chat && (
           <p className="card border-amber-400/60 bg-amber-50 text-sm dark:bg-amber-900/20">
-            Teams and Slack posts are part of the Team and Business plans.{" "}
+            {t.chatUpsell}{" "}
             <Link href={`/w/${slug}/billing`} className="font-medium text-primary hover:underline">
-              See plans →
+              {t.seePlans}
             </Link>
           </p>
         )}
@@ -132,16 +130,12 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
           <input
             name="teamsWebhookUrl"
             type="url"
-            aria-label="Microsoft Teams webhook URL"
+            aria-label={t.teamsUrl}
             className="input"
             defaultValue={teamsWebhookUrl}
             placeholder="https://…logic.azure.com/workflows/…"
           />
-          <p className="text-xs opacity-60">
-            Posts to a Teams channel when someone books, requests or gets time off approved. In Teams, open the channel&apos;s ⋯ menu →
-            Workflows → &quot;Post to a channel when a webhook request is received&quot;, finish the setup, and paste the URL it gives you.
-            On weekdays it also posts who&apos;s out, at 06:00 UTC.
-          </p>
+          <p className="text-xs opacity-60">{t.teamsHint}</p>
         </section>
 
         <section className="card space-y-2">
@@ -149,32 +143,26 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
           <input
             name="slackWebhookUrl"
             type="url"
-            aria-label="Slack webhook URL"
+            aria-label={t.slackUrl}
             className="input"
             defaultValue={slackWebhookUrl}
             placeholder="https://hooks.slack.com/services/…"
           />
-          <p className="text-xs opacity-60">
-            The same posts in a Slack channel. In Slack, create an app at api.slack.com/apps, turn on Incoming Webhooks, add one for the
-            channel, and paste its URL here. You can use Teams, Slack or both.
-          </p>
+          <p className="text-xs opacity-60">{t.slackHint}</p>
         </section>
 
-        <button className="btn">Save settings</button>
+        <button className="btn">{t.save}</button>
       </ActionForm>
 
       <section className="card space-y-3 border-red-500/40">
-        <h2 className="font-medium text-red-600">Delete workspace</h2>
-        <p className="text-sm opacity-70">
-          Deletes {workspace.name} with all its members&apos; bookings, allowances and holidays, for everyone. This can&apos;t be undone. To
-          hand the workspace over instead, make someone else an admin in Members.
-        </p>
+        <h2 className="font-medium text-red-600">{t.deleteHeading}</h2>
+        <p className="text-sm opacity-70">{t.deleteBody(workspace.name)}</p>
         <ActionForm action={deleteWorkspaceAction.bind(null, slug)} className="space-y-3">
           <label className="block space-y-1">
-            <span className="text-sm font-medium">Type {workspace.name} to confirm</span>
+            <span className="text-sm font-medium">{t.typeToConfirm(workspace.name)}</span>
             <input name="confirmName" className="input" required autoComplete="off" />
           </label>
-          <button className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">Delete workspace</button>
+          <button className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">{t.deleteButton}</button>
         </ActionForm>
       </section>
     </div>

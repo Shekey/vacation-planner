@@ -6,27 +6,27 @@ import { z } from "zod";
 import type { ActionResult } from "@/components/action-form";
 import { BookingError, cancelBooking, createBooking, updateBooking } from "@/lib/bookings";
 import { isISODate } from "@/lib/dates";
+import { getMessages } from "@/lib/i18n/server";
 import { actorOf, requireMembership, settingsOf } from "@/lib/session";
 import { appOrigin } from "@/lib/url";
 
 const schema = z.object({
   membershipId: z.string().min(1),
   type: z.enum(["VACATION", "OTHER"]),
-  start: z.string().refine(isISODate, "Pick a start date."),
-  end: z.string().refine(isISODate, "Pick an end date."),
+  start: z.string().refine(isISODate),
+  end: z.string().refine(isISODate),
   startPart: z.enum(["FULL", "PM"]),
   endPart: z.enum(["FULL", "AM"]),
 });
 
-export async function saveBooking(
-  slug: string,
-  bookingId: string | null,
-  _prev: ActionResult,
-  formData: FormData,
-): Promise<ActionResult> {
+export async function saveBooking(slug: string, bookingId: string | null, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const ctx = await requireMembership(slug);
   const parsed = schema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) {
+    const t = (await getMessages()).book;
+    const field = parsed.error.issues[0].path[0];
+    return { error: field === "start" ? t.pickStart : field === "end" ? t.pickEnd : t.invalid };
+  }
   // Bookings carry no free text, so nothing personal ends up in notes.
   const { membershipId, ...rest } = parsed.data;
   const input = { ...rest, note: null };
@@ -58,5 +58,5 @@ export async function cancelBookingAction(slug: string, bookingId: string): Prom
     throw e;
   }
   revalidatePath(`/w/${slug}`, "layout");
-  return { ok: "Cancelled." };
+  return { ok: (await getMessages()).book.cancelled };
 }

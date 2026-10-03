@@ -1,6 +1,7 @@
 import { activeBookingsBetween, allowanceSummary, regionOf, spanOf } from "@/lib/bookings";
 import { addDays, fromISO, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
+import { getMessages } from "@/lib/i18n/server";
 import type { requireMembership } from "@/lib/session";
 import { settingsOf } from "@/lib/session";
 
@@ -13,6 +14,7 @@ export async function loadBookingFormData(ctx: Ctx) {
   const isAdmin = membership.role === "ADMIN";
   const today = todayIn(workspace.timezone);
   const currentYear = Number(today.slice(0, 4));
+  const t = (await getMessages()).book;
 
   // All regions' holidays; the form keeps the ones for the person being booked.
   const holidays = (
@@ -34,7 +36,7 @@ export async function loadBookingFormData(ctx: Ctx) {
       const label = m.user.name ?? m.user.email;
       return {
         id: m.id,
-        name: m.id === membership.id ? `${label} (you)` : label,
+        name: m.id === membership.id ? t.you(label) : label,
         allowance: s.allowance,
         takenThisYear: s.used + s.pending,
         region: regionOf(m, settings),

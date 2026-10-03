@@ -5,6 +5,7 @@ import type { Settings } from "@/lib/bookings";
 import { accessOf } from "@/lib/plans";
 import type { Plan } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { isLocale } from "@/lib/i18n";
 
 /** The signed-in user, or a redirect to sign in. */
 export const requireUser = cache(async () => {
@@ -45,6 +46,7 @@ type SettingsRow = {
   slackWebhookUrl: string | null;
   holidayRegion: string | null;
   hideSickType: boolean;
+  locale: string;
 };
 
 type BillingRow = { plan: Plan; billingStatus: string | null; trialEndsAt: Date | null };
@@ -63,6 +65,7 @@ export function settingsOf(workspace: { settings: SettingsRow | null } & Billing
     slackWebhookUrl: chat ? (s?.slackWebhookUrl ?? null) : null,
     holidayRegion: s?.holidayRegion ?? null,
     hideSickType: s?.hideSickType ?? true,
+    locale: isLocale(s?.locale) ? s.locale : "en",
   };
 }
 

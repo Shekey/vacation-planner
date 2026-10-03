@@ -1,0 +1,111 @@
+import { defineMessages } from "../define";
+
+/** The workspace shell: header, navigation, plan banners, getting-started checklist and shared components. */
+export const workspace = defineMessages({
+  en: {
+    switchWorkspace: "Switch workspace",
+    bookTimeOff: "Book time off",
+    navLabel: "Workspace",
+    nav: {
+      overview: "Overview",
+      calendar: "Calendar",
+      people: "People",
+      me: "My time off",
+      holidays: "Holidays",
+      approvals: "Approvals",
+      members: "Members",
+      settings: "Settings",
+      billing: "Billing",
+    },
+    waitingAria: (n: number) => `${n} waiting`,
+    waiting: " waiting",
+    overLimit: (plan: string, max: number, count: number) =>
+      `${plan} covers up to ${max} people and this workspace has ${count}, so new bookings are paused.`,
+    choosePlan: "Choose a plan →",
+    adminCanUpgrade: "An admin can upgrade the plan.",
+    trialEnds: (n: number) => `Your free trial ends in ${n} ${n === 1 ? "day" : "days"}.`,
+    trialAfterPaid: "Teams over 5 people need a paid plan after that.",
+    trialAfterFree: "After that you stay on Free, without Teams and Slack posts.",
+    seePlans: "See plans →",
+    loading: "Loading",
+    onboarding: {
+      title: "Get your team set up",
+      progress: (done: number, total: number) => `${done} of ${total} done`,
+      hide: "Hide",
+      done: " (done)",
+      steps: {
+        holidays: "Import public holidays for your state",
+        invite: "Invite your team (paste emails straight from Excel)",
+        chat: "Connect Microsoft Teams or Slack",
+        book: "Book the first time off",
+      },
+    },
+    components: {
+      allowance: {
+        title: (year: number) => `Vacation in ${year}`,
+        left: (left: string, total: string) => `${left} of ${total} days left`,
+        noAllowance: (used: string, pending: string | null) =>
+          `No yearly allowance is set for you. You've taken ${used} ${used === "1" ? "day" : "days"}${pending ? ` and have ${pending} pending` : ""}.`,
+        setAllowance: "Set your allowance",
+        taken: (used: string, pending: string | null) => `${used} taken${pending ? `, ${pending} pending` : ""}`,
+        carriedOver: (n: string, year: number) => ` · includes ${n} carried over from ${year}`,
+        change: "Change",
+      },
+      copy: "Copy",
+      copied: "Copied",
+    },
+  },
+  de: {
+    switchWorkspace: "Workspace wechseln",
+    bookTimeOff: "Urlaub buchen",
+    navLabel: "Workspace",
+    nav: {
+      overview: "Übersicht",
+      calendar: "Kalender",
+      people: "Team",
+      me: "Mein Urlaub",
+      holidays: "Feiertage",
+      approvals: "Freigaben",
+      members: "Mitglieder",
+      settings: "Einstellungen",
+      billing: "Abrechnung",
+    },
+    waitingAria: (n: number) => `${n} offen`,
+    waiting: " offen",
+    overLimit: (plan: string, max: number, count: number) =>
+      `${plan} umfasst bis zu ${max} Personen, dieser Workspace hat ${count}. Neue Buchungen sind deshalb pausiert.`,
+    choosePlan: "Tarif wählen →",
+    adminCanUpgrade: "Ein Admin kann den Tarif upgraden.",
+    trialEnds: (n: number) => `Deine kostenlose Testphase endet in ${n} ${n === 1 ? "Tag" : "Tagen"}.`,
+    trialAfterPaid: "Teams mit mehr als 5 Personen brauchen danach einen bezahlten Tarif.",
+    trialAfterFree: "Danach bleibst du bei Free, ohne Nachrichten in Teams und Slack.",
+    seePlans: "Tarife ansehen →",
+    loading: "Wird geladen",
+    onboarding: {
+      title: "Richte dein Team ein",
+      progress: (done: number, total: number) => `${done} von ${total} erledigt`,
+      hide: "Ausblenden",
+      done: " (erledigt)",
+      steps: {
+        holidays: "Feiertage für dein Bundesland importieren",
+        invite: "Team einladen (E-Mails direkt aus Excel einfügen)",
+        chat: "Microsoft Teams oder Slack verbinden",
+        book: "Den ersten Urlaub buchen",
+      },
+    },
+    components: {
+      allowance: {
+        title: (year: number) => `Urlaub ${year}`,
+        left: (left: string, total: string) => `Noch ${left} von ${total} Tagen übrig`,
+        noAllowance: (used: string, pending: string | null) =>
+          `Für dich ist kein Jahresurlaub festgelegt. Du hast ${used} ${used === "1" ? "Tag" : "Tage"} genommen${pending ? ` und ${pending} offen` : ""}.`,
+        setAllowance: "Jahresurlaub festlegen",
+        taken: (used: string, pending: string | null) => `${used} genommen${pending ? `, ${pending} offen` : ""}`,
+        carriedOver: (n: string, year: number) => ` · inklusive ${n} Übertrag aus ${year}`,
+        change: "Ändern",
+      },
+      copy: "Kopieren",
+      copied: "Kopiert",
+    },
+  },
+});

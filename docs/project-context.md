@@ -19,6 +19,7 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 - Data minimization (Ajdin, 2026-10-03): no sick leave and no free-text notes are stored, to keep legal exposure low; bookings are deleted 3 years after they end (`src/lib/retention.ts`, run by the monthly holidays cron).
 - Payments: Stripe (Ajdin chose it over Paddle, 2026-10-03). Flat team prices: Free ≤5, Team €15 ≤20, Business €35 ≤50.
 - No CSV export.
+- Languages (Ajdin, 2026-10-03): English and German everywhere, picked by the user. First visit follows the browser language, falling back to English. EN/DE switch in the header (landing and app) and on the profile page; saved on the profile when signed in, in a `lang` cookie otherwise. The app UI uses informal "du". Legal pages: German is binding, English is a convenience translation (`?lang=de` / `?lang=en` switches one page).
 - Public holidays come per country with a region (ISO 3166-2, e.g. `DE-BE`). Each person picks their own region; the workspace has a default. Focus is Germany: Berlin = `DE-BE`, Bielefeld = North Rhine-Westphalia = `DE-NW`.
 
 ## What's built
@@ -38,6 +39,7 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 
 ## Where things live
 
+- Translations: `src/lib/i18n/` (`config.ts` languages and detection, `messages/<namespace>.ts` one file per area with `en` and `de`, `server.ts` `getLocale()`/`getMessages()` for server code, `index.ts` `messagesFor(locale)`), `useI18n()` in `src/components/i18n-provider.tsx` for client components. A test checks German has every English key. Emails go out in the recipient's saved language, else the workspace language; Teams/Slack posts, the daily digest and holiday-import errors use the workspace language (Settings, `WorkspaceSettings.locale`, set from the creator's language).
 - Schema: `prisma/schema.prisma`, migrations in `prisma/migrations/`.
 - Day counting and allowance: `src/lib/booking-days.ts` (`proratedAllowance`, work days in `DayRules`), `src/lib/bookings.ts` (`regionOf`, `rulesFor`, `forViewer`, `loadHolidays`, `allowanceSummary`).
 - Plans and billing: `src/lib/plans.ts` (`accessOf`, limits), `src/lib/stripe.ts`, `/api/stripe/webhook`, `/w/[slug]/billing`. Chat is dropped in `settingsOf` when the plan has none.

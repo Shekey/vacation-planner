@@ -1,5 +1,6 @@
 import { toISO } from "@/lib/dates";
 import { db } from "@/lib/db";
+import { getMessages } from "@/lib/i18n/server";
 
 /**
  * What deleting this user's account would do to their workspaces:
@@ -36,7 +37,7 @@ export async function accountDeletionPlan(userId: string) {
 /** Deletes the user, their memberships and bookings, and the workspaces only they were in. */
 export async function deleteAccount(userId: string) {
   const { blocked, alone } = await accountDeletionPlan(userId);
-  if (blocked.length) throw new Error("Make someone else an admin first.");
+  if (blocked.length) throw new Error((await getMessages()).errors.makeSomeoneAdmin);
   await db.$transaction([
     db.workspace.deleteMany({ where: { id: { in: alone.map((w) => w.id) } } }),
     // Memberships, bookings, sessions and sign-in accounts cascade; links to them from others' records are cleared.

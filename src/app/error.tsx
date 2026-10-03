@@ -1,12 +1,15 @@
 "use client";
 
+import { useI18n } from "@/components/i18n-provider";
+
 export default function ErrorPage({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  const t = useI18n().t.common.error;
   return (
     <div className="mx-auto max-w-md space-y-3">
-      <h1 className="text-xl font-semibold">Something went wrong</h1>
-      <p className="opacity-80">That didn&apos;t work. Try again, and if it keeps happening, reload the page.</p>
+      <h1 className="text-xl font-semibold">{t.title}</h1>
+      <p className="opacity-80">{t.body}</p>
       <button className="btn" onClick={reset}>
-        Try again
+        {t.retry}
       </button>
     </div>
   );

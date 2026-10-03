@@ -1,6 +1,8 @@
 import type { BookingStatus, BookingType, Prisma, Role } from "@/generated/prisma/client";
 import { carryOver, countDays, proratedAllowance, validateSpan, type BookingSpan, type DayRules } from "@/lib/booking-days";
 import { formatRange, fromISO, toISO, type ISODate } from "@/lib/dates";
+import { getMessages } from "@/lib/i18n/server";
+import { formatNumber, isLocale, LOCALES, messagesFor, type Locale, type Messages } from "@/lib/i18n";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { postToChannels } from "@/lib/notify";
@@ -21,6 +23,8 @@ export type Settings = {
   holidayRegion: string | null;
   /** Show colleagues' sick leave as "Other", without its note. */
   hideSickType: boolean;
+  /** Language of chat posts and of emails to people who haven't picked one; English when unset. */
+  locale?: Locale;
 };
 
 /** Day-counting rules for one member: the workspace's weekend rule or their own work days, plus holidays. */
@@ -71,9 +75,8 @@ async function assertWithinPlan(workspaceId: string) {
   });
   const access = accessOf(ws);
   if (isOverLimit(access, ws._count.memberships)) {
-    throw new BookingError(
-      `${access.name} covers up to ${access.maxMembers} people and this workspace has ${ws._count.memberships}. An admin can upgrade under Billing.`,
-    );
+    const t = (await getMessages()).errors;
+    throw new BookingError(t.overLimit(access.name, access.maxMembers, ws._count.memberships));
   }
 }
 
@@ -88,19 +91,18 @@ export function spanOf(b: { startDate: Date; endDate: Date; startPart: string; e
 }
 
 function isOverlapError(e: unknown) {
-  return String((e as Error)?.message ?? e).includes("Booking_no_overlap") ||
-    JSON.stringify(e ?? "").includes("Booking_no_overlap");
+  return String((e as Error)?.message ?? e).includes("Booking_no_overlap") || JSON.stringify(e ?? "").includes("Booking_no_overlap");
 }
 
 type Actor = { userId: string; membershipId: string; role: Role };
 
 type BookingInput = BookingSpan & { type: BookingType; note: string | null };
 
-function prepare(input: BookingInput, settings: Settings, rules: DayRules) {
+function prepare(input: BookingInput, settings: Settings, rules: DayRules, t: Messages["errors"]) {
   const error = validateSpan(input, settings);
-  if (error) throw new BookingError(error);
+  if (error) throw new BookingError(t[error]);
   const daysCount = countDays(input, rules);
-  if (daysCount === 0) throw new BookingError("That range has no working days in it.");
+  if (daysCount === 0) throw new BookingError(t.noWorkingDays);
   return {
     startDate: fromISO(input.start),
     endDate: fromISO(input.end),
@@ -121,7 +123,7 @@ async function write<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();
   } catch (e) {
-    if (isOverlapError(e)) throw new BookingError("This overlaps another booking for the same person.");
+    if (isOverlapError(e)) throw new BookingError((await getMessages()).errors.overlap);
     throw e;
   }
 }
@@ -135,55 +137,60 @@ export async function createBooking(opts: {
   origin: string;
 }) {
   const { workspace, settings, actor, membershipId, input } = opts;
+  const t = (await getMessages()).errors;
   if (membershipId !== actor.membershipId && actor.role !== "ADMIN") {
-    throw new BookingError("Only admins can book time off for someone else.");
+    throw new BookingError(t.onlyAdminsBookForOthers);
   }
   await assertWithinPlan(workspace.id);
   const target = await db.membership.findFirst({
     where: { id: membershipId, workspaceId: workspace.id, removedAt: null },
     include: { user: true },
   });
-  if (!target) throw new BookingError("That member is not in this workspace.");
+  if (!target) throw new BookingError(t.memberNotInWorkspace);
 
   const status = initialStatus(actor, settings);
   const holidays = await loadHolidays(workspace.id, regionOf(target, settings));
   const booking = await write(() =>
     db.booking.create({
       data: {
-        ...prepare(input, settings, rulesFor(target, settings, holidays)),
+        ...prepare(input, settings, rulesFor(target, settings, holidays), t),
         status,
         workspaceId: workspace.id,
         membershipId,
         createdById: actor.userId,
-        ...(status === "APPROVED" && settings.approvalsEnabled
-          ? { decidedById: actor.userId, decidedAt: new Date() }
-          : {}),
+        ...(status === "APPROVED" && settings.approvalsEnabled ? { decidedById: actor.userId, decidedAt: new Date() } : {}),
       },
     }),
   );
 
-  if (status === "PENDING") await notifyAdminsOfRequest(workspace, target.user, booking, opts.origin);
-  await announce(settings, target.user, booking, status === "PENDING" ? "requested time off" : "is off", `${opts.origin}/w/${workspace.slug}/calendar`);
+  if (status === "PENDING") await notifyAdminsOfRequest(workspace, settings, target.user, booking, opts.origin);
+  await announce(settings, target.user, booking, status === "PENDING" ? "requested" : "off", `${opts.origin}/w/${workspace.slug}/calendar`);
   return booking;
 }
 
-/** Posts a one-line summary to the workspace's Teams channel, if one is set. */
+/** Posts a one-line summary to the workspace's Teams and Slack channels, in the workspace's language. */
 async function announce(
   settings: Settings,
   person: { name: string | null; email: string },
   booking: { startDate: Date; endDate: Date; daysCount: Prisma.Decimal | number; type: BookingType },
-  verb: string,
+  verb: keyof Messages["chat"]["verb"],
   calendarUrl: string,
 ) {
+  if (!settings.teamsWebhookUrl && !settings.slackWebhookUrl) return;
+  const locale = settings.locale ?? "en";
+  const { chat, common } = messagesFor(locale);
   // The channel is shared with colleagues, so private sick leave is posted as plain time off.
   const type = settings.hideSickType && booking.type === "SICK" ? "OTHER" : booking.type;
-  const kind = { VACATION: "vacation", SICK: "sick leave", OTHER: "time off" }[type];
   await postToChannels(
     settings,
-    `${person.name ?? person.email} ${verb}: ${formatRange(toISO(booking.startDate), toISO(booking.endDate))} (${Number(
-      booking.daysCount,
-    )} days, ${kind})`,
-    { title: "Open team calendar", url: `${calendarUrl}?month=${toISO(booking.startDate).slice(0, 7)}` },
+    chat.booking(
+      person.name ?? person.email,
+      chat.verb[verb],
+      formatRange(toISO(booking.startDate), toISO(booking.endDate), locale),
+      common.days(formatNumber(Number(booking.daysCount), locale)),
+      chat.kind[type],
+    ),
+    { title: chat.openCalendar, url: `${calendarUrl}?month=${toISO(booking.startDate).slice(0, 7)}` },
   );
 }
 
@@ -196,14 +203,15 @@ export async function updateBooking(opts: {
   origin: string;
 }) {
   const { workspace, settings, actor, input } = opts;
+  const t = (await getMessages()).errors;
   const existing = await db.booking.findFirst({
     where: { id: opts.bookingId, workspaceId: workspace.id, status: { in: ACTIVE_STATUSES } },
     include: { membership: { include: { user: true } } },
   });
-  if (!existing) throw new BookingError("Booking not found.");
+  if (!existing) throw new BookingError(t.bookingNotFound);
   await assertWithinPlan(workspace.id);
   if (existing.membershipId !== actor.membershipId && actor.role !== "ADMIN") {
-    throw new BookingError("You can only change your own bookings.");
+    throw new BookingError(t.onlyOwnChange);
   }
 
   // A member changing dates sends the booking back for approval.
@@ -213,30 +221,31 @@ export async function updateBooking(opts: {
     db.booking.update({
       where: { id: existing.id },
       data: {
-        ...prepare(input, settings, rulesFor(existing.membership, settings, holidays)),
+        ...prepare(input, settings, rulesFor(existing.membership, settings, holidays), t),
         status,
         ...(status === "PENDING" ? { decidedById: null, decidedAt: null, decisionNote: null } : {}),
       },
     }),
   );
-  if (status === "PENDING") await notifyAdminsOfRequest(workspace, existing.membership.user, booking, opts.origin);
+  if (status === "PENDING") await notifyAdminsOfRequest(workspace, settings, existing.membership.user, booking, opts.origin);
   await announce(
     settings,
     existing.membership.user,
     booking,
-    status === "PENDING" ? "changed a request" : "changed time off",
+    status === "PENDING" ? "changedRequest" : "changed",
     `${opts.origin}/w/${workspace.slug}/calendar`,
   );
   return booking;
 }
 
 export async function cancelBooking(opts: { workspaceId: string; actor: Actor; bookingId: string }) {
+  const t = (await getMessages()).errors;
   const booking = await db.booking.findFirst({
     where: { id: opts.bookingId, workspaceId: opts.workspaceId, status: { in: ACTIVE_STATUSES } },
   });
-  if (!booking) throw new BookingError("Booking not found.");
+  if (!booking) throw new BookingError(t.bookingNotFound);
   if (booking.membershipId !== opts.actor.membershipId && opts.actor.role !== "ADMIN") {
-    throw new BookingError("You can only cancel your own bookings.");
+    throw new BookingError(t.onlyOwnCancel);
   }
   await db.booking.update({ where: { id: booking.id }, data: { status: "CANCELLED" } });
 }
@@ -250,12 +259,13 @@ export async function decideBooking(opts: {
   note: string | null;
   origin: string;
 }) {
-  if (opts.actor.role !== "ADMIN") throw new BookingError("Only admins can approve requests.");
+  const t = (await getMessages()).errors;
+  if (opts.actor.role !== "ADMIN") throw new BookingError(t.onlyAdminsApprove);
   const booking = await db.booking.findFirst({
     where: { id: opts.bookingId, workspaceId: opts.workspace.id, status: "PENDING" },
     include: { membership: { include: { user: true } } },
   });
-  if (!booking) throw new BookingError("This request was already handled.");
+  if (!booking) throw new BookingError(t.alreadyHandled);
 
   await db.booking.update({
     where: { id: booking.id },
@@ -269,15 +279,19 @@ export async function decideBooking(opts: {
   });
 
   const span = spanOf(booking);
+  const locale = recipientLocale(booking.membership.user, opts.settings);
+  const t2 = messagesFor(locale).email.decision;
   await sendEmail({
     to: booking.membership.user.email,
-    subject: `Your time off was ${opts.approve ? "approved" : "declined"}`,
-    text: `Your request for ${span.start} to ${span.end} in ${opts.workspace.name} was ${
-      opts.approve ? "approved" : "declined"
-    }.${opts.note ? `\n\nNote: ${opts.note}` : ""}\n\n${opts.origin}/w/${opts.workspace.slug}/me`,
+    subject: t2.subject(opts.approve),
+    text: [
+      t2.text(formatRange(span.start, span.end, locale), opts.workspace.name, opts.approve),
+      ...(opts.note ? [t2.note(opts.note)] : []),
+      `${opts.origin}/w/${opts.workspace.slug}/me`,
+    ].join("\n\n"),
   });
   if (opts.approve) {
-    await announce(opts.settings, booking.membership.user, booking, "is off", `${opts.origin}/w/${opts.workspace.slug}/calendar`);
+    await announce(opts.settings, booking.membership.user, booking, "off", `${opts.origin}/w/${opts.workspace.slug}/calendar`);
   }
 }
 
@@ -289,24 +303,40 @@ export async function approveAllPending(workspaceId: string, actorId: string) {
   });
 }
 
+/** The language for an email to this person: their own choice, else the workspace's. */
+function recipientLocale(user: { locale?: string | null }, settings: Settings): Locale {
+  return isLocale(user.locale) ? user.locale : (settings.locale ?? "en");
+}
+
 async function notifyAdminsOfRequest(
   workspace: { id: string; name: string; slug: string },
+  settings: Settings,
   requester: { name: string | null; email: string },
   booking: { startDate: Date; endDate: Date; daysCount: Prisma.Decimal | number },
   origin: string,
 ) {
   const admins = await db.membership.findMany({
     where: { workspaceId: workspace.id, role: "ADMIN", removedAt: null },
-    select: { user: { select: { email: true } } },
+    select: { user: { select: { email: true, locale: true } } },
   });
   const who = requester.name ?? requester.email;
-  await sendEmail({
-    to: admins.map((a) => a.user.email),
-    subject: `${who} requested time off`,
-    text: `${who} requested ${Number(booking.daysCount)} day(s) off, ${toISO(booking.startDate)} to ${toISO(
-      booking.endDate,
-    )}, in ${workspace.name}.\n\nReview it: ${origin}/w/${workspace.slug}/approvals`,
-  });
+  // One email per language, so every admin reads it in theirs.
+  for (const locale of LOCALES) {
+    const to = admins.filter((a) => recipientLocale(a.user, settings) === locale).map((a) => a.user.email);
+    if (to.length === 0) continue;
+    const { email, common } = messagesFor(locale);
+    await sendEmail({
+      to,
+      subject: email.request.subject(who),
+      text: email.request.text(
+        who,
+        common.days(formatNumber(Number(booking.daysCount), locale)),
+        formatRange(toISO(booking.startDate), toISO(booking.endDate), locale),
+        workspace.name,
+        `${origin}/w/${workspace.slug}/approvals`,
+      ),
+    });
+  }
 }
 
 /** Bookings that touch [from, to], for calendars and "who's off". */
@@ -371,11 +401,7 @@ export async function allowanceSummary(
   year: number,
   holidays?: Set<ISODate>,
 ): Promise<AllowanceSummary> {
-  const rules = rulesFor(
-    membership,
-    settings,
-    holidays ?? (await loadHolidays(membership.workspaceId, regionOf(membership, settings))),
-  );
+  const rules = rulesFor(membership, settings, holidays ?? (await loadHolidays(membership.workspaceId, regionOf(membership, settings))));
   const { used, pending } = await vacationDaysInYear(membership.id, rules, year);
   if (membership.annualAllowanceDays === null) {
     return { year, allowance: null, carriedOver: 0, used, pending, remaining: null };

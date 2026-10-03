@@ -15,6 +15,8 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  // "en" or "de"; null follows the browser language.
+  locale        String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -142,6 +144,8 @@ model WorkspaceSettings {
   hideSickType         Boolean @default(true)
   // Slack incoming webhook, posted to alongside Teams.
   slackWebhookUrl      String?
+  // Language of Teams/Slack posts and of emails to people who haven't picked one: "en" or "de".
+  locale               String  @default("en")
   // Set when an admin hides the getting-started checklist.
   onboardingDismissedAt DateTime?
 

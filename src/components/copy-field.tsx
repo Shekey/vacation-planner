@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useI18n } from "@/components/i18n-provider";
 
 export function CopyField({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
+  const t = useI18n().t.workspace.components;
   return (
     <div className="flex gap-2">
       <input readOnly value={value} className="input font-mono text-xs" onFocus={(e) => e.target.select()} />
@@ -16,7 +18,7 @@ export function CopyField({ value }: { value: string }) {
           setTimeout(() => setCopied(false), 1500);
         }}
       >
-        {copied ? "Copied" : "Copy"}
+        {copied ? t.copied : t.copy}
       </button>
     </div>
   );

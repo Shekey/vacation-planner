@@ -1,23 +1,18 @@
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/auth";
 import { SubmitButton } from "@/components/submit-button";
+import { getMessages } from "@/lib/i18n/server";
 import { safeRedirectPath } from "@/lib/security";
 import { tooManySignInLinks } from "@/lib/sign-in-limit";
 
-// Codes Auth.js puts in ?error= when it sends someone back here, plus our own RateLimited.
-const ERRORS: Record<string, string> = {
-  Configuration: "Sign-in isn't set up correctly on the server, so no email was sent. Please tell your admin.",
-  Verification: "That sign-in link has expired or was already used. Enter your email to get a new one.",
-  AccessDenied: "You don't have access.",
-  RateLimited: "We've already sent a few links to that address. Check your inbox and spam folder, or try again in 10 minutes.",
-};
-const DEFAULT_ERROR = "Something went wrong signing you in. Please try again.";
-
-export const metadata = { title: "Sign in" };
+export async function generateMetadata() {
+  return { title: (await getMessages()).signIn.title };
+}
 
 export default async function SignInPage({ searchParams }: PageProps<"/sign-in">) {
   if ((await auth())?.user) redirect("/");
   const { sent, callbackUrl, email, error } = await searchParams;
+  const t = (await getMessages()).signIn;
 
   if (sent) {
     return (
@@ -26,10 +21,8 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
           <div className="mx-auto grid size-12 place-items-center rounded-full bg-primary/10 text-2xl" aria-hidden>
             ✉️
           </div>
-          <h1 className="text-xl font-semibold">Check your email</h1>
-          <p className="text-muted">
-            We sent you a sign-in link. It works once and expires in an hour. You can close this tab.
-          </p>
+          <h1 className="text-xl font-semibold">{t.checkEmail}</h1>
+          <p className="text-muted">{t.sentBody}</p>
         </div>
       </Shell>
     );
@@ -52,20 +45,16 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
         }}
       >
         <div className="space-y-1">
-          <h1 className="text-xl font-semibold">Sign in</h1>
-          <p className="text-muted">
-            {redirectTo.startsWith("/invite/")
-              ? "Sign in to accept your invitation. We'll email you a link."
-              : "No password needed. We'll email you a link."}
-          </p>
+          <h1 className="text-xl font-semibold">{t.heading}</h1>
+          <p className="text-muted">{redirectTo.startsWith("/invite/") ? t.inviteIntro : t.intro}</p>
         </div>
         {typeof error === "string" && (
           <p role="alert" className="rounded-lg bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-300">
-            {ERRORS[error] ?? DEFAULT_ERROR}
+            {(Object.hasOwn(t.errors, error) ? t.errors[error] : undefined) ?? t.defaultError}
           </p>
         )}
         <label className="block space-y-1">
-          <span className="text-sm font-medium">Work email</span>
+          <span className="text-sm font-medium">{t.emailLabel}</span>
           <input
             className="input"
             name="email"
@@ -73,12 +62,12 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
             autoComplete="email"
             required
             maxLength={254}
-            placeholder="you@company.com"
+            placeholder={t.emailPlaceholder}
             defaultValue={typeof email === "string" ? email : undefined}
           />
         </label>
-        <SubmitButton className="btn w-full" pending="Sending link…">
-          Email me a link
+        <SubmitButton className="btn w-full" pending={t.sending}>
+          {t.submit}
         </SubmitButton>
       </form>
     </Shell>

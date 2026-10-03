@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import type { ActionResult } from "@/components/action-form";
 import { accessOf, type PaidPlan } from "@/lib/plans";
+import { getMessages } from "@/lib/i18n/server";
 import { requireAdmin } from "@/lib/session";
 import { createCheckout, createPortal, type Interval } from "@/lib/stripe";
 import { appOrigin } from "@/lib/url";
@@ -25,7 +26,7 @@ export async function checkoutAction(slug: string, plan: PaidPlan, interval: Int
 
 export async function portalAction(slug: string): Promise<ActionResult> {
   const { workspace } = await requireAdmin(slug);
-  if (!workspace.stripeCustomerId) return { error: "There is no subscription yet." };
+  if (!workspace.stripeCustomerId) return { error: (await getMessages()).billing.noSubscription };
   let url: string;
   try {
     url = await createPortal(workspace.stripeCustomerId, `${await appOrigin()}/w/${slug}/billing`);

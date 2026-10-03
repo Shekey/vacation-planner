@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { isCronRequest } from "@/lib/security";
 import { importHolidays } from "@/lib/holiday-import";
 import { purgeOldData } from "@/lib/retention";
+import { isLocale } from "@/lib/i18n";
 
 /**
  * Keeps public holidays filled in: imports this year's and next year's for every workspace
@@ -23,7 +24,7 @@ export async function GET(req: Request) {
   for (const ws of workspaces) {
     const year = Number(todayIn(ws.timezone).slice(0, 4));
     for (const y of [year, year + 1]) {
-      const result = await importHolidays(ws.id, ws.settings!.holidayCountry!, y);
+      const result = await importHolidays(ws.id, ws.settings!.holidayCountry!, y, isLocale(ws.settings?.locale) ? ws.settings.locale : "en");
       if ("error" in result) errors.push(`${ws.slug} ${y}: ${result.error}`);
       else imported += result.count;
     }
