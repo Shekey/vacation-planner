@@ -2,10 +2,12 @@ import { todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { isCronRequest } from "@/lib/security";
 import { importHolidays } from "@/lib/holiday-import";
+import { purgeOldData } from "@/lib/retention";
 
 /**
  * Keeps public holidays filled in: imports this year's and next year's for every workspace
  * that has imported a country. Existing days are kept, so manual edits survive.
+ * It also deletes data past its retention period (see src/lib/retention.ts).
  * Vercel Cron calls this monthly (see vercel.json) with the CRON_SECRET bearer token.
  */
 export async function GET(req: Request) {
@@ -26,5 +28,6 @@ export async function GET(req: Request) {
       else imported += result.count;
     }
   }
-  return Response.json({ workspaces: workspaces.length, imported, errors });
+  const purged = await purgeOldData();
+  return Response.json({ workspaces: workspaces.length, imported, errors, purged });
 }

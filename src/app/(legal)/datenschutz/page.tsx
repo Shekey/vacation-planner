@@ -20,11 +20,11 @@ export default function PrivacyPage() {
         <li>Konto: E-Mail-Adresse, Name, Zeitpunkt der Anmeldung, Sitzungsdaten (ein technisch notwendiges Cookie).</li>
         <li>
           Workspace: Name des Teams, Mitglieder und Rollen, Urlaubskontingente, Arbeitstage, Eintrittsdatum, Bundesland für Feiertage, Buchungen
-          mit Art, Zeitraum und optionaler Notiz.
+          mit Zeitraum und Art („Urlaub“ oder „Sonstige Abwesenheit“).
         </li>
         <li>
-          Krankheitstage gelten als Gesundheitsdaten (Art. 9 DSGVO). Sie werden Kolleginnen und Kollegen standardmäßig nur als „Sonstiges“ ohne
-          Notiz angezeigt; nur Administratoren und die Person selbst sehen sie als Krankheit.
+          Wir erfassen bewusst keine Krankheitstage und keine Freitext-Notizen, also keine Gesundheitsdaten oder andere besondere Kategorien
+          nach Art. 9 DSGVO.
         </li>
         <li>Zahlungen: Firmenname, Rechnungsadresse und USt-ID der zahlenden Kunden; Kartendaten verarbeitet ausschließlich Stripe.</li>
         <li>Server-Protokolle: IP-Adresse, Zeitpunkt und aufgerufene Seite, zur Sicherheit und Fehlersuche, höchstens 30 Tage gespeichert.</li>
@@ -50,7 +50,8 @@ export default function PrivacyPage() {
 
       <h2>5. Speicherdauer</h2>
       <p>
-        Kontodaten speichern wir, bis das Konto gelöscht wird. Wird ein Workspace gelöscht, werden alle seine Daten sofort gelöscht; aus
+        Kontodaten speichern wir, bis das Konto gelöscht wird. Buchungen löschen wir automatisch drei Jahre nach ihrem Ende, ebenso die Daten
+        von Personen, die seit drei Jahren aus einem Workspace entfernt sind; erledigte Einladungen nach 30 Tagen. Wird ein Workspace gelöscht, werden alle seine Daten sofort gelöscht; aus
         Sicherungskopien verschwinden sie spätestens nach 30 Tagen. Rechnungsdaten bewahren wir so lange auf, wie es das Handels- und
         Steuerrecht verlangt (bis zu 10 Jahre).
       </p>

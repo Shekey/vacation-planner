@@ -99,7 +99,7 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
                   <p className="text-sm text-amber-700 dark:text-amber-400">Also off then: {clashes.join(", ")}</p>
                 )}
                 <ActionForm action={decideAction.bind(null, slug, b.id)} className="flex flex-wrap items-center gap-2">
-                  <input name="note" className="input min-w-48 flex-1 py-1.5 text-sm" placeholder="Note to them (optional)" aria-label="Note to them (optional)" />
+                  <input name="note" className="input min-w-48 flex-1 py-1.5 text-sm" placeholder="Note in the email to them (optional, not saved)" aria-label="Note in the email to them (optional, not saved)" />
                   <button name="decision" value="approve" className="btn py-1.5">
                     Approve
                   </button>

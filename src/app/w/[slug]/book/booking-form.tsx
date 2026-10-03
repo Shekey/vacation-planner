@@ -52,7 +52,7 @@ export function BookingForm(props: BookingFormProps) {
   const { initial, settings } = props;
   const [state, formAction, pending] = useActionState(props.action, {});
   const [membershipId, setMembershipId] = useState(initial.membershipId);
-  const [type, setType] = useState(initial.type);
+  const [type, setType] = useState(initial.type === "SICK" ? "OTHER" : initial.type);
   const [start, setStart] = useState(initial.start);
   const [end, setEnd] = useState(initial.end);
   const [startsPm, setStartsPm] = useState(initial.startPart === "PM");
@@ -142,7 +142,8 @@ export function BookingForm(props: BookingFormProps) {
       <fieldset className="space-y-1">
         <legend className="text-sm font-medium">Type</legend>
         <div className="flex gap-2">
-          {(["VACATION", "SICK", "OTHER"] as const).map((t) => (
+          {/* Sick leave isn't offered: it would be health data (Art. 9 GDPR). */}
+          {(["VACATION", "OTHER"] as const).map((t) => (
             <label
               key={t}
               className={`cursor-pointer rounded-lg border px-3 py-1.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40 text-sm ${
@@ -150,7 +151,7 @@ export function BookingForm(props: BookingFormProps) {
               }`}
             >
               <input type="radio" name="type" value={t} checked={type === t} onChange={() => setType(t)} className="sr-only" />
-              {{ VACATION: "Vacation", SICK: "Sick leave", OTHER: "Other" }[t]}
+              {{ VACATION: "Vacation", OTHER: "Other time off" }[t]}
             </label>
           ))}
         </div>
@@ -205,11 +206,6 @@ export function BookingForm(props: BookingFormProps) {
           </div>
         )
       )}
-
-      <label className="block space-y-1">
-        <span className="text-sm font-medium">Note (optional)</span>
-        <textarea className="input" name="note" rows={2} maxLength={500} defaultValue={initial.note} placeholder="Beach week 🏖" />
-      </label>
 
       <div className="space-y-1 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm" aria-live="polite">
         {problem ? (

@@ -22,10 +22,10 @@ export default function DpaPage() {
       <ul>
         <li>Betroffene: Mitarbeitende und Administratoren des Verantwortlichen.</li>
         <li>
-          Daten: Name, E-Mail-Adresse, Rolle, Urlaubskontingent, Arbeitstage, Eintrittsdatum, Region für Feiertage, Buchungen mit Art, Zeitraum
-          und Notiz.
+          Daten: Name, E-Mail-Adresse, Rolle, Urlaubskontingent, Arbeitstage, Eintrittsdatum, Region für Feiertage, Buchungen mit Zeitraum
+          und Art (Urlaub oder sonstige Abwesenheit).
         </li>
-        <li>Besondere Kategorien: Angaben zu Krankheitstagen (Gesundheitsdaten), ohne Diagnosen, sofern Nutzer keine in Notizen eintragen.</li>
+        <li>Besondere Kategorien (Art. 9 DSGVO): keine. Der Dienst erfasst keine Krankheitstage und keine Freitext-Notizen.</li>
       </ul>
 
       <h2>3. Weisungen</h2>
@@ -39,7 +39,7 @@ export default function DpaPage() {
       <ul>
         <li>Hosting und Datenbank in der EU (Frankfurt am Main), Verschlüsselung bei der Übertragung (TLS) und im Ruhezustand.</li>
         <li>Anmeldung ohne Passwörter über zeitlich begrenzte E-Mail-Links, Begrenzung von Anmeldeversuchen.</li>
-        <li>Strikte Trennung der Workspaces, Rechte nach Rollen, Krankheitstage für Kollegen standardmäßig verborgen.</li>
+        <li>Strikte Trennung der Workspaces, Rechte nach Rollen, Datensparsamkeit (keine Krankheitstage, keine Notizen, automatische Löschung nach drei Jahren).</li>
         <li>Sicherheits-Header, regelmäßige Updates von Abhängigkeiten, tägliche Sicherungen mit Wiederherstellung zu einem Zeitpunkt.</li>
       </ul>
 

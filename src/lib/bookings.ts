@@ -263,7 +263,8 @@ export async function decideBooking(opts: {
       status: opts.approve ? "APPROVED" : "REJECTED",
       decidedById: opts.actor.userId,
       decidedAt: new Date(),
-      decisionNote: opts.note,
+      // The note goes out in the email only; it isn't stored.
+      decisionNote: null,
     },
   });
 

@@ -51,7 +51,6 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
     approvalsEnabled: formData.get("approvalsEnabled") === "on",
     allowHalfDays: formData.get("allowHalfDays") === "on",
     countWeekends: formData.get("countWeekends") === "on",
-    hideSickType: formData.get("hideSickType") === "on",
     defaultAllowanceDays: parsed.data.defaultAllowance,
     maxCarryOverDays: parsed.data.maxCarryOver,
     minPeoplePresent: parsed.data.minPeoplePresent,

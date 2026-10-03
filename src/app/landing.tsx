@@ -51,7 +51,7 @@ const STEPS = [
 const FAQ = [
   {
     q: "Who can see my bookings?",
-    a: "Only people in your workspace. Sick days show to colleagues as \"Other\" without the note; only admins and the person see them as sick.",
+    a: "Only people in your workspace, and they only see dates and whether it's vacation or other time off. There are no sick days and no notes, so nothing sensitive is stored.",
   },
   {
     q: "Where is our data stored?",
@@ -79,7 +79,7 @@ const FAQ = [
 const TEAM = [
   { name: "Anna", days: "....vvvvv..........." },
   { name: "Ben", days: "..........hhpp......" },
-  { name: "Clara", days: "s..................." },
+  { name: "Clara", days: "vv.................." },
   { name: "Deniz", days: "........vvvvvvv....." },
   { name: "Emil", days: "..............aa...." },
 ];
@@ -87,7 +87,6 @@ const CELL: Record<string, string> = {
   v: "bg-sky-500",
   h: "bg-sky-500 [clip-path:inset(0_50%_0_0)]",
   p: "pending-stripes bg-sky-500/70",
-  s: "bg-amber-500",
   a: "bg-violet-500",
 };
 
@@ -96,7 +95,7 @@ function CalendarPreview() {
     <figure className="card space-y-3 bg-background shadow-xl shadow-sky-900/10">
       <div
         role="img"
-        aria-label="Example team calendar for two weeks: Anna on vacation for five days, Ben off for two half days with two days pending approval, Clara off sick for a day, Deniz away for a week, and Emil taking two other days off."
+        aria-label="Example team calendar for two weeks: Anna on vacation for five days, Ben off for two half days with two days pending approval, Clara on vacation for two days, Deniz away for a week, and Emil taking two other days off."
         className="space-y-1.5"
       >
         <div className="grid grid-cols-[3.5rem_repeat(20,minmax(0,1fr))] gap-px text-[10px] opacity-60" aria-hidden>
@@ -122,9 +121,6 @@ function CalendarPreview() {
       <figcaption className="flex flex-wrap gap-x-4 gap-y-1 text-xs opacity-80">
         <span className="flex items-center gap-1.5">
           <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full bg-sky-500" /> Vacation
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500" /> Sick
         </span>
         <span className="flex items-center gap-1.5">
           <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full bg-violet-500" /> Other

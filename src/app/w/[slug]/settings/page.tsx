@@ -116,12 +116,6 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
             hint="Turn on if your team works weekends. Applies to new and changed bookings."
             defaultChecked={settings.countWeekends}
           />
-          <Toggle
-            name="hideSickType"
-            label="Keep sick leave private"
-            hint="Colleagues see sick days as “Other” without the note, also in Teams posts and calendar feeds. Admins and the person still see them as sick."
-            defaultChecked={settings.hideSickType}
-          />
         </section>
 
         {!chat && (
