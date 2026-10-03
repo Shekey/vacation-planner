@@ -90,6 +90,23 @@ export function carryOver(baseAllowance: number, takenLastYear: number, maxCarry
   return Math.max(0, Math.min(maxCarryOver, baseAllowance - takenLastYear));
 }
 
+/** A "MM-DD" day that exists every year (so not 29 February), e.g. "03-31". */
+export function isMonthDay(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{2}-\d{2}$/.test(value)) return false;
+  const [month, day] = value.split("-").map(Number);
+  return month >= 1 && month <= 12 && day >= 1 && day <= new Date(Date.UTC(2027, month, 0)).getUTCDate();
+}
+
+/**
+ * Carried-over days are used first: vacation taken up to the deadline spends them, and whatever is
+ * still unused once the deadline has passed expires. `left` is what can still be taken before it.
+ */
+export function carriedOverStatus(carried: number, takenByDeadline: number, deadlinePassed: boolean) {
+  const used = Math.min(carried, Math.max(0, takenByDeadline));
+  const unused = carried - used;
+  return { used, left: deadlinePassed ? 0 : unused, expired: deadlinePassed ? unused : 0 };
+}
+
 /**
  * The allowance for `year` when employment starts during it: 1/12 per full month employed,
  * rounded up to a half day (German practice under BUrlG section 5). Starting before the year

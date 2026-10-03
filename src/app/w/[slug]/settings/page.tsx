@@ -16,6 +16,8 @@ function Toggle({ name, label, hint, defaultChecked }: { name: string; label: st
   );
 }
 
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
 export const metadata = { title: "Settings" };
 
 export default async function SettingsPage({ params }: PageProps<"/w/[slug]/settings">) {
@@ -27,6 +29,7 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
   const slackWebhookUrl = workspace.settings?.slackWebhookUrl ?? "";
   const chat = accessOf(workspace).chat;
   const defaultAllowance = workspace.settings?.defaultAllowanceDays;
+  const [expiryMonth, expiryDay] = settings.carryOverExpiry ? settings.carryOverExpiry.split("-") : ["", ""];
   const timezones = ["UTC", ...Intl.supportedValuesOf("timeZone").filter((tz) => tz !== "UTC")];
 
   return (
@@ -79,6 +82,40 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
             />
             <span className="block text-xs opacity-60">Unused vacation days, up to this many, are added to the next year.</span>
           </label>
+          <fieldset className="space-y-1">
+            <legend className="text-sm font-medium">Carried-over days must be taken by</legend>
+            <div className="flex gap-2">
+              <label className="sr-only" htmlFor="carryOverExpiryDay">
+                Day
+              </label>
+              <input
+                id="carryOverExpiryDay"
+                name="carryOverExpiryDay"
+                type="number"
+                min={1}
+                max={31}
+                step={1}
+                className="input w-20"
+                defaultValue={expiryDay ? Number(expiryDay) : ""}
+                placeholder="31"
+              />
+              <label className="sr-only" htmlFor="carryOverExpiryMonth">
+                Month
+              </label>
+              <select id="carryOverExpiryMonth" name="carryOverExpiryMonth" className="input w-auto" defaultValue={expiryMonth}>
+                <option value="">Never expire</option>
+                {MONTHS.map((m, i) => (
+                  <option key={m} value={String(i + 1).padStart(2, "0")}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <span className="block text-xs opacity-60">
+              Carried-over days are used first. Whatever is left of them after this day is lost, e.g. 31 March as is common in
+              Germany.
+            </span>
+          </fieldset>
           <label className="block space-y-1">
             <span className="text-sm font-medium">Minimum people in</span>
             <input
