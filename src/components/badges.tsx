@@ -39,7 +39,7 @@ export function StatusBadge({ status }: { status: keyof typeof statusStyles }) {
 export function Legend() {
   return (
     <div className="flex flex-wrap items-center gap-4 text-xs opacity-80">
-      {(Object.keys(typeStyles) as BookingTypeKey[]).map((t) => (
+      {(["VACATION", "OTHER"] as const).map((t) => (
         <span key={t} className="flex items-center gap-1.5">
           <TypeDot type={t} decorative /> {typeStyles[t].label}
         </span>

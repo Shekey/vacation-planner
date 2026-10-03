@@ -72,6 +72,12 @@ enum Role {
   MEMBER
 }
 
+enum Plan {
+  FREE
+  TEAM
+  BUSINESS
+}
+
 model Workspace {
   id          String   @id @default(cuid())
   name        String
@@ -82,6 +88,15 @@ model Workspace {
   createdById String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // Billing. Everything is unlocked until trialEndsAt; after that the paid plan applies while Stripe says it's active.
+  plan                 Plan      @default(FREE)
+  trialEndsAt          DateTime?
+  // Stripe subscription status, e.g. "active", "past_due", "canceled".
+  billingStatus        String?
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  currentPeriodEnd     DateTime?
 
   createdBy   User?              @relation("WorkspaceCreator", fields: [createdById], references: [id], onDelete: SetNull)
   settings    WorkspaceSettings?
@@ -125,6 +140,10 @@ model WorkspaceSettings {
   teamsWebhookUrl      String?
   // Colleagues see sick leave as "Other" without its note; admins and the person still see it as sick.
   hideSickType         Boolean @default(true)
+  // Slack incoming webhook, posted to alongside Teams.
+  slackWebhookUrl      String?
+  // Set when an admin hides the getting-started checklist.
+  onboardingDismissedAt DateTime?
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }

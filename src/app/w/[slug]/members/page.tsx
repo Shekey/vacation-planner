@@ -62,7 +62,7 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
             name="emails"
             aria-label="Email addresses to invite"
             className="input"
-            rows={2}
+            rows={3}
             required
             placeholder="anna@company.com, ben@company.com"
           />
@@ -74,7 +74,10 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
             <button className="btn">Send invites</button>
           </div>
         </ActionForm>
-        <p className="text-xs opacity-60">Each person gets an email link that works for 7 days. Separate emails with commas or new lines.</p>
+        <p className="text-xs opacity-60">
+          Each person gets an email link that works for 7 days. Type emails separated by commas, or paste rows straight from Excel or
+          Outlook; names are skipped and only the email addresses are used.
+        </p>
       </section>
 
       {invites.length > 0 && (

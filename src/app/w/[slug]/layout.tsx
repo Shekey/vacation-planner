@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { NavLink } from "@/components/nav-link";
 import { db } from "@/lib/db";
+import { accessOf, isOverLimit } from "@/lib/plans";
 import { requireMembership, settingsOf } from "@/lib/session";
 
 export default async function WorkspaceLayout({ children, params }: LayoutProps<"/w/[slug]">) {
@@ -13,6 +14,10 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
       ? await db.booking.count({ where: { workspaceId: workspace.id, status: "PENDING" } })
       : 0;
   const base = `/w/${slug}`;
+  const access = accessOf(workspace);
+  const memberCount = await db.membership.count({ where: { workspaceId: workspace.id, removedAt: null } });
+  const overLimit = isOverLimit(access, memberCount);
+  const trialEnding = access.kind === "trial" && access.trialDaysLeft <= 7;
 
   return (
     <div className="space-y-6">
@@ -59,7 +64,29 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
         )}
         {isAdmin && <NavLink href={`${base}/members`}>Members</NavLink>}
         {isAdmin && <NavLink href={`${base}/settings`}>Settings</NavLink>}
+        {isAdmin && <NavLink href={`${base}/billing`}>Billing</NavLink>}
       </nav>
+      {overLimit && (
+        <p role="status" className="card border-red-500/40 bg-red-50 text-sm dark:bg-red-900/20">
+          {access.name} covers up to {access.maxMembers} people and this workspace has {memberCount}, so new bookings are paused.{" "}
+          {isAdmin ? (
+            <Link href={`${base}/billing`} className="font-medium text-primary hover:underline">
+              Choose a plan →
+            </Link>
+          ) : (
+            "An admin can upgrade the plan."
+          )}
+        </p>
+      )}
+      {isAdmin && !overLimit && trialEnding && (
+        <p role="status" className="card border-amber-400/60 bg-amber-50 text-sm dark:bg-amber-900/20">
+          Your free trial ends in {access.trialDaysLeft} {access.trialDaysLeft === 1 ? "day" : "days"}.{" "}
+          {memberCount > 5 ? "Teams over 5 people need a paid plan after that." : "After that you stay on Free, without Teams and Slack posts."}{" "}
+          <Link href={`${base}/billing`} className="font-medium text-primary hover:underline">
+            See plans →
+          </Link>
+        </p>
+      )}
       {children}
     </div>
   );

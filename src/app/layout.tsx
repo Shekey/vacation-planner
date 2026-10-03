@@ -7,7 +7,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: { default: "Vacation Planner", template: "%s · Vacation Planner" },
   description:
-    "Team vacation planning with yearly allowances, half days, regional public holidays, approvals and Microsoft Teams updates.",
+    "Team vacation planning with yearly allowances, half days, regional public holidays, approvals and Microsoft Teams or Slack updates.",
 };
 
 export const viewport: Viewport = {
@@ -62,6 +62,17 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           </div>
         </header>
         <main id="main" tabIndex={-1} className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 outline-none sm:py-8">{children}</main>
+        <footer className="border-t border-border">
+          <nav
+            aria-label="Legal"
+            className="mx-auto flex max-w-5xl flex-wrap gap-x-5 gap-y-1 px-4 py-4 text-sm text-muted [&_a:hover]:text-foreground [&_a:hover]:underline"
+          >
+            <Link href="/impressum">Impressum</Link>
+            <Link href="/datenschutz">Datenschutz</Link>
+            <Link href="/agb">AGB</Link>
+            <Link href="/avv">AVV</Link>
+          </nav>
+        </footer>
       </body>
     </html>
   );

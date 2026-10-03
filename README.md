@@ -31,6 +31,27 @@ Without `AUTH_RESEND_KEY`, sign-in links are printed to the dev server console i
    Don't set `AUTH_URL` on Vercel unless you add a custom domain; then set it to exactly that address (e.g. `https://vacations.yourcompany.com`). A wrong `AUTH_URL` sends sign-in links and redirects to another site.
 4. **Redeploy** so the variables apply. Open the site, sign in with your email and create your workspace.
 
+### Payments (Stripe)
+
+Billing stays off until these are set; the Billing page then says to write to the support address instead.
+
+1. In Stripe, create two products, **Team** and **Business**, each with a monthly and a yearly recurring price (net prices: €15 / €150 and €35 / €350).
+2. Add a webhook endpoint `https://<your-domain>/api/stripe/webhook` with the events `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated` and `customer.subscription.deleted`.
+3. Turn on the Customer Portal (*Settings* → *Billing* → *Customer portal*) and allow switching between the four prices, cancelling and invoice history.
+4. Set the variables:
+   | Name | Value |
+   |---|---|
+   | `STRIPE_SECRET_KEY` | secret key (`sk_live_…`, or `sk_test_…` for testing) |
+   | `STRIPE_WEBHOOK_SECRET` | signing secret of the webhook endpoint (`whsec_…`) |
+   | `STRIPE_PRICE_TEAM_MONTHLY`, `STRIPE_PRICE_TEAM_YEARLY`, `STRIPE_PRICE_BUSINESS_MONTHLY`, `STRIPE_PRICE_BUSINESS_YEARLY` | the price ids (`price_…`) |
+   | `STRIPE_AUTOMATIC_TAX` | `1` once Stripe Tax is set up, so VAT is added per customer country |
+
+New workspaces get a 30-day trial with everything for up to 50 people, then fall back to Free (5 people, no Teams or Slack) unless they subscribe.
+
+### Legal pages
+
+`/impressum`, `/datenschutz`, `/agb` and `/avv` read the operator's details from `LEGAL_NAME`, `LEGAL_ADDRESS`, `LEGAL_EMAIL`, and optionally `LEGAL_PHONE`, `LEGAL_VAT_ID` and `LEGAL_RESPONSIBLE`. They show a draft notice until `LEGAL_REVIEWED=1`; have a lawyer check the texts first. Subprocessors are listed in `src/lib/legal.ts`.
+
 Without a verified domain, Resend only delivers to the email address of your Resend account, which is enough to try it yourself. Verify a domain in Resend before inviting the team. While `EMAIL_FROM` is unset or on `resend.dev`, the Members page shows a warning, and invites that Resend rejects say so instead of reporting success.
 
 ## Scripts

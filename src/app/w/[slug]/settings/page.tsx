@@ -1,4 +1,6 @@
 import { ActionForm } from "@/components/action-form";
+import Link from "next/link";
+import { accessOf } from "@/lib/plans";
 import { requireAdmin, settingsOf } from "@/lib/session";
 import { deleteWorkspaceAction, saveSettingsAction } from "./actions";
 
@@ -20,6 +22,10 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
   const { slug } = await params;
   const { workspace } = await requireAdmin(slug);
   const settings = settingsOf(workspace);
+  // The raw values, so saving on a plan without chat doesn't wipe the webhooks.
+  const teamsWebhookUrl = workspace.settings?.teamsWebhookUrl ?? "";
+  const slackWebhookUrl = workspace.settings?.slackWebhookUrl ?? "";
+  const chat = accessOf(workspace).chat;
   const defaultAllowance = workspace.settings?.defaultAllowanceDays;
   const timezones = ["UTC", ...Intl.supportedValuesOf("timeZone").filter((tz) => tz !== "UTC")];
 
@@ -110,27 +116,47 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
             hint="Turn on if your team works weekends. Applies to new and changed bookings."
             defaultChecked={settings.countWeekends}
           />
-          <Toggle
-            name="hideSickType"
-            label="Keep sick leave private"
-            hint="Colleagues see sick days as “Other” without the note, also in Teams posts and calendar feeds. Admins and the person still see them as sick."
-            defaultChecked={settings.hideSickType}
-          />
         </section>
+
+        {!chat && (
+          <p className="card border-amber-400/60 bg-amber-50 text-sm dark:bg-amber-900/20">
+            Teams and Slack posts are part of the Team and Business plans.{" "}
+            <Link href={`/w/${slug}/billing`} className="font-medium text-primary hover:underline">
+              See plans →
+            </Link>
+          </p>
+        )}
 
         <section className="card space-y-2">
           <h2 className="font-medium">Microsoft Teams</h2>
           <input
             name="teamsWebhookUrl"
             type="url"
+            aria-label="Microsoft Teams webhook URL"
             className="input"
-            defaultValue={settings.teamsWebhookUrl ?? ""}
+            defaultValue={teamsWebhookUrl}
             placeholder="https://…logic.azure.com/workflows/…"
           />
           <p className="text-xs opacity-60">
             Posts to a Teams channel when someone books, requests or gets time off approved. In Teams, open the channel&apos;s ⋯ menu →
             Workflows → &quot;Post to a channel when a webhook request is received&quot;, finish the setup, and paste the URL it gives you.
             On weekdays it also posts who&apos;s out, at 06:00 UTC.
+          </p>
+        </section>
+
+        <section className="card space-y-2">
+          <h2 className="font-medium">Slack</h2>
+          <input
+            name="slackWebhookUrl"
+            type="url"
+            aria-label="Slack webhook URL"
+            className="input"
+            defaultValue={slackWebhookUrl}
+            placeholder="https://hooks.slack.com/services/…"
+          />
+          <p className="text-xs opacity-60">
+            The same posts in a Slack channel. In Slack, create an app at api.slack.com/apps, turn on Incoming Webhooks, add one for the
+            channel, and paste its URL here. You can use Teams, Slack or both.
           </p>
         </section>
 

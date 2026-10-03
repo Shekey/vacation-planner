@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PLANS, TRIAL_DAYS } from "@/lib/plans";
 
 /** The public home page, shown at / to anyone who isn't signed in. */
 
@@ -24,8 +25,8 @@ const FEATURES = [
     body: "See the whole month at a glance and get a warning before too many people are out on the same day.",
   },
   {
-    title: "Microsoft Teams updates",
-    body: "Bookings and approvals post to your Teams channel, and every weekday morning it says who's out.",
+    title: "Microsoft Teams and Slack updates",
+    body: "Bookings and approvals post to your Teams or Slack channel, and every weekday morning it says who's out.",
   },
   {
     title: "In your own calendar",
@@ -50,7 +51,15 @@ const STEPS = [
 const FAQ = [
   {
     q: "Who can see my bookings?",
-    a: "Only people in your workspace. Notes on bookings are visible to the team, so keep private details out of them.",
+    a: "Only people in your workspace, and they only see dates and whether it's vacation or other time off. There are no sick days and no notes, so nothing sensitive is stored.",
+  },
+  {
+    q: "Where is our data stored?",
+    a: "In data centres in Frankfurt, in the EU. We sign a data processing agreement (AVV) with every customer and use no tracking cookies.",
+  },
+  {
+    q: "Does it work for part-time staff and new starters?",
+    a: "Yes. Set the days someone works and days off only count on those. In the year someone starts, the allowance is 1/12 per full month.",
   },
   {
     q: "Does it handle different German states?",
@@ -70,7 +79,7 @@ const FAQ = [
 const TEAM = [
   { name: "Anna", days: "....vvvvv..........." },
   { name: "Ben", days: "..........hhpp......" },
-  { name: "Clara", days: "s..................." },
+  { name: "Clara", days: "vv.................." },
   { name: "Deniz", days: "........vvvvvvv....." },
   { name: "Emil", days: "..............aa...." },
 ];
@@ -78,7 +87,6 @@ const CELL: Record<string, string> = {
   v: "bg-sky-500",
   h: "bg-sky-500 [clip-path:inset(0_50%_0_0)]",
   p: "pending-stripes bg-sky-500/70",
-  s: "bg-amber-500",
   a: "bg-violet-500",
 };
 
@@ -87,7 +95,7 @@ function CalendarPreview() {
     <figure className="card space-y-3 bg-background shadow-xl shadow-sky-900/10">
       <div
         role="img"
-        aria-label="Example team calendar for two weeks: Anna on vacation for five days, Ben off for two half days with two days pending approval, Clara off sick for a day, Deniz away for a week, and Emil taking two other days off."
+        aria-label="Example team calendar for two weeks: Anna on vacation for five days, Ben off for two half days with two days pending approval, Clara on vacation for two days, Deniz away for a week, and Emil taking two other days off."
         className="space-y-1.5"
       >
         <div className="grid grid-cols-[3.5rem_repeat(20,minmax(0,1fr))] gap-px text-[10px] opacity-60" aria-hidden>
@@ -113,9 +121,6 @@ function CalendarPreview() {
       <figcaption className="flex flex-wrap gap-x-4 gap-y-1 text-xs opacity-80">
         <span className="flex items-center gap-1.5">
           <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full bg-sky-500" /> Vacation
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500" /> Sick
         </span>
         <span className="flex items-center gap-1.5">
           <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full bg-violet-500" /> Other
@@ -297,6 +302,36 @@ export function Landing() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section id="pricing" className="scroll-mt-8 space-y-6" aria-labelledby="pricing-title">
+        <div className="space-y-2">
+          <h2 id="pricing-title" className="text-3xl font-semibold tracking-tight">
+            Simple prices for the whole team
+          </h2>
+          <p className="opacity-80">
+            One flat price per team, not per person. Every new workspace gets {TRIAL_DAYS} days with everything, no card needed.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {(["FREE", "TEAM", "BUSINESS"] as const).map((key) => {
+            const plan = PLANS[key];
+            return (
+              <div key={key} className={`card space-y-2 ${key === "TEAM" ? "ring-2 ring-primary" : ""}`}>
+                <h3 className="font-semibold">{plan.name}</h3>
+                <p>
+                  <span className="text-3xl font-semibold">€{plan.monthly}</span>
+                  <span className="text-sm opacity-70"> / month</span>
+                </p>
+                <p className="text-sm opacity-80">
+                  Up to {plan.maxMembers} people{plan.yearly > 0 ? `, or €${plan.yearly} a year` : ""}.{" "}
+                  {plan.chat ? "Everything, including Teams and Slack." : "Everything except Teams and Slack posts."}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-sm opacity-70">Prices plus VAT. More than {PLANS.BUSINESS.maxMembers} people? Get in touch for an offer.</p>
       </section>
 
       <section className="space-y-6" aria-labelledby="faq-title">

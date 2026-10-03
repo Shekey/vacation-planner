@@ -2,6 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import { auth } from "@/auth";
 import type { Settings } from "@/lib/bookings";
+import { accessOf } from "@/lib/plans";
+import type { Plan } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 
 /** The signed-in user, or a redirect to sign in. */
@@ -40,19 +42,25 @@ type SettingsRow = {
   maxCarryOverDays: { toString(): string } | null;
   minPeoplePresent: number | null;
   teamsWebhookUrl: string | null;
+  slackWebhookUrl: string | null;
   holidayRegion: string | null;
   hideSickType: boolean;
 };
 
-export function settingsOf(workspace: { settings: SettingsRow | null }): Settings {
+type BillingRow = { plan: Plan; billingStatus: string | null; trialEndsAt: Date | null };
+
+/** Effective settings: chat webhooks are dropped when the plan doesn't include chat. */
+export function settingsOf(workspace: { settings: SettingsRow | null } & BillingRow): Settings {
   const s = workspace.settings;
+  const chat = accessOf(workspace).chat;
   return {
     approvalsEnabled: s?.approvalsEnabled ?? false,
     countWeekends: s?.countWeekends ?? false,
     allowHalfDays: s?.allowHalfDays ?? true,
     maxCarryOverDays: s?.maxCarryOverDays == null ? null : Number(s.maxCarryOverDays),
     minPeoplePresent: s?.minPeoplePresent ?? null,
-    teamsWebhookUrl: s?.teamsWebhookUrl ?? null,
+    teamsWebhookUrl: chat ? (s?.teamsWebhookUrl ?? null) : null,
+    slackWebhookUrl: chat ? (s?.slackWebhookUrl ?? null) : null,
     holidayRegion: s?.holidayRegion ?? null,
     hideSickType: s?.hideSickType ?? true,
   };

@@ -11,16 +11,11 @@ import { appOrigin } from "@/lib/url";
 
 const schema = z.object({
   membershipId: z.string().min(1),
-  type: z.enum(["VACATION", "SICK", "OTHER"]),
+  type: z.enum(["VACATION", "OTHER"]),
   start: z.string().refine(isISODate, "Pick a start date."),
   end: z.string().refine(isISODate, "Pick an end date."),
   startPart: z.enum(["FULL", "PM"]),
   endPart: z.enum(["FULL", "AM"]),
-  note: z
-    .string()
-    .trim()
-    .max(500)
-    .transform((s) => s || null),
 });
 
 export async function saveBooking(
@@ -32,7 +27,9 @@ export async function saveBooking(
   const ctx = await requireMembership(slug);
   const parsed = schema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
-  const { membershipId, ...input } = parsed.data;
+  // Bookings carry no free text, so nothing personal ends up in notes.
+  const { membershipId, ...rest } = parsed.data;
+  const input = { ...rest, note: null };
   const common = {
     workspace: ctx.workspace,
     settings: settingsOf(ctx.workspace),

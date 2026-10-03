@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { TRIAL_DAYS } from "@/lib/plans";
 import { uniqueSlug } from "@/lib/slug";
 
 /** Creates a workspace with default settings and makes the creator its first admin. */
@@ -12,6 +13,7 @@ export async function createWorkspace(input: { name: string; timezone: string; u
       slug,
       timezone: input.timezone,
       createdById: input.userId,
+      trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 86_400_000),
       settings: { create: {} },
       memberships: { create: { userId: input.userId, role: "ADMIN", annualAllowanceDays: 20 } },
     },
