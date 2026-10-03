@@ -50,6 +50,7 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 
 - Env vars: a Postgres URL (`DATABASE_URL` or Neon's `POSTGRES_*`), `AUTH_SECRET`, `AUTH_RESEND_KEY`, `EMAIL_FROM`, `CRON_SECRET`. See `README.md`.
 - Leave `AUTH_URL` unset on Vercel; the app uses the production domain. Never use `vacation-planner.vercel.app`: that is someone else's site.
+- Emails reach real people only after a domain is verified in Resend and `EMAIL_FROM` uses it; with `onboarding@resend.dev` Resend delivers only to the Resend account owner (seen 2026-10-03).
 - Never run `prisma migrate reset` against a real database.
 
 ## Open items

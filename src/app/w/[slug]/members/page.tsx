@@ -3,6 +3,7 @@ import { Avatar } from "@/components/ui";
 import { defaultWorkDays } from "@/lib/booking-days";
 import { formatDate, toISO } from "@/lib/dates";
 import { db } from "@/lib/db";
+import { usingTestSender } from "@/lib/email";
 import { HOLIDAY_REGIONS } from "@/lib/holiday-regions";
 import { requireAdmin } from "@/lib/session";
 import {
@@ -50,6 +51,12 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
     <div className="space-y-8">
       <section className="card space-y-3">
         <h2 className="font-medium">Invite people</h2>
+        {usingTestSender() && (
+          <p role="alert" className="rounded-md bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
+            Emails are sent from Resend&apos;s test address, so only the Resend account owner receives them. Verify your
+            domain in Resend and set <code>EMAIL_FROM</code> to an address on it.
+          </p>
+        )}
         <ActionForm action={inviteAction.bind(null, slug)} className="space-y-3" resetOnSuccess>
           <textarea
             name="emails"
