@@ -15,7 +15,7 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
     isAdmin && settings.approvalsEnabled ? await db.booking.count({ where: { workspaceId: workspace.id, status: "PENDING" } }) : 0;
   const base = `/w/${slug}`;
   const access = accessOf(workspace);
-  const memberCount = await db.membership.count({ where: { workspaceId: workspace.id, removedAt: null } });
+  const memberCount = await db.membership.count({ where: { workspaceId: workspace.id, removedAt: null, isSample: false } });
   const overLimit = isOverLimit(access, memberCount);
   const trialEnding = access.kind === "trial" && access.trialDaysLeft <= 7;
   const { common, workspace: t } = await getMessages();

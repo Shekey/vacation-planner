@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { SAMPLE_EMAIL_DOMAIN } from "@/lib/sample-team";
 
 /** Bookings and removed members are kept this long: the time employees can still claim leave in Germany. */
 export const RETENTION_YEARS = 3;
@@ -9,7 +10,7 @@ export async function purgeOldData(now = new Date()) {
   cutoff.setUTCFullYear(cutoff.getUTCFullYear() - RETENTION_YEARS);
   const monthAgo = new Date(now.getTime() - 30 * 86_400_000);
 
-  const [bookings, members, invitations, sessions, tokens] = await db.$transaction([
+  const [bookings, members, invitations, sessions, tokens, sampleUsers] = await db.$transaction([
     db.booking.deleteMany({ where: { endDate: { lt: cutoff } } }),
     // Their remaining bookings go with them.
     db.membership.deleteMany({ where: { removedAt: { lt: cutoff } } }),
@@ -19,6 +20,8 @@ export async function purgeOldData(now = new Date()) {
     }),
     db.session.deleteMany({ where: { expires: { lt: now } } }),
     db.verificationToken.deleteMany({ where: { expires: { lt: now } } }),
+    // Sample people left without a workspace, e.g. after a purge of removed members.
+    db.user.deleteMany({ where: { email: { endsWith: `@${SAMPLE_EMAIL_DOMAIN}` }, memberships: { none: {} } } }),
   ]);
   return {
     bookings: bookings.count,
@@ -26,5 +29,6 @@ export async function purgeOldData(now = new Date()) {
     invitations: invitations.count,
     sessions: sessions.count,
     tokens: tokens.count,
+    sampleUsers: sampleUsers.count,
   };
 }

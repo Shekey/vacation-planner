@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ActionForm } from "@/components/action-form";
 import { TypeDot, typeLabel } from "@/components/badges";
-import { Avatar, EmptyState } from "@/components/ui";
+import { Avatar, EmptyState, SampleBadge } from "@/components/ui";
 import { halfDayLabel, portionOn } from "@/lib/booking-days";
 import { activeBookingsBetween, allowanceSummary, loadHolidays, spanOf } from "@/lib/bookings";
 import { eachDay, formatDate, formatRange, todayIn } from "@/lib/dates";
@@ -84,6 +84,7 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
                     <div className="flex items-center gap-2 font-medium">
                       <Avatar label={b.membership.user.name ?? b.membership.user.email} seed={b.membership.user.email} />
                       {b.membership.user.name ?? b.membership.user.email}
+                      {b.membership.isSample && <SampleBadge label={messages.common.sample} />}
                       <TypeDot type={b.type} locale={locale} />
                     </div>
                     <div className="text-sm">

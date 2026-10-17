@@ -1,5 +1,6 @@
 import { messagesFor } from "@/lib/i18n";
 import { requestLocaleOr } from "@/lib/i18n/server";
+import { isSampleEmail } from "@/lib/sample-team";
 
 type Email = { to: string | string[]; subject: string; text: string };
 
@@ -22,7 +23,8 @@ export function usingTestSender(): boolean {
 
 /** Sends through Resend when AUTH_RESEND_KEY is set; otherwise logs to the console (development). */
 export async function sendEmail({ to, subject, text }: Email): Promise<SendResult> {
-  const recipients = Array.isArray(to) ? to : [to];
+  // Sample people are made up; their .invalid addresses are dropped so nothing is ever sent for them.
+  const recipients = (Array.isArray(to) ? to : [to]).filter((r) => !isSampleEmail(r));
   if (recipients.length === 0) return { ok: true };
 
   const apiKey = process.env.AUTH_RESEND_KEY;

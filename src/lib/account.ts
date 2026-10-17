@@ -1,6 +1,8 @@
 import { toISO } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { getMessages } from "@/lib/i18n/server";
+import { removeSampleTeam } from "@/lib/sample-team-db";
+import { cancelSubscriptionNow } from "@/lib/stripe";
 
 /**
  * What deleting this user's account would do to their workspaces:
@@ -17,16 +19,20 @@ export async function accountDeletionPlan(userId: string) {
           id: true,
           name: true,
           slug: true,
-          memberships: { where: { removedAt: null }, select: { userId: true, role: true } },
+          stripeSubscriptionId: true,
+          // Sample people don't count: a workspace with only them left goes with the account.
+          memberships: { where: { removedAt: null, isSample: false }, select: { userId: true, role: true } },
         },
       },
     },
   });
   const blocked: { name: string; slug: string }[] = [];
-  const alone: { id: string; name: string }[] = [];
+  const alone: { id: string; name: string; stripeSubscriptionId: string | null }[] = [];
   for (const m of memberships) {
     const others = m.workspace.memberships.filter((o) => o.userId !== userId);
-    if (others.length === 0) alone.push({ id: m.workspace.id, name: m.workspace.name });
+    if (others.length === 0) {
+      alone.push({ id: m.workspace.id, name: m.workspace.name, stripeSubscriptionId: m.workspace.stripeSubscriptionId });
+    }
     else if (m.role === "ADMIN" && !others.some((o) => o.role === "ADMIN")) {
       blocked.push({ name: m.workspace.name, slug: m.workspace.slug });
     }
@@ -38,6 +44,8 @@ export async function accountDeletionPlan(userId: string) {
 export async function deleteAccount(userId: string) {
   const { blocked, alone } = await accountDeletionPlan(userId);
   if (blocked.length) throw new Error((await getMessages()).errors.makeSomeoneAdmin);
+  for (const w of alone) await cancelSubscriptionNow(w.stripeSubscriptionId);
+  await removeSampleTeam(alone.map((w) => w.id));
   await db.$transaction([
     db.workspace.deleteMany({ where: { id: { in: alone.map((w) => w.id) } } }),
     // Memberships, bookings, sessions and sign-in accounts cascade; links to them from others' records are cleared.

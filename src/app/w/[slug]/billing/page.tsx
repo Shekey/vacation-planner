@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { ActionForm } from "@/components/action-form";
 import { db } from "@/lib/db";
-import { formatDate, toISO } from "@/lib/dates";
+import { formatDate, todayIn } from "@/lib/dates";
 import { intlLocale, type Locale } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { OPERATOR } from "@/lib/legal";
 import { accessOf, isOverLimit, planFor, PLANS, type PaidPlan } from "@/lib/plans";
+import { RETENTION_YEARS } from "@/lib/retention";
 import { requireAdmin } from "@/lib/session";
 import { priceId, stripe } from "@/lib/stripe";
 import { checkoutAction, portalAction } from "./actions";
@@ -33,20 +34,28 @@ export default async function BillingPage({ params, searchParams }: PageProps<"/
   const access = accessOf(workspace);
   const locale = await getLocale();
   const t = (await getMessages()).billing;
-  const members = await db.membership.count({ where: { workspaceId: workspace.id, removedAt: null } });
+  const members = await db.membership.count({ where: { workspaceId: workspace.id, removedAt: null, isSample: false } });
   const fits = planFor(members);
   const ready = Boolean(stripe() && priceId("TEAM", "monthly"));
 
+  const day = (d: Date | null) => (d ? formatDate(todayIn(workspace.timezone, d), longDate, locale) : null);
+  const trialEnd = day(workspace.trialEndsAt) ?? "";
+  const pastDue = workspace.billingStatus === "past_due";
   const status =
     access.kind === "trial"
-      ? t.statusTrial(access.trialDaysLeft, access.maxMembers)
+      ? t.statusTrial(access.trialDaysLeft, access.maxMembers, trialEnd)
       : access.kind === "paid"
-        ? t.statusPaid(
-            t.planName[access.plan],
-            workspace.currentPeriodEnd ? formatDate(toISO(workspace.currentPeriodEnd), longDate, locale) : null,
-            workspace.billingStatus === "past_due",
-          )
+        ? t.statusPaid(t.planName[access.plan], day(workspace.currentPeriodEnd), pastDue, day(workspace.cancelAt))
         : t.statusFree(PLANS.FREE.maxMembers);
+  // Plain words on what ending the trial, cancelling or a failed payment does: never deletes anything.
+  const dataNote =
+    access.kind === "trial"
+      ? t.dataTrial(trialEnd, PLANS.FREE.maxMembers)
+      : access.kind === "paid"
+        ? pastDue
+          ? t.dataPastDue
+          : t.dataPaid(PLANS.FREE.maxMembers)
+        : t.dataFree;
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -68,6 +77,15 @@ export default async function BillingPage({ params, searchParams }: PageProps<"/
             <button className="btn-secondary">{t.portal}</button>
           </ActionForm>
         )}
+      </section>
+
+      <section className="card space-y-2">
+        <h2 className="font-medium">{t.dataHeading}</h2>
+        <p className="text-sm">
+          {dataNote}
+          {members > PLANS.FREE.maxMembers && access.kind !== "paid" && <> {t.dataOverFree(members, PLANS.FREE.maxMembers)}</>}
+        </p>
+        <p className="text-sm text-muted">{t.dataRetention(RETENTION_YEARS)}</p>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3" aria-label={t.plans}>

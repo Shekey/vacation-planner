@@ -1,6 +1,6 @@
 import { defineMessages } from "../define";
 
-/** Emails: sign-in link, invitations, approval requests and decisions. */
+/** Emails: sign-in link, invitations, approval requests and decisions, trial reminders. */
 export const email = defineMessages({
   en: {
     signIn: {
@@ -24,6 +24,24 @@ export const email = defineMessages({
       text: (who: string, days: string, range: string, workspace: string, url: string) =>
         `${who} requested ${days} off, ${range}, in ${workspace}.\n\nReview it: ${url}`,
     },
+    trialEnding: {
+      subject: (workspace: string, date: string, last: boolean) =>
+        `${last ? "Last reminder: the" : "The"} free trial of ${workspace} ends on ${date}`,
+      text: (o: { workspace: string; date: string; people: number; freeMax: number; billingUrl: string; contact: string }) =>
+        [
+          `The free trial of ${o.workspace} on Vacation Planner ends on ${o.date}.`,
+          [
+            "What happens then:",
+            "• Nothing is deleted. People, bookings, allowances and holidays all stay as they are.",
+            `• ${o.workspace} moves to the free plan: up to ${o.freeMax} people, without Microsoft Teams and Slack posts.`,
+            o.people > o.freeMax
+              ? `• You have ${o.people} people, more than the free plan covers. Everyone can still sign in, see the calendar and cancel time off, but new bookings and invitations pause until you pick a plan or remove people.`
+              : `• With ${o.people} ${o.people === 1 ? "person" : "people"} you can keep using it for free.`,
+          ].join("\n"),
+          `To keep everything as it is, pick a plan: ${o.billingUrl}`,
+          `Questions? Write to ${o.contact}.`,
+        ].join("\n\n"),
+    },
   },
   de: {
     signIn: {
@@ -46,6 +64,24 @@ export const email = defineMessages({
       subject: (who: string) => `${who} hat frei beantragt`,
       text: (who: string, days: string, range: string, workspace: string, url: string) =>
         `${who} hat ${days} frei beantragt, ${range}, in ${workspace}.\n\nAntrag ansehen: ${url}`,
+    },
+    trialEnding: {
+      subject: (workspace: string, date: string, last: boolean) =>
+        `${last ? "Letzte Erinnerung: Die" : "Die"} kostenlose Testphase von ${workspace} endet am ${date}`,
+      text: (o: { workspace: string; date: string; people: number; freeMax: number; billingUrl: string; contact: string }) =>
+        [
+          `Die kostenlose Testphase von ${o.workspace} in Vacation Planner endet am ${o.date}.`,
+          [
+            "Was dann passiert:",
+            "• Es wird nichts gelöscht. Personen, Buchungen, Urlaubsansprüche und Feiertage bleiben, wie sie sind.",
+            `• ${o.workspace} wechselt in den Tarif Free: bis zu ${o.freeMax} Personen, ohne Posts in Microsoft Teams und Slack.`,
+            o.people > o.freeMax
+              ? `• Ihr seid ${o.people} Personen, mehr als Free abdeckt. Alle können sich weiter anmelden, den Kalender sehen und Urlaub stornieren, aber neue Buchungen und Einladungen sind pausiert, bis du einen Tarif wählst oder Personen entfernst.`
+              : `• Mit ${o.people} ${o.people === 1 ? "Person" : "Personen"} könnt ihr kostenlos weitermachen.`,
+          ].join("\n"),
+          `Damit alles so bleibt, wie es ist, wähl einen Tarif: ${o.billingUrl}`,
+          `Fragen? Schreib an ${o.contact}.`,
+        ].join("\n\n"),
     },
   },
 });

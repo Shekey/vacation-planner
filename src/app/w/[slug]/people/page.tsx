@@ -51,6 +51,7 @@ export default async function PeoplePage({ params }: PageProps<"/w/[slug]/people
         id: m.id,
         name: m.user.name ?? m.user.email,
         email: m.user.email,
+        sample: m.isSample,
         todayStatus,
         upcoming: own.slice(0, 5).map((b) => {
           const span = spanOf(b);

@@ -12,9 +12,11 @@ export default async function ImpressumPage({ searchParams }: PageProps<"/impres
   const { locale } = await legalLocale(searchParams);
   if (locale === "en") {
     return (
-      <LegalPage locale="en" path="/impressum" title="Legal notice (Impressum)" updated="2026-10-03">
+      <LegalPage locale="en" path="/impressum" title="Legal notice (Impressum)" updated="2026-10-17">
         <h2>Information pursuant to § 5 DDG</h2>
         <Operator locale="en" />
+        {OPERATOR.representative && <p>Represented by: {OPERATOR.representative}</p>}
+        {OPERATOR.register && <p>Commercial register: {OPERATOR.register}</p>}
         {OPERATOR.vatId && (
           <>
             <h2>VAT ID</h2>
@@ -34,9 +36,11 @@ export default async function ImpressumPage({ searchParams }: PageProps<"/impres
     );
   }
   return (
-    <LegalPage locale="de" path="/impressum" title="Impressum" updated="2026-10-03">
+    <LegalPage locale="de" path="/impressum" title="Impressum" updated="2026-10-17">
       <h2>Angaben gemäß § 5 DDG</h2>
       <Operator locale="de" />
+      {OPERATOR.representative && <p>Vertreten durch: {OPERATOR.representative}</p>}
+      {OPERATOR.register && <p>Registereintrag: {OPERATOR.register}</p>}
       {OPERATOR.vatId && (
         <>
           <h2>Umsatzsteuer-ID</h2>

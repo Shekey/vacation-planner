@@ -14,7 +14,7 @@ export default async function TermsPage({ searchParams }: PageProps<"/agb">) {
   const avv = legalHref("/avv", locale, forced);
   if (locale === "en") {
     return (
-      <LegalPage locale="en" path="/agb" title="General Terms and Conditions" updated="2026-10-03">
+      <LegalPage locale="en" path="/agb" title="General Terms and Conditions" updated="2026-10-17">
         <h2>1. Scope</h2>
         <p>
           These terms apply to the use of Vacation Planner, offered by {OPERATOR.name}, {OPERATOR.address} (“Provider”). The service is
@@ -33,20 +33,24 @@ export default async function TermsPage({ searchParams }: PageProps<"/agb">) {
         <h2>3. Trial period and conclusion of contract</h2>
         <p>
           Every new workspace can be used free of charge with all features for {TRIAL_DAYS} days. After that, the Free plan applies until a
-          paid plan is booked. The paid contract is concluded when the order is completed via the payment service Stripe.
+          paid plan is booked; no data is deleted. If the workspace has more people than the current plan allows, everyone can still sign
+          in, see existing bookings and cancel them, but no new bookings or invitations can be made until a larger plan is booked or people
+          are removed. The paid contract is concluded when the order is completed via the payment service Stripe.
         </p>
 
         <h2>4. Prices and payment</h2>
         <p>
-          The prices shown at the time of ordering apply, plus statutory VAT. Billing is monthly or yearly in advance. If payment is late,
-          the Provider may downgrade the workspace to the Free plan after giving notice.
+          The prices shown at the time of ordering apply, plus statutory VAT. Billing is monthly or yearly in advance. If a payment fails,
+          Stripe retries it several times; if it still fails, the paid plan ends and the workspace moves to the Free plan. No data is
+          deleted.
         </p>
 
         <h2>5. Term and termination</h2>
         <p>
           Depending on the choice made, contracts run for one month or one year and renew automatically for the same period. They can be
-          cancelled at any time, effective at the end of the current period, in the workspace’s billing settings. The right to terminate for
-          cause remains unaffected.
+          cancelled at any time, effective at the end of the current period, in the workspace’s billing settings. After that, the workspace
+          continues on the Free plan and its data is kept until the customer deletes the workspace. Deleting the workspace ends a running
+          subscription at the same time. The right to terminate for cause remains unaffected.
         </p>
 
         <h2>6. Customer obligations</h2>
@@ -85,7 +89,7 @@ export default async function TermsPage({ searchParams }: PageProps<"/agb">) {
     );
   }
   return (
-    <LegalPage locale="de" path="/agb" title="Allgemeine Geschäftsbedingungen" updated="2026-10-03">
+    <LegalPage locale="de" path="/agb" title="Allgemeine Geschäftsbedingungen" updated="2026-10-17">
       <h2>1. Geltungsbereich</h2>
       <p>
         Diese AGB gelten für die Nutzung des Vacation Planner, angeboten von {OPERATOR.name}, {OPERATOR.address} („Anbieter“). Das Angebot
@@ -104,21 +108,25 @@ export default async function TermsPage({ searchParams }: PageProps<"/agb">) {
       <h2>3. Testphase und Vertragsschluss</h2>
       <p>
         Jeder neue Workspace kann {TRIAL_DAYS} Tage kostenlos mit allen Funktionen genutzt werden. Danach gilt der Free-Tarif, bis ein
-        kostenpflichtiger Tarif gebucht wird. Der kostenpflichtige Vertrag kommt mit Abschluss der Bestellung über den Bezahldienst Stripe
-        zustande.
+        kostenpflichtiger Tarif gebucht wird; Daten werden dabei nicht gelöscht. Hat der Workspace mehr Personen, als der aktuelle Tarif
+        erlaubt, können sich alle weiter anmelden, bestehende Buchungen sehen und stornieren, aber keine neuen Buchungen oder Einladungen
+        anlegen, bis ein größerer Tarif gebucht ist oder Personen entfernt sind. Der kostenpflichtige Vertrag kommt mit Abschluss der
+        Bestellung über den Bezahldienst Stripe zustande.
       </p>
 
       <h2>4. Preise und Zahlung</h2>
       <p>
         Es gelten die bei der Bestellung angezeigten Preise zuzüglich der gesetzlichen Umsatzsteuer. Die Abrechnung erfolgt monatlich oder
-        jährlich im Voraus. Bei Zahlungsverzug kann der Anbieter den Workspace nach Ankündigung auf den Free-Tarif zurückstufen.
+        jährlich im Voraus. Schlägt eine Zahlung fehl, versucht Stripe sie mehrmals erneut; bleibt sie erfolglos, endet der
+        kostenpflichtige Tarif und der Workspace wechselt in den Free-Tarif. Daten werden dabei nicht gelöscht.
       </p>
 
       <h2>5. Laufzeit und Kündigung</h2>
       <p>
         Verträge laufen je nach Wahl einen Monat oder ein Jahr und verlängern sich automatisch um denselben Zeitraum. Sie können jederzeit
-        zum Ende des laufenden Zeitraums in der Abrechnung des Workspaces gekündigt werden. Das Recht zur außerordentlichen Kündigung bleibt
-        unberührt.
+        zum Ende des laufenden Zeitraums in der Abrechnung des Workspaces gekündigt werden. Danach läuft der Workspace im Free-Tarif weiter
+        und seine Daten bleiben erhalten, bis der Kunde den Workspace löscht. Mit dem Löschen des Workspaces endet auch ein laufendes Abo.
+        Das Recht zur außerordentlichen Kündigung bleibt unberührt.
       </p>
 
       <h2>6. Pflichten des Kunden</h2>

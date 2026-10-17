@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { postToChannels } from "@/lib/notify";
 import { accessOf, isOverLimit } from "@/lib/plans";
+import { isSampleEmail } from "@/lib/sample-team";
 
 export const ACTIVE_STATUSES: BookingStatus[] = ["PENDING", "APPROVED"];
 
@@ -73,7 +74,7 @@ export class BookingError extends Error {}
 async function assertWithinPlan(workspaceId: string) {
   const ws = await db.workspace.findUniqueOrThrow({
     where: { id: workspaceId },
-    select: { plan: true, billingStatus: true, trialEndsAt: true, _count: { select: { memberships: { where: { removedAt: null } } } } },
+    select: { plan: true, billingStatus: true, trialEndsAt: true, _count: { select: { memberships: { where: { removedAt: null, isSample: false } } } } },
   });
   const access = accessOf(ws);
   if (isOverLimit(access, ws._count.memberships)) {
@@ -178,7 +179,8 @@ async function announce(
   verb: keyof Messages["chat"]["verb"],
   calendarUrl: string,
 ) {
-  if (!settings.teamsWebhookUrl && !settings.slackWebhookUrl) return;
+  // Sample people are made up, so the team's channel never hears about them.
+  if ((!settings.teamsWebhookUrl && !settings.slackWebhookUrl) || isSampleEmail(person.email)) return;
   const locale = settings.locale ?? "en";
   const { chat, common } = messagesFor(locale);
   // The channel is shared with colleagues, so private sick leave is posted as plain time off.

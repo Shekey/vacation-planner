@@ -16,7 +16,7 @@ export async function loadBookingFormData(ctx: Ctx) {
   const today = todayIn(workspace.timezone);
   const locale = await getLocale();
   const currentYear = Number(today.slice(0, 4));
-  const t = (await getMessages()).book;
+  const { book: t, common } = await getMessages();
 
   // All regions' holidays; the form keeps the ones for the person being booked.
   const holidays = (
@@ -35,7 +35,7 @@ export async function loadBookingFormData(ctx: Ctx) {
   const members = await Promise.all(
     memberships.map(async (m) => {
       const s = await allowanceSummary(m, settings, currentYear, undefined, today);
-      const label = m.user.name ?? m.user.email;
+      const label = `${m.user.name ?? m.user.email}${m.isSample ? ` (${common.sample})` : ""}`;
       return {
         id: m.id,
         name: m.id === membership.id ? t.you(label) : label,

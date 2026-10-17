@@ -19,6 +19,8 @@ export const common = defineMessages({
     member: "Member",
     save: "Save",
     cancel: "Cancel",
+    // Marks made-up people from "Fill with a sample team".
+    sample: "Sample",
     type: { VACATION: "Vacation", SICK: "Sick", OTHER: "Other" },
     status: { PENDING: "Pending", APPROVED: "Approved", REJECTED: "Declined", CANCELLED: "Cancelled" },
     legend: { pending: "Pending", holiday: "Holiday", halfDay: "Half day" },
@@ -56,6 +58,7 @@ export const common = defineMessages({
     member: "Mitglied",
     save: "Speichern",
     cancel: "Abbrechen",
+    sample: "Beispiel",
     type: { VACATION: "Urlaub", SICK: "Krank", OTHER: "Sonstiges" },
     status: { PENDING: "Offen", APPROVED: "Genehmigt", REJECTED: "Abgelehnt", CANCELLED: "Storniert" },
     legend: { pending: "Offen", holiday: "Feiertag", halfDay: "Halber Tag" },

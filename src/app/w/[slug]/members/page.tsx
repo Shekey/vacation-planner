@@ -1,5 +1,5 @@
 import { ActionForm } from "@/components/action-form";
-import { Avatar } from "@/components/ui";
+import { Avatar, SampleBadge } from "@/components/ui";
 import { defaultWorkDays } from "@/lib/booking-days";
 import { formatDate, toISO } from "@/lib/dates";
 import { db } from "@/lib/db";
@@ -8,6 +8,7 @@ import { regionsOf } from "@/lib/holiday-regions";
 import type { Locale } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { requireAdmin } from "@/lib/session";
+import { SampleTeamButton } from "../sample-team-button";
 import {
   inviteAction,
   removeMemberAction,
@@ -36,7 +37,7 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
   const { members: t, common } = await getMessages();
   const WEEKDAYS = t.weekdays;
 
-  const [members, invites] = await Promise.all([
+  const [members, invites, samples] = await Promise.all([
     db.membership.findMany({
       where: { workspaceId: workspace.id, removedAt: null },
       include: { user: { select: { name: true, email: true } } },
@@ -46,6 +47,7 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
       where: { workspaceId: workspace.id, acceptedAt: null, revokedAt: null },
       orderBy: { createdAt: "desc" },
     }),
+    db.membership.count({ where: { workspaceId: workspace.id, isSample: true } }),
   ]);
   const now = new Date();
   const regions = regionsOf(workspace.settings?.holidayCountry ?? "", locale);
@@ -81,6 +83,7 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
         <p className="text-xs opacity-60">
           {t.inviteHint}
         </p>
+        <SampleTeamButton slug={slug} samples={samples} />
       </section>
 
       {invites.length > 0 && (
@@ -123,13 +126,21 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
                   <div className="font-medium">
                     {who}
                     {m.id === me.id && <span className="font-normal opacity-60"> {t.you}</span>}
+                    {m.isSample && <SampleBadge label={common.sample} />}
                   </div>
-                  {m.user.name && <div className="truncate text-sm opacity-60">{m.user.email}</div>}
+                  {m.user.name && !m.isSample && <div className="truncate text-sm opacity-60">{m.user.email}</div>}
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <ActionForm action={updateMemberAction.bind(null, slug, m.id)} className="flex flex-wrap items-center gap-2 text-sm">
-                  <select name="role" defaultValue={m.role} className="input w-auto py-1" aria-label={t.roleFor(who)}>
+                  {/* Sample people can't sign in, so they stay members. */}
+                  <select
+                    name="role"
+                    defaultValue={m.role}
+                    disabled={m.isSample}
+                    className="input w-auto py-1"
+                    aria-label={t.roleFor(who)}
+                  >
                     <option value="MEMBER">{common.member}</option>
                     <option value="ADMIN">{common.admin}</option>
                   </select>

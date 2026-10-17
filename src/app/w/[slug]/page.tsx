@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { TypeDot, typeLabel } from "@/components/badges";
-import { Avatar, EmptyState } from "@/components/ui";
+import { Avatar, EmptyState, SampleBadge } from "@/components/ui";
 import { halfDayLabel, portionOn } from "@/lib/booking-days";
 import { activeBookingsBetween, allowanceSummary, forViewer, loadHolidays, regionOf, rulesFor, spanOf } from "@/lib/bookings";
 import { addDays, eachDay, formatDate, formatRange, fromISO, partOfDay, relativeDay, toISO, todayIn } from "@/lib/dates";
@@ -186,6 +186,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 font-medium">
                         <span className="truncate">{name(b)}</span>
+                        {b.membership.isSample && <SampleBadge label={common.sample} />}
                         <TypeDot type={b.type} decorative={portion === "FULL"} locale={locale} />
                       </div>
                       <div className="text-muted">
@@ -221,6 +222,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 font-medium">
                         <span className="truncate">{name(b)}</span>
+                        {b.membership.isSample && <SampleBadge label={common.sample} />}
                         <TypeDot type={b.type} locale={locale} />
                       </div>
                       <div className="text-muted">

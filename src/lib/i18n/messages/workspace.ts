@@ -23,12 +23,13 @@ export const workspace = defineMessages({
     waitingAria: (n: number) => `${n} waiting`,
     waiting: " waiting",
     overLimit: (plan: string, max: number, count: number) =>
-      `${plan} covers up to ${max} people and this workspace has ${count}, so new bookings are paused.`,
+      `${plan} covers up to ${max} people and this workspace has ${count}, so new bookings and invitations are paused. Nothing is deleted.`,
     choosePlan: "Choose a plan →",
     adminCanUpgrade: "An admin can upgrade the plan.",
     trialEnds: (n: number) => `Your free trial ends in ${n} ${n === 1 ? "day" : "days"}.`,
-    trialAfterPaid: "Teams over 5 people need a paid plan after that.",
-    trialAfterFree: "After that you stay on Free, without Teams and Slack posts.",
+    trialAfterPaid:
+      "Nothing is deleted then, but with more than 5 people new bookings and invitations pause until you pick a plan.",
+    trialAfterFree: "Then you move to Free, without Teams and Slack posts. Nothing is deleted.",
     seePlans: "See plans →",
     loading: "Loading",
     onboarding: {
@@ -90,12 +91,13 @@ export const workspace = defineMessages({
     waitingAria: (n: number) => `${n} offen`,
     waiting: " offen",
     overLimit: (plan: string, max: number, count: number) =>
-      `${plan} umfasst bis zu ${max} Personen, dieser Workspace hat ${count}. Neue Buchungen sind deshalb pausiert.`,
+      `${plan} umfasst bis zu ${max} Personen, dieser Workspace hat ${count}. Neue Buchungen und Einladungen sind deshalb pausiert. Gelöscht wird nichts.`,
     choosePlan: "Tarif wählen →",
     adminCanUpgrade: "Ein Admin kann den Tarif upgraden.",
     trialEnds: (n: number) => `Deine kostenlose Testphase endet in ${n} ${n === 1 ? "Tag" : "Tagen"}.`,
-    trialAfterPaid: "Teams mit mehr als 5 Personen brauchen danach einen bezahlten Tarif.",
-    trialAfterFree: "Danach bleibst du bei Free, ohne Nachrichten in Teams und Slack.",
+    trialAfterPaid:
+      "Gelöscht wird dann nichts, aber mit mehr als 5 Personen sind neue Buchungen und Einladungen pausiert, bis du einen Tarif wählst.",
+    trialAfterFree: "Dann wechselst du zu Free, ohne Nachrichten in Teams und Slack. Gelöscht wird nichts.",
     seePlans: "Tarife ansehen →",
     loading: "Wird geladen",
     onboarding: {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LegalPage, legalHref, legalLocale, Operator, SubprocessorList } from "@/components/legal";
 import { messagesFor } from "@/lib/i18n";
+import { OPERATOR } from "@/lib/legal";
 
 export async function generateMetadata({ searchParams }: PageProps<"/datenschutz">): Promise<Metadata> {
   const { locale } = await legalLocale(searchParams);
@@ -12,7 +13,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
   const avv = legalHref("/avv", locale, forced);
   if (locale === "en") {
     return (
-      <LegalPage locale="en" path="/datenschutz" title="Privacy policy" updated="2026-10-03">
+      <LegalPage locale="en" path="/datenschutz" title="Privacy policy" updated="2026-10-17">
         <h2>1. Controller</h2>
         <p>The controller responsible for data processing on this website and for the accounts of workspace administrators is:</p>
         <Operator locale="en" />
@@ -23,16 +24,32 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
 
         <h2>2. What data we process</h2>
         <ul>
-          <li>Account: email address, name, time of sign-in, session data (one technically necessary cookie).</li>
+          <li>Account: email address, name, preferred language, time of sign-in, session data.</li>
+          <li>
+            Cookies: only technically necessary ones (§ 25(2) no. 2 TDDDG): the session cookie that keeps you signed in, two cookies that
+            protect the sign-in form (CSRF protection and return address), and a cookie with your chosen language.
+          </li>
           <li>
             Workspace: team name, members and roles, vacation allowances, working days, start date, federal state for public holidays,
-            bookings with period and type (“Vacation” or “Other absence”).
+            bookings with period and type (“Vacation” or “Other absence”), who approved or declined a request and when, and, if you turn it
+            on, a secret link for your personal calendar feed.
+          </li>
+          <li>
+            Emails: sign-in links, invitations, approval requests and decisions, and reminders to administrators before a trial ends. A note
+            written when deciding on a request is only sent by email, not stored.
+          </li>
+          <li>
+            Microsoft Teams and Slack: if a workspace connects a channel, names, periods and types of bookings are posted there, as well as a
+            morning list of who is out.
           </li>
           <li>
             We deliberately do not record sick days or free-text notes, and therefore no health data or other special categories of data
             under Art. 9 GDPR.
           </li>
-          <li>Payments: company name, billing address and VAT ID of paying customers; card details are processed exclusively by Stripe.</li>
+          <li>
+            Payments: company name, billing address and VAT ID of paying customers; payment details (card or bank account for SEPA direct
+            debit) are processed exclusively by Stripe. We only store the Stripe customer number and the status of the subscription.
+          </li>
           <li>Server logs: IP address, time and page requested, for security and troubleshooting, stored for no longer than 30 days.</li>
         </ul>
 
@@ -50,8 +67,10 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
 
         <h2>5. Retention period</h2>
         <p>
-          We store account data until the account is deleted. We automatically delete bookings three years after they end, as well as the
-          data of people who were removed from a workspace three years ago; completed invitations after 30 days. When a workspace is
+          We store account data until the account is deleted. In a monthly clean-up we automatically delete bookings three years after they
+          end, the data of people who were removed from a workspace three years ago, completed invitations 30 days after they were sent,
+          and expired sessions and sign-in links. When a paid plan or the trial ends, the workspace moves to the free plan and nothing is
+          deleted. When a workspace is
           deleted, all of its data is deleted immediately; it disappears from backups after 30 days at the latest. We keep billing data for
           as long as commercial and tax law requires (up to 10 years).
         </p>
@@ -60,7 +79,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
         <p>
           You have the right of access, rectification, erasure, restriction of processing, data portability and objection (Art. 15 to 21
           GDPR). In your profile you can download your data and delete your account yourself at any time. You can also lodge a complaint
-          with a data protection supervisory authority.
+          with a data protection supervisory authority, for example the one responsible for us: {OPERATOR.supervisoryAuthority}.
         </p>
         <p>
           If your account is part of your employer’s workspace, please contact your employer first with questions about your vacation data;
@@ -70,7 +89,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
     );
   }
   return (
-    <LegalPage locale="de" path="/datenschutz" title="Datenschutzerklärung" updated="2026-10-03">
+    <LegalPage locale="de" path="/datenschutz" title="Datenschutzerklärung" updated="2026-10-17">
       <h2>1. Verantwortlicher</h2>
       <p>Verantwortlich für die Datenverarbeitung auf dieser Website und für Konten von Workspace-Administratoren ist:</p>
       <Operator locale="de" />
@@ -82,16 +101,32 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
 
       <h2>2. Welche Daten wir verarbeiten</h2>
       <ul>
-        <li>Konto: E-Mail-Adresse, Name, Zeitpunkt der Anmeldung, Sitzungsdaten (ein technisch notwendiges Cookie).</li>
+        <li>Konto: E-Mail-Adresse, Name, bevorzugte Sprache, Zeitpunkt der Anmeldung, Sitzungsdaten.</li>
+        <li>
+          Cookies: nur technisch notwendige (§ 25 Abs. 2 Nr. 2 TDDDG): das Sitzungs-Cookie, das Sie angemeldet hält, zwei Cookies, die das
+          Anmeldeformular schützen (CSRF-Schutz und Rücksprungadresse), und ein Cookie mit der gewählten Sprache.
+        </li>
         <li>
           Workspace: Name des Teams, Mitglieder und Rollen, Urlaubskontingente, Arbeitstage, Eintrittsdatum, Bundesland für Feiertage,
-          Buchungen mit Zeitraum und Art („Urlaub“ oder „Sonstige Abwesenheit“).
+          Buchungen mit Zeitraum und Art („Urlaub“ oder „Sonstige Abwesenheit“), wer einen Antrag wann genehmigt oder abgelehnt hat, und,
+          wenn Sie ihn einschalten, ein geheimer Link für Ihren persönlichen Kalender-Feed.
+        </li>
+        <li>
+          E-Mails: Anmeldelinks, Einladungen, Urlaubsanträge und Entscheidungen sowie Erinnerungen an Administratoren vor Ende der
+          Testphase. Eine Notiz zur Entscheidung über einen Antrag wird nur per E-Mail verschickt, nicht gespeichert.
+        </li>
+        <li>
+          Microsoft Teams und Slack: Verbindet ein Workspace einen Kanal, werden Namen, Zeitraum und Art von Buchungen dorthin gesendet,
+          dazu morgens eine Liste, wer fehlt.
         </li>
         <li>
           Wir erfassen bewusst keine Krankheitstage und keine Freitext-Notizen, also keine Gesundheitsdaten oder andere besondere Kategorien
           nach Art. 9 DSGVO.
         </li>
-        <li>Zahlungen: Firmenname, Rechnungsadresse und USt-ID der zahlenden Kunden; Kartendaten verarbeitet ausschließlich Stripe.</li>
+        <li>
+          Zahlungen: Firmenname, Rechnungsadresse und USt-ID der zahlenden Kunden; Zahlungsdaten (Karte oder Bankverbindung für
+          SEPA-Lastschrift) verarbeitet ausschließlich Stripe. Wir speichern nur die Stripe-Kundennummer und den Status des Abos.
+        </li>
         <li>
           Server-Protokolle: IP-Adresse, Zeitpunkt und aufgerufene Seite, zur Sicherheit und Fehlersuche, höchstens 30 Tage gespeichert.
         </li>
@@ -111,8 +146,10 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
 
       <h2>5. Speicherdauer</h2>
       <p>
-        Kontodaten speichern wir, bis das Konto gelöscht wird. Buchungen löschen wir automatisch drei Jahre nach ihrem Ende, ebenso die
-        Daten von Personen, die seit drei Jahren aus einem Workspace entfernt sind; erledigte Einladungen nach 30 Tagen. Wird ein Workspace
+        Kontodaten speichern wir, bis das Konto gelöscht wird. Bei einem monatlichen Löschlauf löschen wir automatisch Buchungen drei Jahre
+        nach ihrem Ende, die Daten von Personen, die seit drei Jahren aus einem Workspace entfernt sind, erledigte Einladungen 30 Tage nach
+        dem Versand sowie abgelaufene Sitzungen und Anmeldelinks. Endet ein bezahlter Tarif oder die Testphase, wechselt der Workspace in
+        den Free-Tarif; dabei wird nichts gelöscht. Wird ein Workspace
         gelöscht, werden alle seine Daten sofort gelöscht; aus Sicherungskopien verschwinden sie spätestens nach 30 Tagen. Rechnungsdaten
         bewahren wir so lange auf, wie es das Handels- und Steuerrecht verlangt (bis zu 10 Jahre).
       </p>
@@ -121,7 +158,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
       <p>
         Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch (Art.
         15 bis 21 DSGVO). Im Profil können Sie Ihre Daten jederzeit selbst herunterladen und Ihr Konto löschen. Außerdem können Sie sich bei
-        einer Datenschutz-Aufsichtsbehörde beschweren.
+        einer Datenschutz-Aufsichtsbehörde beschweren, zum Beispiel bei der für uns zuständigen: {OPERATOR.supervisoryAuthority}.
       </p>
       <p>
         Ist Ihr Konto Teil des Workspaces Ihres Arbeitgebers, wenden Sie sich für Fragen zu Ihren Urlaubsdaten bitte zuerst an Ihren

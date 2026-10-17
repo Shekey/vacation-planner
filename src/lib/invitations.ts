@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { sendEmail, type SendResult } from "@/lib/email";
 import { messagesFor } from "@/lib/i18n";
 import { getLocale, getMessages, localeOfEmail } from "@/lib/i18n/server";
+import { isSampleEmail } from "@/lib/sample-team";
 
 const INVITE_TTL_DAYS = 7;
 
@@ -26,8 +27,9 @@ export function parseEmailList(input: string): { valid: string[]; invalid: strin
     .map((s) => s.replace(/^mailto:/, "").replace(/\.$/, ""))
     .filter((s) => s.includes("@"));
   const unique = [...new Set(items)];
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return { valid: unique.filter((e) => re.test(e)), invalid: unique.filter((e) => !re.test(e)) };
+  // Sample people's placeholder addresses can't receive anything, so they can't be invited either.
+  const ok = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !isSampleEmail(e);
+  return { valid: unique.filter(ok), invalid: unique.filter((e) => !ok(e)) };
 }
 
 type InviteContext = {

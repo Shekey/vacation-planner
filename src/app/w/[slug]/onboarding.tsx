@@ -3,6 +3,7 @@ import { ActionForm } from "@/components/action-form";
 import { db } from "@/lib/db";
 import { getMessages } from "@/lib/i18n/server";
 import { dismissOnboardingAction } from "./onboarding-actions";
+import { SampleTeamButton } from "./sample-team-button";
 
 type Workspace = {
   id: string;
@@ -19,10 +20,12 @@ type Workspace = {
 export async function Onboarding({ slug, workspace }: { slug: string; workspace: Workspace }) {
   const s = workspace.settings;
   if (s?.onboardingDismissedAt) return null;
-  const [members, invites, bookings] = await Promise.all([
-    db.membership.count({ where: { workspaceId: workspace.id, removedAt: null } }),
+  // Sample people don't tick off "invite" or "book": the real team still has to do those.
+  const [members, invites, bookings, samples] = await Promise.all([
+    db.membership.count({ where: { workspaceId: workspace.id, removedAt: null, isSample: false } }),
     db.invitation.count({ where: { workspaceId: workspace.id, revokedAt: null } }),
-    db.booking.count({ where: { workspaceId: workspace.id } }),
+    db.booking.count({ where: { workspaceId: workspace.id, membership: { isSample: false } } }),
+    db.membership.count({ where: { workspaceId: workspace.id, isSample: true } }),
   ]);
   const base = `/w/${slug}`;
   const t = (await getMessages()).workspace.onboarding;
@@ -91,6 +94,7 @@ export async function Onboarding({ slug, workspace }: { slug: string; workspace:
           </li>
         ))}
       </ol>
+      <SampleTeamButton slug={slug} samples={samples} />
     </section>
   );
 }

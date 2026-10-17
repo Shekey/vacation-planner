@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useI18n } from "@/components/i18n-provider";
-import { Avatar } from "@/components/ui";
+import { Avatar, SampleBadge } from "@/components/ui";
 
 export type PersonRow = {
   id: string;
   name: string;
   email: string;
+  /** A made-up person from "Fill with a sample team". */
+  sample: boolean;
   /** e.g. "Off today (vacation) until 16 Oct" or null when in. */
   todayStatus: string | null;
   upcoming: { id: string; label: string; detail: string; pending: boolean; color: string }[];
@@ -20,7 +22,7 @@ function fold(text: string) {
 
 export function PeopleSearch({ people }: { people: PersonRow[] }) {
   const [query, setQuery] = useState("");
-  const t = useI18n().t.people;
+  const { people: t, common } = useI18n().t;
   const shown = useMemo(() => {
     const q = fold(query.trim());
     return q ? people.filter((p) => fold(`${p.name} ${p.email}`).includes(q)) : people;
@@ -47,8 +49,11 @@ export function PeopleSearch({ people }: { people: PersonRow[] }) {
                 <div className="flex min-w-0 items-center gap-2.5">
                   <Avatar label={p.name} seed={p.email} className="size-9 text-sm" />
                   <div className="min-w-0">
-                    <div className="truncate font-medium">{p.name}</div>
-                    {p.name !== p.email && <div className="truncate text-xs opacity-60">{p.email}</div>}
+                    <div className="truncate font-medium">
+                      {p.name}
+                      {p.sample && <SampleBadge label={common.sample} />}
+                    </div>
+                    {p.name !== p.email && !p.sample && <div className="truncate text-xs opacity-60">{p.email}</div>}
                   </div>
                 </div>
                 <span
