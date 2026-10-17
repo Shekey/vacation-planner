@@ -13,7 +13,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/calendar/[token
     where: { calendarToken: token.replace(/\.ics$/, "") },
     include: { workspace: { include: { settings: true } }, user: { select: { locale: true } } },
   });
-  if (!membership || membership.removedAt) return new Response("Not found", { status: 404 });
+  if (!membership || membership.removedAt || membership.workspace.deletedAt) return new Response("Not found", { status: 404 });
 
   const { workspace } = membership;
   // The feed owner's language, else the workspace's.

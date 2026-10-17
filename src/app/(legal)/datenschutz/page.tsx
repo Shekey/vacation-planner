@@ -13,7 +13,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
   const avv = legalHref("/avv", locale, forced);
   if (locale === "en") {
     return (
-      <LegalPage locale="en" path="/datenschutz" title="Privacy policy" updated="2026-10-17">
+      <LegalPage locale="en" path="/datenschutz" title="Privacy policy" updated="2026-10-18">
         <h2>1. Controller</h2>
         <p>The controller responsible for data processing on this website and for the accounts of workspace administrators is:</p>
         <Operator locale="en" />
@@ -33,6 +33,11 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
             Workspace: team name, members and roles, vacation allowances, working days, start date, federal state for public holidays,
             bookings with period and type (“Vacation” or “Other absence”), who approved or declined a request and when, and, if you turn it
             on, a secret link for your personal calendar feed.
+          </li>
+          <li>
+            Activity log: for administrators of a workspace we record who removed or restored a person, changed a role, cancelled,
+            restored, approved or declined a booking, and deleted or restored the workspace, with the names involved and the date. This
+            serves traceability and the resolution of mistakes and disputes (Art. 6(1)(f) GDPR). It holds no notes.
           </li>
           <li>
             Emails: sign-in links, invitations, approval requests and decisions, and reminders to administrators before a trial ends. A note
@@ -69,9 +74,10 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
         <p>
           We store account data until the account is deleted. In a monthly clean-up we automatically delete bookings three years after they
           end, the data of people who were removed from a workspace three years ago, completed invitations 30 days after they were sent,
-          and expired sessions and sign-in links. When a paid plan or the trial ends, the workspace moves to the free plan and nothing is
-          deleted. When a workspace is
-          deleted, all of its data is deleted immediately; it disappears from backups after 30 days at the latest. We keep billing data for
+          and expired sessions and sign-in links, and activity log entries after 12 months. When a paid plan or the trial ends, the workspace
+          moves to the free plan and nothing is deleted. People removed from a workspace, cancelled bookings and deleted workspaces can be
+          restored for 30 days; deleted workspaces are removed for good after that. Once a deleted
+          workspace is past those 30 days, all of its data is deleted; it disappears from backups after 30 days at the latest. We keep billing data for
           as long as commercial and tax law requires (up to 10 years).
         </p>
 
@@ -89,7 +95,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
     );
   }
   return (
-    <LegalPage locale="de" path="/datenschutz" title="Datenschutzerklärung" updated="2026-10-17">
+    <LegalPage locale="de" path="/datenschutz" title="Datenschutzerklärung" updated="2026-10-18">
       <h2>1. Verantwortlicher</h2>
       <p>Verantwortlich für die Datenverarbeitung auf dieser Website und für Konten von Workspace-Administratoren ist:</p>
       <Operator locale="de" />
@@ -110,6 +116,12 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
           Workspace: Name des Teams, Mitglieder und Rollen, Urlaubskontingente, Arbeitstage, Eintrittsdatum, Bundesland für Feiertage,
           Buchungen mit Zeitraum und Art („Urlaub“ oder „Sonstige Abwesenheit“), wer einen Antrag wann genehmigt oder abgelehnt hat, und,
           wenn Sie ihn einschalten, ein geheimer Link für Ihren persönlichen Kalender-Feed.
+        </li>
+        <li>
+          Verlauf: Für Administratoren eines Workspaces protokollieren wir, wer eine Person entfernt oder wiederhergestellt, eine Rolle
+          geändert, eine Buchung storniert, wiederhergestellt, genehmigt oder abgelehnt und den Workspace gelöscht oder wiederhergestellt
+          hat, mit den beteiligten Namen und dem Datum. Das dient der Nachvollziehbarkeit und der Klärung von Fehlern und Streitfällen (Art.
+          6 Abs. 1 lit. f DSGVO). Notizen enthält es nicht.
         </li>
         <li>
           E-Mails: Anmeldelinks, Einladungen, Urlaubsanträge und Entscheidungen sowie Erinnerungen an Administratoren vor Ende der
@@ -148,10 +160,10 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
       <p>
         Kontodaten speichern wir, bis das Konto gelöscht wird. Bei einem monatlichen Löschlauf löschen wir automatisch Buchungen drei Jahre
         nach ihrem Ende, die Daten von Personen, die seit drei Jahren aus einem Workspace entfernt sind, erledigte Einladungen 30 Tage nach
-        dem Versand sowie abgelaufene Sitzungen und Anmeldelinks. Endet ein bezahlter Tarif oder die Testphase, wechselt der Workspace in
-        den Free-Tarif; dabei wird nichts gelöscht. Wird ein Workspace
-        gelöscht, werden alle seine Daten sofort gelöscht; aus Sicherungskopien verschwinden sie spätestens nach 30 Tagen. Rechnungsdaten
-        bewahren wir so lange auf, wie es das Handels- und Steuerrecht verlangt (bis zu 10 Jahre).
+        dem Versand, abgelaufene Sitzungen und Anmeldelinks sowie Einträge des Verlaufs nach 12 Monaten. Endet ein bezahlter Tarif oder die
+        Testphase, wechselt der Workspace in den Free-Tarif; dabei wird nichts gelöscht. Entfernte Personen, stornierte Buchungen und
+        gelöschte Workspaces lassen sich 30 Tage lang wiederherstellen. Ist ein gelöschter Workspace älter als diese 30 Tage, werden alle seine Daten gelöscht; aus Sicherungskopien verschwinden sie
+        spätestens nach 30 Tagen. Rechnungsdaten bewahren wir so lange auf, wie es das Handels- und Steuerrecht verlangt (bis zu 10 Jahre).
       </p>
 
       <h2>6. Ihre Rechte</h2>

@@ -13,7 +13,7 @@ import { PLANS, trialReminderDue } from "@/lib/plans";
 export async function sendTrialReminders(origin: string, now = new Date()) {
   const soon = new Date(now.getTime() + 8 * 86_400_000);
   const workspaces = await db.workspace.findMany({
-    where: { trialEndsAt: { gt: now, lte: soon }, OR: [{ trialReminder7SentAt: null }, { trialReminder1SentAt: null }] },
+    where: { deletedAt: null, trialEndsAt: { gt: now, lte: soon }, OR: [{ trialReminder7SentAt: null }, { trialReminder1SentAt: null }] },
     include: { settings: { select: { locale: true } } },
   });
 

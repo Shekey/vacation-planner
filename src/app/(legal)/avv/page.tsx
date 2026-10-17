@@ -12,7 +12,7 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
   const agb = legalHref("/agb", locale, forced);
   if (locale === "en") {
     return (
-      <LegalPage locale="en" path="/avv" title="Data Processing Agreement (DPA) pursuant to Art. 28 GDPR" updated="2026-10-17">
+      <LegalPage locale="en" path="/avv" title="Data Processing Agreement (DPA) pursuant to Art. 28 GDPR" updated="2026-10-18">
         <p>
           This agreement applies between the customer that uses a workspace in Vacation Planner (“Controller”) and the following provider
           (“Processor”). It is concluded through use of the service in accordance with the <a href={agb}>terms and conditions</a>.
@@ -78,8 +78,8 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
 
         <h2>7. Deletion and return</h2>
         <p>
-          After the end of the agreement, or when the Controller deletes the workspace, all data is deleted; from backups after 30 days at
-          the latest. Before that, the Controller can have each person export their data. When only a paid plan ends, the workspace
+          After the end of the agreement, or 30 days after the Controller deletes the workspace (until then the Controller can restore
+          it), all data is deleted; from backups after 30 days at the latest after that. Before that, the Controller can have each person export their data. When only a paid plan ends, the workspace
           continues on the Free plan and nothing is deleted.
         </p>
 
@@ -92,7 +92,7 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
     );
   }
   return (
-    <LegalPage locale="de" path="/avv" title="Auftragsverarbeitungsvertrag (AVV) nach Art. 28 DSGVO" updated="2026-10-17">
+    <LegalPage locale="de" path="/avv" title="Auftragsverarbeitungsvertrag (AVV) nach Art. 28 DSGVO" updated="2026-10-18">
       <p>
         Dieser Vertrag gilt zwischen dem Kunden, der einen Workspace im Vacation Planner nutzt („Verantwortlicher“), und dem folgenden
         Anbieter („Auftragsverarbeiter“). Er wird mit der Nutzung des Dienstes gemäß den <a href={agb}>AGB</a> geschlossen.
@@ -162,8 +162,8 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
 
       <h2>7. Löschung und Rückgabe</h2>
       <p>
-        Nach Vertragsende oder wenn der Verantwortliche den Workspace löscht, werden alle Daten gelöscht; aus Sicherungskopien spätestens
-        nach 30 Tagen. Vorher kann der Verantwortliche jede Person ihre Daten exportieren lassen. Endet nur ein bezahlter Tarif, läuft der
+        Nach Vertragsende oder 30 Tage nach dem Löschen des Workspaces durch den Verantwortlichen (bis dahin kann er ihn wiederherstellen)
+        werden alle Daten gelöscht; aus Sicherungskopien spätestens 30 Tage danach. Vorher kann der Verantwortliche jede Person ihre Daten exportieren lassen. Endet nur ein bezahlter Tarif, läuft der
         Workspace im Free-Tarif weiter und es wird nichts gelöscht.
       </p>
 

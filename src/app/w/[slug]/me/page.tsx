@@ -9,7 +9,8 @@ import { db } from "@/lib/db";
 import { formatNumber } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { requireMembership, settingsOf } from "@/lib/session";
-import { cancelBookingAction } from "../book/actions";
+import { cancelBookingAction, restoreBookingAction } from "../book/actions";
+import { canRestore } from "@/lib/undo";
 import { CopyField } from "@/components/copy-field";
 import { EmptyState } from "@/components/ui";
 import { appOrigin } from "@/lib/url";
@@ -62,6 +63,11 @@ export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me"
             {b.decisionNote && ` · ${t.adminNote(b.decisionNote)}`}
           </div>
         </div>
+        {editable && b.status === "CANCELLED" && !b.cancelReason && canRestore(b.cancelledAt) && (
+          <ActionForm action={restoreBookingAction.bind(null, slug, b.id)}>
+            <button className="btn-secondary px-3 py-1 text-sm">{t.restore}</button>
+          </ActionForm>
+        )}
         {editable && active && (
           <div className="flex items-center gap-3 text-sm">
             <Link href={`/w/${slug}/book/${b.id}`} className="btn-secondary px-3 py-1">

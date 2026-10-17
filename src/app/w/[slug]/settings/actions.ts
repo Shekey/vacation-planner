@@ -8,7 +8,7 @@ import { isMonthDay } from "@/lib/booking-days";
 import { approveAllPending, keepLastYearsAllowance } from "@/lib/bookings";
 import { todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
-import { removeSampleTeam } from "@/lib/sample-team-db";
+import { recordAudit } from "@/lib/audit";
 import { requireAdmin, settingsOf } from "@/lib/session";
 import { isSlackWebhookUrl } from "@/lib/slack";
 import { cancelSubscriptionNow } from "@/lib/stripe";
@@ -116,9 +116,9 @@ export async function deleteWorkspaceAction(slug: string, _prev: ActionResult, f
   if (String(formData.get("confirmName") ?? "").trim() !== ctx.workspace.name) {
     return { error: (await getMessages()).settings.errors.confirmName };
   }
-  // Memberships, bookings, invitations, holidays and settings cascade; sample people's placeholder users don't.
+  // Hidden, not deleted: admins can restore it for RESTORE_DAYS, then the monthly purge deletes it (src/lib/retention.ts).
   await cancelSubscriptionNow(ctx.workspace.stripeSubscriptionId);
-  await removeSampleTeam([ctx.workspace.id]);
-  await db.workspace.delete({ where: { id: ctx.workspace.id } });
+  await db.workspace.update({ where: { id: ctx.workspace.id }, data: { deletedAt: new Date() } });
+  await recordAudit({ workspaceId: ctx.workspace.id, actorId: ctx.user.id, action: "workspace.deleted" });
   redirect("/");
 }

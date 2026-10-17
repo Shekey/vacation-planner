@@ -4,7 +4,10 @@ import { auth } from "@/auth";
 import { getMessages } from "@/lib/i18n/server";
 import { TRIAL_DAYS } from "@/lib/plans";
 import { requireUser } from "@/lib/session";
-import { listWorkspacesForUser } from "@/lib/workspaces";
+import { restoreDaysLeft, RESTORE_DAYS } from "@/lib/undo";
+import { listDeletedWorkspacesForAdmin, listWorkspacesForUser } from "@/lib/workspaces";
+import { ActionForm } from "@/components/action-form";
+import { restoreWorkspaceAction } from "./workspaces/restore-actions";
 import { Landing } from "./landing";
 
 export default async function HomePage() {
@@ -13,7 +16,7 @@ export default async function HomePage() {
   const user = await requireUser();
   // First visit: ask for a name so teammates don't see a bare email.
   if (!user.name) redirect("/account?next=/");
-  const memberships = await listWorkspacesForUser(user.id);
+  const [memberships, deleted] = await Promise.all([listWorkspacesForUser(user.id), listDeletedWorkspacesForAdmin(user.id)]);
   const { home: t, common } = await getMessages();
 
   return (
@@ -58,6 +61,25 @@ export default async function HomePage() {
             </li>
           ))}
         </ul>
+      )}
+      {deleted.length > 0 && (
+        <section className="card space-y-3">
+          <h2 className="font-medium">{t.deletedHeading}</h2>
+          <p className="text-sm text-muted">{t.deletedBody(RESTORE_DAYS)}</p>
+          <ul className="divide-y divide-border">
+            {deleted.map((w) => (
+              <li key={w.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                <span>
+                  <span className="font-medium">{w.name}</span>{" "}
+                  <span className="text-muted">· {t.daysLeft(restoreDaysLeft(w.deletedAt!))}</span>
+                </span>
+                <ActionForm action={restoreWorkspaceAction.bind(null, w.id)}>
+                  <button className="btn-secondary px-3 py-1">{t.restore}</button>
+                </ActionForm>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );
