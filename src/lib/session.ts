@@ -22,7 +22,7 @@ export const requireUser = cache(async () => {
 export const requireMembership = cache(async (slug: string) => {
   const user = await requireUser();
   const membership = await db.membership.findFirst({
-    where: { userId: user.id, removedAt: null, workspace: { slug } },
+    where: { userId: user.id, removedAt: null, workspace: { slug, deletedAt: null } },
     include: { workspace: { include: { settings: true } } },
   });
   if (!membership) notFound();

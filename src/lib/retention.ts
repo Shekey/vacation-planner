@@ -1,5 +1,7 @@
 import { db } from "@/lib/db";
 import { SAMPLE_EMAIL_DOMAIN } from "@/lib/sample-team";
+import { removeSampleTeam } from "@/lib/sample-team-db";
+import { auditCutoff, restoreCutoff } from "@/lib/undo";
 
 /** Bookings and removed members are kept this long: the time employees can still claim leave in Germany. */
 export const RETENTION_YEARS = 3;
@@ -10,7 +12,14 @@ export async function purgeOldData(now = new Date()) {
   cutoff.setUTCFullYear(cutoff.getUTCFullYear() - RETENTION_YEARS);
   const monthAgo = new Date(now.getTime() - 30 * 86_400_000);
 
-  const [bookings, members, invitations, sessions, tokens, sampleUsers] = await db.$transaction([
+  // Workspaces deleted more than RESTORE_DAYS ago go for good. Their sample people's placeholder users
+  // are deleted first, because the workspace's cascade would leave those users behind.
+  const expired = await db.workspace.findMany({ where: { deletedAt: { lt: restoreCutoff(now) } }, select: { id: true } });
+  await removeSampleTeam(expired.map((w) => w.id));
+
+  const [workspaces, audit, bookings, members, invitations, sessions, tokens, sampleUsers] = await db.$transaction([
+    db.workspace.deleteMany({ where: { id: { in: expired.map((w) => w.id) } } }),
+    db.auditEvent.deleteMany({ where: { createdAt: { lt: auditCutoff(now) } } }),
     db.booking.deleteMany({ where: { endDate: { lt: cutoff } } }),
     // Their remaining bookings go with them.
     db.membership.deleteMany({ where: { removedAt: { lt: cutoff } } }),
@@ -24,6 +33,8 @@ export async function purgeOldData(now = new Date()) {
     db.user.deleteMany({ where: { email: { endsWith: `@${SAMPLE_EMAIL_DOMAIN}` }, memberships: { none: {} } } }),
   ]);
   return {
+    workspaces: workspaces.count,
+    auditEvents: audit.count,
     bookings: bookings.count,
     members: members.count,
     invitations: invitations.count,

@@ -8,10 +8,12 @@ import { regionsOf } from "@/lib/holiday-regions";
 import type { Locale } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { requireAdmin } from "@/lib/session";
+import { restoreCutoff, restoreDaysLeft } from "@/lib/undo";
 import { SampleTeamButton } from "../sample-team-button";
 import {
   inviteAction,
   removeMemberAction,
+  restoreMemberAction,
   resendInviteAction,
   revokeInviteAction,
   updateMemberAction,
@@ -37,7 +39,7 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
   const { members: t, common } = await getMessages();
   const WEEKDAYS = t.weekdays;
 
-  const [members, invites, samples] = await Promise.all([
+  const [members, invites, samples, removed] = await Promise.all([
     db.membership.findMany({
       where: { workspaceId: workspace.id, removedAt: null },
       include: { user: { select: { name: true, email: true } } },
@@ -48,6 +50,11 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
       orderBy: { createdAt: "desc" },
     }),
     db.membership.count({ where: { workspaceId: workspace.id, isSample: true } }),
+    db.membership.findMany({
+      where: { workspaceId: workspace.id, isSample: false, removedAt: { gt: restoreCutoff() } },
+      include: { user: { select: { name: true, email: true } } },
+      orderBy: { removedAt: "desc" },
+    }),
   ]);
   const now = new Date();
   const regions = regionsOf(workspace.settings?.holidayCountry ?? "", locale);
@@ -223,6 +230,31 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
         </ul>
         <p className="text-xs opacity-60">{t.allowanceHint}</p>
       </section>
+
+      {removed.length > 0 && (
+        <section className="card space-y-2">
+          <h2 className="font-medium">{t.removedHeading}</h2>
+          <p className="text-xs opacity-60">{t.removedHint}</p>
+          <ul className="divide-y divide-border">
+            {removed.map((m) => {
+              const who = m.user.name ?? m.user.email;
+              return (
+                <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                  <span>
+                    <span className="font-medium">{who}</span>{" "}
+                    <span className="text-muted">· {t.daysLeft(restoreDaysLeft(m.removedAt!))}</span>
+                  </span>
+                  <ActionForm action={restoreMemberAction.bind(null, slug, m.id)}>
+                    <button className="btn-secondary px-3 py-1" aria-label={t.restoreLabel(who)}>
+                      {t.restore}
+                    </button>
+                  </ActionForm>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

@@ -9,7 +9,10 @@ import { db } from "@/lib/db";
 import { isHolidayRegion } from "@/lib/holiday-regions";
 import { getMessages } from "@/lib/i18n/server";
 import { inviteMembers, parseEmailList, resendInvitation } from "@/lib/invitations";
+import { recordAudit } from "@/lib/audit";
 import { accessOf } from "@/lib/plans";
+import { restoreMember } from "@/lib/restore";
+import { MEMBER_REMOVED } from "@/lib/undo";
 import { requireAdmin } from "@/lib/session";
 import { appOrigin } from "@/lib/url";
 
@@ -144,6 +147,16 @@ export async function updateMemberAction(
     where: { id: member.id },
     data: { role, annualAllowanceDays: allowance, holidayRegion, workDays, employmentStart },
   });
+  if (role !== member.role) {
+    const who = await db.user.findUniqueOrThrow({ where: { id: member.userId }, select: { name: true, email: true } });
+    await recordAudit({
+      workspaceId: ctx.workspace.id,
+      actorId: ctx.user.id,
+      action: "member.role_changed",
+      targetLabel: who.name ?? who.email,
+      detail: role,
+    });
+  }
   revalidatePath(`/w/${slug}`, "layout");
   return { ok: t.saved };
 }
@@ -153,19 +166,47 @@ export async function removeMemberAction(slug: string, membershipId: string): Pr
   const t = (await getMessages()).members;
   const member = await db.membership.findFirst({
     where: { id: membershipId, workspaceId: ctx.workspace.id, removedAt: null },
+    include: { user: { select: { name: true, email: true } } },
   });
   if (!member) return { error: t.errors.memberNotFound };
   if (member.role === "ADMIN" && (await wouldRemoveLastAdmin(ctx.workspace.id, member.id))) {
     return { error: t.errors.lastAdmin };
   }
+  const now = new Date();
   await db.$transaction([
-    db.membership.update({ where: { id: member.id }, data: { removedAt: new Date() } }),
-    // Their future plans no longer apply; history stays.
-    db.booking.updateMany({
-      where: { membershipId: member.id, status: { in: ["PENDING", "APPROVED"] }, startDate: { gt: new Date() } },
-      data: { status: "CANCELLED" },
-    }),
+    db.membership.update({ where: { id: member.id }, data: { removedAt: now } }),
+    // Their future plans no longer apply; history stays. They are marked so "Restore" brings them back as they were.
+    ...(["PENDING", "APPROVED"] as const).map((status) =>
+      db.booking.updateMany({
+        where: { membershipId: member.id, status, startDate: { gt: now } },
+        data: { status: "CANCELLED", cancelledAt: now, cancelledFrom: status, cancelReason: MEMBER_REMOVED },
+      }),
+    ),
   ]);
+  await recordAudit({
+    workspaceId: ctx.workspace.id,
+    actorId: ctx.user.id,
+    action: "member.removed",
+    targetLabel: member.user.name ?? member.user.email,
+  });
   revalidatePath(`/w/${slug}`, "layout");
   return {};
+}
+
+export async function restoreMemberAction(slug: string, membershipId: string): Promise<ActionResult> {
+  const { ctx } = await inviteContext(slug);
+  const t = (await getMessages()).members;
+  const result = await restoreMember(ctx.workspace, membershipId, ctx.user.id);
+  if (!result.ok) {
+    return {
+      error:
+        result.reason === "limit"
+          ? t.errors.restoreLimit(accessOf(ctx.workspace).name, result.max ?? 0)
+          : result.reason === "expired"
+            ? t.errors.restoreExpired
+            : t.errors.memberNotFound,
+    };
+  }
+  revalidatePath(`/w/${slug}`, "layout");
+  return { ok: t.restored(result.bookings, result.skipped) };
 }

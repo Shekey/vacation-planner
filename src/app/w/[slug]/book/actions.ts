@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { ActionResult } from "@/components/action-form";
-import { BookingError, cancelBooking, createBooking, updateBooking } from "@/lib/bookings";
+import { BookingError, cancelBooking, createBooking, restoreBooking, updateBooking } from "@/lib/bookings";
 import { isISODate } from "@/lib/dates";
 import { getMessages } from "@/lib/i18n/server";
 import { actorOf, requireMembership, settingsOf } from "@/lib/session";
@@ -59,4 +59,16 @@ export async function cancelBookingAction(slug: string, bookingId: string): Prom
   }
   revalidatePath(`/w/${slug}`, "layout");
   return { ok: (await getMessages()).book.cancelled };
+}
+
+export async function restoreBookingAction(slug: string, bookingId: string): Promise<ActionResult> {
+  const ctx = await requireMembership(slug);
+  try {
+    await restoreBooking({ workspace: ctx.workspace, settings: settingsOf(ctx.workspace), actor: actorOf(ctx), bookingId });
+  } catch (e) {
+    if (e instanceof BookingError) return { error: e.message };
+    throw e;
+  }
+  revalidatePath(`/w/${slug}`, "layout");
+  return { ok: (await getMessages()).book.restored };
 }

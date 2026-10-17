@@ -6,7 +6,16 @@ Book and plan vacations inside invite-only workspaces. See the v1 plan for scope
 
 The code is ready for a first paying customer once these are done. They are things only you can do (accounts, contracts, money). Work through them top to bottom; the first three block selling. The bigger plan, with pricing reasoning and next features, is in [`docs/sales-plan.md`](docs/sales-plan.md).
 
-### After the launch-foundations update (PR #16)
+### After the undo and activity-log update
+
+Customers can now undo their own mistakes: bring back a removed person (with their cancelled time off), undo a cancelled booking, and restore a deleted workspace, each for 30 days. Admins also have an *Activity* page (who removed, cancelled, approved or deleted what, kept 12 months). The database change runs by itself on the next deploy. What you must do:
+
+1. **Check the backup window of your Neon plan** (Neon → *Settings* → *Storage* / *Restore window*). The free plan keeps only a very short history. Pick a plan with at least 7 days, and make the privacy text and DPA ("backups … 30 days") match what you really have.
+2. **Keep your own copy of the database** in separate storage, e.g. a weekly `pg_dump "$DATABASE_URL" > backup.sql` saved to a cloud drive. Neon's restore brings back the whole database at once, so it can't restore a single customer's workspace; it is your safety net for a disaster, not for customers' mistakes.
+3. Show your lawyer the new *Activity log* paragraph in `/datenschutz` (legal basis, 12 months, names of the people involved) and the 30-day restore wording in the privacy text and `/avv`.
+4. Try it in a test workspace: remove a person and restore them, cancel a booking and undo it, delete the workspace and restore it from the workspace list.
+
+### After the launch-foundations update
 
 The database change runs by itself on the next deploy. What it needs from you:
 

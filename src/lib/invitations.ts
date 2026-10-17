@@ -96,9 +96,9 @@ export type InvitationLookup =
 export async function findInvitation(token: string): Promise<InvitationLookup> {
   const invitation = await db.invitation.findUnique({
     where: { tokenHash: hashToken(token) },
-    include: { workspace: { select: { id: true, name: true, slug: true } } },
+    include: { workspace: { select: { id: true, name: true, slug: true, deletedAt: true } } },
   });
-  if (!invitation) return { status: "invalid" };
+  if (!invitation || invitation.workspace.deletedAt) return { status: "invalid" };
   if (invitation.acceptedAt) return { status: "used" };
   if (invitation.revokedAt) return { status: "revoked" };
   if (invitation.expiresAt < new Date()) return { status: "expired" };

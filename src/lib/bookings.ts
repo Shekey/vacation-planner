@@ -7,7 +7,9 @@ import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { postToChannels } from "@/lib/notify";
 import { accessOf, isOverLimit } from "@/lib/plans";
+import { recordAudit, bookingDetail } from "@/lib/audit";
 import { isSampleEmail } from "@/lib/sample-team";
+import { canRestore } from "@/lib/undo";
 
 export const ACTIVE_STATUSES: BookingStatus[] = ["PENDING", "APPROVED"];
 
@@ -93,7 +95,7 @@ export function spanOf(b: { startDate: Date; endDate: Date; startPart: string; e
   };
 }
 
-function isOverlapError(e: unknown) {
+export function isOverlapError(e: unknown) {
   return String((e as Error)?.message ?? e).includes("Booking_no_overlap") || JSON.stringify(e ?? "").includes("Booking_no_overlap");
 }
 
@@ -246,12 +248,60 @@ export async function cancelBooking(opts: { workspaceId: string; actor: Actor; b
   const t = (await getMessages()).errors;
   const booking = await db.booking.findFirst({
     where: { id: opts.bookingId, workspaceId: opts.workspaceId, status: { in: ACTIVE_STATUSES } },
+    include: { membership: { include: { user: { select: { name: true, email: true } } } } },
   });
   if (!booking) throw new BookingError(t.bookingNotFound);
   if (booking.membershipId !== opts.actor.membershipId && opts.actor.role !== "ADMIN") {
     throw new BookingError(t.onlyOwnCancel);
   }
-  await db.booking.update({ where: { id: booking.id }, data: { status: "CANCELLED" } });
+  // Remember what it was, so "Restore" puts it back as it was (approved stays approved).
+  await db.booking.update({
+    where: { id: booking.id },
+    data: { status: "CANCELLED", cancelledAt: new Date(), cancelledFrom: booking.status, cancelReason: null },
+  });
+  await recordAudit({
+    workspaceId: opts.workspaceId,
+    actorId: opts.actor.userId,
+    action: "booking.cancelled",
+    targetLabel: booking.membership.user.name ?? booking.membership.user.email,
+    detail: bookingDetail(spanOf(booking)),
+  });
+}
+
+/**
+ * Puts a booking cancelled in the last RESTORE_DAYS back as it was. The person or an admin can do it;
+ * bookings cancelled because the person was removed come back with the person instead (restoreMember).
+ */
+export async function restoreBooking(opts: {
+  workspace: { id: string };
+  settings: Settings;
+  actor: Actor;
+  bookingId: string;
+}) {
+  const t = (await getMessages()).errors;
+  const booking = await db.booking.findFirst({
+    where: { id: opts.bookingId, workspaceId: opts.workspace.id, status: "CANCELLED", cancelReason: null, membership: { removedAt: null } },
+    include: { membership: { include: { user: { select: { name: true, email: true } } } } },
+  });
+  if (!booking) throw new BookingError(t.bookingNotFound);
+  if (booking.membershipId !== opts.actor.membershipId && opts.actor.role !== "ADMIN") {
+    throw new BookingError(t.onlyOwnChange);
+  }
+  if (!canRestore(booking.cancelledAt)) throw new BookingError(t.restoreExpired);
+  await assertWithinPlan(opts.workspace.id);
+  await write(() =>
+    db.booking.update({
+      where: { id: booking.id },
+      data: { status: booking.cancelledFrom ?? initialStatus(opts.actor, opts.settings), cancelledAt: null, cancelledFrom: null },
+    }),
+  );
+  await recordAudit({
+    workspaceId: opts.workspace.id,
+    actorId: opts.actor.userId,
+    action: "booking.restored",
+    targetLabel: booking.membership.user.name ?? booking.membership.user.email,
+    detail: bookingDetail(spanOf(booking)),
+  });
 }
 
 export async function decideBooking(opts: {
@@ -283,6 +333,13 @@ export async function decideBooking(opts: {
   });
 
   const span = spanOf(booking);
+  await recordAudit({
+    workspaceId: opts.workspace.id,
+    actorId: opts.actor.userId,
+    action: opts.approve ? "booking.approved" : "booking.declined",
+    targetLabel: booking.membership.user.name ?? booking.membership.user.email,
+    detail: bookingDetail(span),
+  });
   const locale = recipientLocale(booking.membership.user, opts.settings);
   const t2 = messagesFor(locale).email.decision;
   await sendEmail({

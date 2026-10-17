@@ -33,7 +33,8 @@ export const book = defineMessages({
     pickStart: "Pick a start date.",
     pickEnd: "Pick an end date.",
     invalid: "Something is missing. Check the form and try again.",
-    cancelled: "Cancelled.",
+    cancelled: "Cancelled. You can undo this for 30 days.",
+    restored: "Booking restored.",
   },
   de: {
     title: "Abwesenheit eintragen",
@@ -70,6 +71,7 @@ export const book = defineMessages({
     pickStart: "Wähle ein Startdatum.",
     pickEnd: "Wähle ein Enddatum.",
     invalid: "Da fehlt noch etwas. Prüf das Formular und versuch es noch einmal.",
-    cancelled: "Storniert.",
+    cancelled: "Storniert. Du kannst das 30 Tage lang rückgängig machen.",
+    restored: "Buchung wiederhergestellt.",
   },
 });

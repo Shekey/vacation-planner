@@ -74,6 +74,7 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
               </NavLink>
             )}
             <NavLink href={`${base}/members`}>{t.nav.members}</NavLink>
+            <NavLink href={`${base}/activity`}>{t.nav.activity}</NavLink>
             <NavLink href={`${base}/settings`}>{t.nav.settings}</NavLink>
             <NavLink href={`${base}/billing`}>{t.nav.billing}</NavLink>
           </>

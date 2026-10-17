@@ -19,7 +19,7 @@ export async function GET(req: Request) {
 
   const origin = await appOrigin();
   const workspaces = await db.workspace.findMany({
-    where: { settings: { OR: [{ teamsWebhookUrl: { not: null } }, { slackWebhookUrl: { not: null } }] } },
+    where: { deletedAt: null, settings: { OR: [{ teamsWebhookUrl: { not: null } }, { slackWebhookUrl: { not: null } }] } },
     include: { settings: true },
   });
 

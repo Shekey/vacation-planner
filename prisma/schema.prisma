@@ -27,6 +27,7 @@ model User {
   sentInvitations   Invitation[] @relation("InvitationSender")
   createdBookings   Booking[]    @relation("BookingCreator")
   decidedBookings   Booking[]    @relation("BookingDecider")
+  auditEvents       AuditEvent[]
 }
 
 model Account {
@@ -81,15 +82,17 @@ enum Plan {
 }
 
 model Workspace {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
-  slug        String   @unique
+  slug        String    @unique
   // IANA timezone used for date math, e.g. "Europe/Sarajevo".
-  timezone    String   @default("UTC")
+  timezone    String    @default("UTC")
   // Null once the creator deleted their account.
   createdById String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  // Set when an admin deletes the workspace. It is hidden and can be restored for RESTORE_DAYS; the monthly purge then deletes it for good.
+  deletedAt   DateTime?
 
   // Billing. Everything is unlocked until trialEndsAt; after that the paid plan applies while Stripe says it's active.
   plan                 Plan      @default(FREE)
@@ -111,6 +114,7 @@ model Workspace {
   invitations Invitation[]
   bookings    Booking[]
   holidays    Holiday[]
+  auditEvents AuditEvent[]
 }
 
 // Days off for everyone; they don't count against allowances.
@@ -246,27 +250,32 @@ enum BookingStatus {
 }
 
 model Booking {
-  id           String        @id @default(cuid())
-  workspaceId  String
-  membershipId String
-  startDate    DateTime      @db.Date
+  id            String         @id @default(cuid())
+  workspaceId   String
+  membershipId  String
+  startDate     DateTime       @db.Date
   // Inclusive.
-  endDate      DateTime      @db.Date
+  endDate       DateTime       @db.Date
   // FULL or PM (starts after lunch).
-  startPart    DayPart       @default(FULL)
+  startPart     DayPart        @default(FULL)
   // FULL or AM (ends at lunch).
-  endPart      DayPart       @default(FULL)
-  type         BookingType   @default(VACATION)
-  note         String?
-  status       BookingStatus
-  daysCount    Decimal       @db.Decimal(4, 1)
+  endPart       DayPart        @default(FULL)
+  type          BookingType    @default(VACATION)
+  note          String?
+  status        BookingStatus
+  daysCount     Decimal        @db.Decimal(4, 1)
   // Null once the creator deleted their account.
-  createdById  String?
-  decidedById  String?
-  decidedAt    DateTime?
-  decisionNote String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdById   String?
+  decidedById   String?
+  decidedAt     DateTime?
+  decisionNote  String?
+  // Set when the booking is cancelled, so it can be restored for RESTORE_DAYS: when, what it was before, and "MEMBER_REMOVED"
+  // when it was cancelled because the person was removed (it then comes back with them).
+  cancelledAt   DateTime?
+  cancelledFrom BookingStatus?
+  cancelReason  String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   workspace  Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
@@ -275,4 +284,24 @@ model Booking {
 
   @@index([workspaceId, startDate])
   @@index([membershipId])
+}
+
+// Who did what in a workspace, shown to admins and deleted after AUDIT_RETENTION_MONTHS. No free text, no health data.
+model AuditEvent {
+  id          String   @id @default(cuid())
+  workspaceId String
+  // Null once the person deleted their account.
+  actorId     String?
+  // e.g. "member.removed", see src/lib/audit.ts.
+  action      String
+  // The person the action was about, by name or email.
+  targetLabel String?
+  // Machine-readable extra: "2026-11-02/2026-11-04" for bookings, the new role for role changes.
+  detail      String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  actor     User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
 }

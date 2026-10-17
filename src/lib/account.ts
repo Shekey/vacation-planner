@@ -11,7 +11,8 @@ import { cancelSubscriptionNow } from "@/lib/stripe";
  */
 export async function accountDeletionPlan(userId: string) {
   const memberships = await db.membership.findMany({
-    where: { userId, removedAt: null },
+    // Deleted workspaces don't block anything; the monthly purge removes them.
+    where: { userId, removedAt: null, workspace: { deletedAt: null } },
     select: {
       role: true,
       workspace: {

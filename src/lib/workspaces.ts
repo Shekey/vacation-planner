@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { TRIAL_DAYS } from "@/lib/plans";
 import { uniqueSlug } from "@/lib/slug";
+import { restoreCutoff } from "@/lib/undo";
 
 /** Creates a workspace with default settings and makes the creator its first admin. */
 export async function createWorkspace(input: {
@@ -40,8 +41,17 @@ export async function createWorkspace(input: {
 
 export function listWorkspacesForUser(userId: string) {
   return db.membership.findMany({
-    where: { userId, removedAt: null },
+    where: { userId, removedAt: null, workspace: { deletedAt: null } },
     include: { workspace: true },
     orderBy: { workspace: { name: "asc" } },
+  });
+}
+
+/** Workspaces this person administers that were deleted less than RESTORE_DAYS ago, for the "Restore" list. */
+export function listDeletedWorkspacesForAdmin(userId: string) {
+  return db.workspace.findMany({
+    where: { deletedAt: { gt: restoreCutoff() }, memberships: { some: { userId, role: "ADMIN", removedAt: null } } },
+    select: { id: true, name: true, deletedAt: true },
+    orderBy: { deletedAt: "desc" },
   });
 }
