@@ -6,6 +6,16 @@ Book and plan vacations inside invite-only workspaces. See the v1 plan for scope
 
 The code is ready for a first paying customer once these are done. They are things only you can do (accounts, contracts, money). Work through them top to bottom; the first three block selling. The bigger plan, with pricing reasoning and next features, is in [`docs/sales-plan.md`](docs/sales-plan.md).
 
+### After the launch-foundations update (PR #16)
+
+The database change runs by itself on the next deploy. What it needs from you:
+
+1. Make sure `CRON_SECRET` is set in Vercel. Without it the emails to admins before their trial ends (7 days and 1–2 days before) don't go out. They also need email turned on (step 3.1).
+2. In Stripe, turn on failed-payment retries and emails (step 3.5). The terms now say Stripe retries and then the workspace moves to Free.
+3. Set the new optional legal variables `LEGAL_REPRESENTATIVE`, `LEGAL_REGISTER` and `LEGAL_SUPERVISORY_AUTHORITY` (step 2, table below).
+4. Decide whether you refund the rest of the period when a paying customer deletes their workspace. The app now cancels the subscription at once and Stripe refunds nothing by default (step 2, last row of the table).
+5. Try it: create a test workspace, click "Fill with a sample team" on the overview, look at the calendar, then "Remove sample team".
+
 ### 1. Move hosting to Frankfurt (blocks selling)
 
 The privacy policy, the DPA (`/avv`) and the landing page already say data is stored in Frankfurt. Until it is, that statement is false.
