@@ -40,6 +40,14 @@ export const settings = defineMessages({
     slackHint:
       "The same posts in a Slack channel. In Slack, create an app at api.slack.com/apps, turn on Incoming Webhooks, add one for the channel, and paste its URL here. You can use Teams, Slack or both.",
     save: "Save settings",
+    supportHeading: "Support access",
+    supportBody:
+      "If you need help, you can let our support team look at your workspace's members, plan and settings (not at anyone's time off) for 24 hours. Every look shows up on your Activity page. It switches off by itself.",
+    supportOn: (until: string) => `Support access is on until ${until}.`,
+    supportGrant: "Allow support access for 24 hours",
+    supportRevoke: "Turn off now",
+    supportGranted: "Support access is on for 24 hours.",
+    supportRevoked: "Support access is off.",
     deleteHeading: "Delete workspace",
     deleteBody: (name: string) =>
       `Deletes ${name} with all its members' bookings, allowances and holidays, for everyone. A paid plan is cancelled with it, so nothing more is charged. You can restore the workspace from your workspace list for 30 days; after that it is gone for good. To hand the workspace over instead, make someone else an admin in Members.`,
@@ -102,6 +110,14 @@ export const settings = defineMessages({
     slackHint:
       "Dieselben Posts in einem Slack-Kanal. Erstelle in Slack unter api.slack.com/apps eine App, schalte Incoming Webhooks ein, füge einen für den Kanal hinzu und füge die URL hier ein. Du kannst Teams, Slack oder beides nutzen.",
     save: "Einstellungen speichern",
+    supportHeading: "Support-Zugriff",
+    supportBody:
+      "Wenn du Hilfe brauchst, kannst du unserem Support 24 Stunden lang erlauben, Mitglieder, Tarif und Einstellungen deines Workspaces anzusehen (nicht den Urlaub von irgendwem). Jeder Blick erscheint in deinem Verlauf. Er schaltet sich von selbst ab.",
+    supportOn: (until: string) => `Der Support-Zugriff ist an bis ${until}.`,
+    supportGrant: "Support-Zugriff für 24 Stunden erlauben",
+    supportRevoke: "Jetzt ausschalten",
+    supportGranted: "Der Support-Zugriff ist für 24 Stunden an.",
+    supportRevoked: "Der Support-Zugriff ist aus.",
     deleteHeading: "Workspace löschen",
     deleteBody: (name: string) =>
       `Löscht ${name} mit allen Buchungen, Urlaubsansprüchen und Feiertagen aller Mitglieder, für alle. Ein bezahlter Tarif wird dabei gekündigt, es wird also nichts mehr abgebucht. Du kannst den Workspace 30 Tage lang in deiner Workspace-Liste wiederherstellen, danach ist er endgültig weg. Um den Workspace stattdessen zu übergeben, mach unter Mitglieder jemand anderen zum Admin.`,

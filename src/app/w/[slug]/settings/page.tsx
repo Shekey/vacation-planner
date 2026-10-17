@@ -5,6 +5,7 @@ import { getLocale, getMessages } from "@/lib/i18n/server";
 import { accessOf } from "@/lib/plans";
 import { requireAdmin, settingsOf } from "@/lib/session";
 import { deleteWorkspaceAction, saveSettingsAction } from "./actions";
+import { SupportAccess } from "./support-access";
 
 function Toggle({ name, label, hint, defaultChecked }: { name: string; label: string; hint: string; defaultChecked: boolean }) {
   return (
@@ -189,6 +190,8 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
 
         <button className="btn">{t.save}</button>
       </ActionForm>
+
+      <SupportAccess slug={slug} until={workspace.supportAccessUntil} timezone={workspace.timezone} />
 
       <section className="card space-y-3 border-red-500/40">
         <h2 className="font-medium text-red-600">{t.deleteHeading}</h2>

@@ -72,6 +72,18 @@ export function formatDate(
   return new Intl.DateTimeFormat(intlLocale(locale), { ...opts, timeZone: "UTC" }).format(fromISO(iso));
 }
 
+/** "17 Oct 2026, 22:49" in a time zone, for moments rather than days. */
+export function formatDateTime(date: Date, locale: Locale = "en", timeZone = "UTC"): string {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone,
+  }).format(date);
+}
+
 export function formatRange(start: ISODate, end: ISODate, locale: Locale = "en"): string {
   const withYear = { day: "numeric", month: "short", year: "numeric" } as const;
   if (start === end) return formatDate(start, withYear, locale);
