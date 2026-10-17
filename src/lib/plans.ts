@@ -5,8 +5,8 @@ export const TRIAL_DAYS = 30;
 /** Prices are net, in euros. Larger teams talk to us. */
 export const PLANS = {
   FREE: { name: "Free", maxMembers: 5, monthly: 0, yearly: 0, chat: false },
-  TEAM: { name: "Team", maxMembers: 20, monthly: 15, yearly: 150, chat: true },
-  BUSINESS: { name: "Business", maxMembers: 50, monthly: 35, yearly: 350, chat: true },
+  TEAM: { name: "Team", maxMembers: 25, monthly: 29, yearly: 290, chat: true },
+  BUSINESS: { name: "Business", maxMembers: 75, monthly: 69, yearly: 690, chat: true },
 } as const satisfies Record<Plan, { name: string; maxMembers: number; monthly: number; yearly: number; chat: boolean }>;
 
 export type PaidPlan = Exclude<Plan, "FREE">;
@@ -27,7 +27,7 @@ export type Access = {
 
 type BillingRow = { plan: Plan; billingStatus: string | null; trialEndsAt: Date | null };
 
-/** The plan a workspace is on now: a live subscription, else the trial (everything, up to 50 people), else Free. */
+/** The plan a workspace is on now: a live subscription, else the trial (everything, up to the Business limit), else Free. */
 export function accessOf(ws: BillingRow, now = new Date()): Access {
   const trialDaysLeft = ws.trialEndsAt ? Math.max(0, Math.ceil((ws.trialEndsAt.getTime() - now.getTime()) / 86_400_000)) : 0;
   if (ws.plan !== "FREE" && ws.billingStatus && LIVE_STATUSES.has(ws.billingStatus)) {

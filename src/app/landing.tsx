@@ -22,9 +22,39 @@ const CELL: Record<string, string> = {
   a: "bg-violet-500",
 };
 
+/* Small notifications floating around the hero calendar, the way the app tells people things. */
+function Toast({ className, icon, children }: { className: string; icon: string; children: React.ReactNode }) {
+  return (
+    <div
+      aria-hidden
+      className={`float absolute z-10 flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium whitespace-nowrap shadow-lg shadow-sky-900/10 ${className}`}
+    >
+      <span>{icon}</span>
+      {children}
+    </div>
+  );
+}
+
+function HeroVisual({ t }: { t: T }) {
+  return (
+    <div className="relative pt-6 pb-8 sm:px-4">
+      <Toast className="-top-1 left-2 sm:left-0" icon="✅">
+        {t.hero.toastApproved}
+      </Toast>
+      <CalendarPreview t={t} />
+      <Toast className="right-2 -bottom-1 [animation-delay:1.5s] sm:right-0" icon="⚠️">
+        {t.hero.toastWarning}
+      </Toast>
+      <Toast className="top-1/2 right-0 hidden [animation-delay:0.8s] lg:flex" icon="🌴">
+        {t.hero.toastLeft}
+      </Toast>
+    </div>
+  );
+}
+
 function CalendarPreview({ t }: { t: T }) {
   return (
-    <figure className="card space-y-3 bg-background shadow-xl shadow-sky-900/10">
+    <figure className="card space-y-3 bg-surface shadow-2xl shadow-sky-900/15">
       <div role="img" aria-label={t.preview.label} className="space-y-1.5">
         <div className="grid grid-cols-[3.5rem_repeat(20,minmax(0,1fr))] gap-px text-[10px] opacity-60" aria-hidden>
           <span />
@@ -158,57 +188,158 @@ function RegionCompare({ t }: { t: T }) {
   );
 }
 
+function SectionHeading({ id, title, subtitle, center }: { id: string; title: string; subtitle?: string; center?: boolean }) {
+  return (
+    <div className={`max-w-2xl space-y-2 ${center ? "mx-auto text-center" : ""}`}>
+      <h2 id={id} className="text-3xl font-semibold tracking-tight sm:text-4xl">
+        {title}
+      </h2>
+      {subtitle && <p className="text-lg text-muted">{subtitle}</p>}
+    </div>
+  );
+}
+
 export async function Landing() {
   const [locale, m] = await Promise.all([getLocale(), getMessages()]);
   const t = m.landing;
-  const euro = (n: number) =>
-    new Intl.NumberFormat(intlLocale(locale), { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+  const euro = (n: number, decimals = 0) =>
+    new Intl.NumberFormat(intlLocale(locale), {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(n);
   return (
-    <div className="space-y-24 pb-8">
-      <section className="grid items-center gap-10 pt-4 md:grid-cols-2" aria-labelledby="hero-title">
+    <div className="space-y-24 pb-8 sm:space-y-28">
+      <section className="relative grid items-center gap-10 overflow-x-clip pt-4 md:grid-cols-2" aria-labelledby="hero-title">
+        {/* Soft color behind the hero; purely decorative. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 -top-24 -z-10 h-[34rem] bg-[radial-gradient(40rem_20rem_at_20%_20%,rgb(14_165_233/0.18),transparent),radial-gradient(30rem_18rem_at_85%_40%,rgb(20_184_166/0.16),transparent)]"
+        />
         <div className="space-y-6">
-          <p className="text-sm font-medium text-sky-700 dark:text-sky-400">{t.hero.eyebrow}</p>
-          <h1 id="hero-title" className="text-4xl font-semibold tracking-tight sm:text-5xl">
+          <p className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-sm font-medium text-sky-700 dark:text-sky-300">
+            <span aria-hidden>🌴</span> {t.hero.eyebrow}
+          </p>
+          <h1 id="hero-title" className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
             {t.hero.title}
           </h1>
-          <p className="text-lg opacity-80">{t.hero.body}</p>
+          <p className="text-lg text-muted">{t.hero.body}</p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/sign-in" className="btn px-5 py-3 text-base">
-              {t.hero.cta}
+            <Link href="/sign-in" className="btn px-5 py-3 text-base shadow-lg shadow-sky-600/25">
+              {t.hero.cta(TRIAL_DAYS)}
             </Link>
-            <a href="#features" className="inline-flex items-center rounded-md px-4 py-3 font-medium underline">
-              {t.hero.more}
+            <a href="#pricing" className="btn-secondary px-5 py-3 text-base">
+              {t.hero.pricing}
             </a>
           </div>
-          <p className="text-sm opacity-70">{t.hero.invite}</p>
+          <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted">
+            {t.hero.ticks.map((tick) => (
+              <li key={tick} className="flex items-center gap-1.5">
+                <span aria-hidden className="font-semibold text-green-600 dark:text-green-400">
+                  ✓
+                </span>
+                {tick}
+              </li>
+            ))}
+          </ul>
+          <p className="text-sm text-muted">{t.hero.invite}</p>
         </div>
-        <CalendarPreview t={t} />
+        <HeroVisual t={t} />
       </section>
 
-      <section id="features" className="scroll-mt-8 space-y-8" aria-labelledby="features-title">
-        <div className="max-w-2xl space-y-2">
-          <h2 id="features-title" className="text-3xl font-semibold tracking-tight">
-            {t.features.title}
-          </h2>
-          <p className="opacity-80">{t.features.subtitle}</p>
+      <section aria-label={t.trust.label} className="-mt-8 sm:-mt-12">
+        <ul className="flex flex-wrap justify-center gap-2">
+          {t.trust.items.map((item) => (
+            <li
+              key={item.text}
+              className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-sm shadow-xs"
+            >
+              <span aria-hidden>{item.icon}</span>
+              {item.text}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section id="for-whom" className="scroll-mt-20 space-y-8" aria-labelledby="audiences-title">
+        <SectionHeading id="audiences-title" title={t.audiences.title} subtitle={t.audiences.subtitle} />
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {t.audiences.items.map((a) => (
+            <li key={a.title} className="card card-link flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <span aria-hidden className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-2xl">
+                  {a.icon}
+                </span>
+                <h3 className="font-semibold leading-snug">{a.title}</h3>
+              </div>
+              <p className="flex-1 text-sm text-muted">
+                <span className="mr-1.5 rounded bg-black/5 px-1.5 py-0.5 text-[11px] font-medium tracking-wide uppercase dark:bg-white/10">
+                  {t.audiences.example}
+                </span>
+                {a.story}
+              </p>
+              <ul className="flex flex-wrap gap-1.5" aria-label={a.title}>
+                {a.tags.map((tag) => (
+                  <li key={tag} className="rounded-full bg-sky-500/10 px-2.5 py-0.5 text-xs font-medium text-sky-800 dark:text-sky-300">
+                    {tag}
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="space-y-8" aria-labelledby="compare-title">
+        <SectionHeading id="compare-title" title={t.compare.title} center />
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="card space-y-3 bg-black/[0.02] dark:bg-white/[0.02]">
+            <h3 className="font-semibold text-muted">{t.compare.beforeTitle}</h3>
+            <ul className="space-y-2.5">
+              {t.compare.before.map((line) => (
+                <li key={line} className="flex gap-2.5 text-sm text-muted">
+                  <span aria-hidden className="text-red-500">
+                    ✕
+                  </span>
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="card space-y-3 ring-2 ring-primary/40">
+            <h3 className="font-semibold">{t.compare.afterTitle}</h3>
+            <ul className="space-y-2.5">
+              {t.compare.after.map((line) => (
+                <li key={line} className="flex gap-2.5 text-sm">
+                  <span aria-hidden className="font-semibold text-green-600 dark:text-green-400">
+                    ✓
+                  </span>
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
+      </section>
+
+      <section id="features" className="scroll-mt-20 space-y-8" aria-labelledby="features-title">
+        <SectionHeading id="features-title" title={t.features.title} subtitle={t.features.subtitle} />
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {t.features.items.map((f) => (
-            <li key={f.title} className="card space-y-1.5">
+            <li key={f.title} className="card space-y-2">
+              <span aria-hidden className="grid size-9 place-items-center rounded-lg bg-primary/10 text-lg">
+                {f.icon}
+              </span>
               <h3 className="font-semibold">{f.title}</h3>
-              <p className="text-sm opacity-80">{f.body}</p>
+              <p className="text-sm text-muted">{f.body}</p>
             </li>
           ))}
         </ul>
       </section>
 
       <section className="space-y-8" aria-labelledby="numbers-title">
-        <div className="max-w-2xl space-y-2">
-          <h2 id="numbers-title" className="text-3xl font-semibold tracking-tight">
-            {t.numbers.title}
-          </h2>
-          <p className="opacity-80">{t.numbers.subtitle}</p>
-        </div>
+        <SectionHeading id="numbers-title" title={t.numbers.title} subtitle={t.numbers.subtitle} />
         <div className="grid gap-4 md:grid-cols-3">
           <AllowanceRing t={t} />
           <BridgeDay t={t} locale={locale} />
@@ -217,84 +348,113 @@ export async function Landing() {
       </section>
 
       <section className="space-y-8" aria-labelledby="how-title">
-        <h2 id="how-title" className="text-3xl font-semibold tracking-tight">
-          {t.steps.title}
-        </h2>
+        <SectionHeading id="how-title" title={t.steps.title} />
         <ol className="grid gap-4 md:grid-cols-3">
           {t.steps.items.map((s, i) => (
             <li key={s.title} className="card flex gap-4">
               <span
                 aria-hidden
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-foreground font-semibold text-background"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground"
               >
                 {i + 1}
               </span>
               <div className="space-y-1">
                 <h3 className="font-semibold">{s.title}</h3>
-                <p className="text-sm opacity-80">{s.body}</p>
+                <p className="text-sm text-muted">{s.body}</p>
               </div>
             </li>
           ))}
         </ol>
       </section>
 
-      <section id="pricing" className="scroll-mt-8 space-y-6" aria-labelledby="pricing-title">
-        <div className="space-y-2">
-          <h2 id="pricing-title" className="text-3xl font-semibold tracking-tight">
-            {t.pricing.title}
-          </h2>
-          <p className="opacity-80">{t.pricing.subtitle(TRIAL_DAYS)}</p>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-3">
+      <section id="pricing" className="scroll-mt-20 space-y-8" aria-labelledby="pricing-title">
+        <SectionHeading id="pricing-title" title={t.pricing.title} subtitle={t.pricing.subtitle(TRIAL_DAYS)} center />
+        <div className="grid items-start gap-4 md:grid-cols-3">
           {(["FREE", "TEAM", "BUSINESS"] as const).map((key) => {
             const plan = PLANS[key];
+            const popular = key === "TEAM";
             return (
-              <div key={key} className={`card space-y-2 ${key === "TEAM" ? "ring-2 ring-primary" : ""}`}>
-                <h3 className="font-semibold">{plan.name}</h3>
-                <p>
-                  <span className="text-3xl font-semibold">{euro(plan.monthly)}</span>
-                  <span className="text-sm opacity-70">{t.pricing.perMonth}</span>
-                </p>
-                <p className="text-sm opacity-80">
-                  {t.pricing.upTo(plan.maxMembers)}
-                  {plan.yearly > 0 ? t.pricing.orYearly(euro(plan.yearly)) : ""}. {plan.chat ? t.pricing.withChat : t.pricing.withoutChat}
-                </p>
+              <div
+                key={key}
+                className={`card relative flex h-full flex-col gap-4 ${popular ? "ring-2 ring-primary shadow-xl shadow-sky-900/10 md:-translate-y-2" : ""}`}
+              >
+                {popular && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-xs font-semibold text-primary-foreground">
+                    {t.pricing.popular}
+                  </span>
+                )}
+                <div className="space-y-1">
+                  <h3 className="font-semibold">{plan.name}</h3>
+                  <p className="text-sm text-muted">{t.pricing.upTo(plan.maxMembers)}</p>
+                </div>
+                <div>
+                  <p>
+                    <span className="text-4xl font-semibold tracking-tight">{euro(plan.monthly)}</span>
+                    <span className="text-sm text-muted">{t.pricing.perMonth}</span>
+                  </p>
+                  {plan.yearly > 0 && (
+                    <p className="mt-1 text-xs text-muted">
+                      {t.pricing.orYearly(euro(plan.yearly))}
+                      <br />
+                      {t.pricing.perPerson(euro(plan.monthly / plan.maxMembers, 2))}
+                    </p>
+                  )}
+                </div>
+                <ul className="flex-1 space-y-2 text-sm">
+                  {t.pricing.features[key].map((f) => (
+                    <li key={f} className="flex gap-2">
+                      <span aria-hidden className="font-semibold text-green-600 dark:text-green-400">
+                        ✓
+                      </span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link href="/sign-in" className={popular ? "btn w-full" : "btn-secondary w-full"}>
+                  {key === "FREE" ? t.pricing.startFree : t.pricing.start}
+                </Link>
               </div>
             );
           })}
         </div>
-        <p className="text-sm opacity-70">{t.pricing.footnote(PLANS.BUSINESS.maxMembers)}</p>
+        <p className="text-center text-sm text-muted">{t.pricing.footnote(PLANS.BUSINESS.maxMembers)}</p>
       </section>
 
-      <section className="space-y-6" aria-labelledby="faq-title">
-        <h2 id="faq-title" className="text-3xl font-semibold tracking-tight">
-          {t.faq.title}
-        </h2>
-        <div className="divide-y divide-black/10 rounded-lg border border-black/10 dark:divide-white/10 dark:border-white/10">
+      <section id="faq" className="scroll-mt-20 space-y-6" aria-labelledby="faq-title">
+        <SectionHeading id="faq-title" title={t.faq.title} />
+        <div className="divide-y divide-border rounded-xl border border-border bg-surface">
           {t.faq.items.map((f) => (
-            <details key={f.q} className="group p-4">
+            <details key={f.q} className="group p-4 sm:px-5">
               <summary className="cursor-pointer list-none font-medium">
                 <span className="flex items-center justify-between gap-4">
                   {f.q}
-                  <span aria-hidden className="transition-transform group-open:rotate-45">
+                  <span aria-hidden className="text-xl leading-none text-muted transition-transform group-open:rotate-45">
                     +
                   </span>
                 </span>
               </summary>
-              <p className="mt-2 text-sm opacity-80">{f.a}</p>
+              <p className="mt-2 text-sm text-muted">{f.a}</p>
             </details>
           ))}
         </div>
       </section>
 
-      <section className="card space-y-4 py-10 text-center" aria-labelledby="cta-title">
-        <h2 id="cta-title" className="text-2xl font-semibold tracking-tight">
-          {t.cta.title}
-        </h2>
-        <p className="mx-auto max-w-xl opacity-80">{t.cta.body}</p>
-        <Link href="/sign-in" className="btn px-5 py-3 text-base">
-          {t.cta.button}
-        </Link>
+      <section
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-600 to-teal-600 px-6 py-12 text-center text-white shadow-xl shadow-sky-900/20"
+        aria-labelledby="cta-title"
+      >
+        <div className="mx-auto max-w-xl space-y-4">
+          <h2 id="cta-title" className="text-3xl font-semibold tracking-tight">
+            {t.cta.title}
+          </h2>
+          <p className="text-white/85">{t.cta.body}</p>
+          <Link
+            href="/sign-in"
+            className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-3 font-semibold text-sky-800 shadow-sm transition-colors hover:bg-sky-50"
+          >
+            {t.cta.button}
+          </Link>
+        </div>
       </section>
     </div>
   );

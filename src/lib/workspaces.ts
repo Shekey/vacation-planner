@@ -3,10 +3,19 @@ import { TRIAL_DAYS } from "@/lib/plans";
 import { uniqueSlug } from "@/lib/slug";
 
 /** Creates a workspace with default settings and makes the creator its first admin. */
-export async function createWorkspace(input: { name: string; timezone: string; userId: string; locale?: string }) {
+export async function createWorkspace(input: {
+  name: string;
+  timezone: string;
+  userId: string;
+  locale?: string;
+  approvalsEnabled?: boolean;
+  /** Yearly allowance for new members, the creator included. */
+  allowanceDays?: number;
+}) {
   const slug = await uniqueSlug(input.name, async (s) =>
     Boolean(await db.workspace.findUnique({ where: { slug: s }, select: { id: true } })),
   );
+  const allowance = input.allowanceDays ?? 20;
   return db.workspace.create({
     data: {
       name: input.name,
@@ -14,8 +23,10 @@ export async function createWorkspace(input: { name: string; timezone: string; u
       timezone: input.timezone,
       createdById: input.userId,
       trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 86_400_000),
-      settings: { create: { locale: input.locale } },
-      memberships: { create: { userId: input.userId, role: "ADMIN", annualAllowanceDays: 20 } },
+      settings: {
+        create: { locale: input.locale, approvalsEnabled: input.approvalsEnabled ?? false, defaultAllowanceDays: allowance },
+      },
+      memberships: { create: { userId: input.userId, role: "ADMIN", annualAllowanceDays: allowance } },
     },
   });
 }

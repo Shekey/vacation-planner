@@ -66,6 +66,13 @@ export function isHolidayCountry(code: string): boolean {
   return (HOLIDAY_COUNTRIES as readonly string[]).includes(code);
 }
 
+/** Countries with names in that language for a picker: Germany first, then alphabetically. */
+export function sortedCountries(locale: Locale = "en"): { code: string; name: string }[] {
+  return [...HOLIDAY_COUNTRIES]
+    .map((code) => ({ code, name: countryName(code, locale) }))
+    .sort((a, b) => Number(b.code === "DE") - Number(a.code === "DE") || a.name.localeCompare(b.name, locale));
+}
+
 /** A region is valid when it is listed for that country. */
 export function isHolidayRegion(country: string, region: string): boolean {
   return HOLIDAY_REGIONS[country]?.some((r) => r.code === region) ?? false;

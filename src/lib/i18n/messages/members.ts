@@ -44,7 +44,7 @@ export const members = defineMessages({
     removeLabel: (who: string) => `Remove ${who}`,
     remove: "Remove",
     allowanceHint:
-      "Change anyone's yearly allowance here, including people who joined before the default was set. Leave it empty to not track it for that person.",
+      "Change anyone's yearly allowance here, including people who joined before the default was set. Leave it empty to not track it for that person. A change counts from this year on; last year's number and carry-over stay as they were.",
     errors: {
       invalidEmail: (emails: string) => `Not a valid email: ${emails}`,
       noEmail: "Enter at least one email.",
@@ -110,7 +110,7 @@ export const members = defineMessages({
     removeLabel: (who: string) => `${who} entfernen`,
     remove: "Entfernen",
     allowanceHint:
-      "Hier kannst du den Jahresurlaub von allen ändern, auch von Leuten, die vor dem Festlegen des Standards beigetreten sind. Lass das Feld leer, um für diese Person keinen Urlaub zu erfassen.",
+      "Hier kannst du den Jahresurlaub von allen ändern, auch von Leuten, die vor dem Festlegen des Standards beigetreten sind. Lass das Feld leer, um für diese Person keinen Urlaub zu erfassen. Eine Änderung gilt ab diesem Jahr; der Wert und Übertrag des Vorjahres bleiben, wie sie waren.",
     errors: {
       invalidEmail: (emails: string) => `Keine gültige E-Mail-Adresse: ${emails}`,
       noEmail: "Gib mindestens eine E-Mail-Adresse ein.",

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { NavLink } from "@/components/nav-link";
 import { db } from "@/lib/db";
 import { getMessages } from "@/lib/i18n/server";
-import { accessOf, isOverLimit } from "@/lib/plans";
+import { accessOf, isOverLimit, PLANS } from "@/lib/plans";
 import { requireMembership, settingsOf } from "@/lib/session";
 
 export default async function WorkspaceLayout({ children, params }: LayoutProps<"/w/[slug]">) {
@@ -83,7 +83,7 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
       )}
       {isAdmin && !overLimit && trialEnding && (
         <p role="status" className="card border-amber-400/60 bg-amber-50 text-sm dark:bg-amber-900/20">
-          {t.trialEnds(access.trialDaysLeft)} {memberCount > 5 ? t.trialAfterPaid : t.trialAfterFree}{" "}
+          {t.trialEnds(access.trialDaysLeft)} {memberCount > PLANS.FREE.maxMembers ? t.trialAfterPaid : t.trialAfterFree}{" "}
           <Link href={`${base}/billing`} className="font-medium text-primary hover:underline">
             {t.seePlans}
           </Link>

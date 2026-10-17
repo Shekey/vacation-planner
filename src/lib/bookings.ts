@@ -1,5 +1,5 @@
 import type { BookingStatus, BookingType, Prisma, Role } from "@/generated/prisma/client";
-import { carriedOverStatus, carryOver, countDays, proratedAllowance, validateSpan, type BookingSpan, type DayRules } from "@/lib/booking-days";
+import { allowanceIn, carriedOverStatus, carryOver, countDays, proratedAllowance, validateSpan, type BookingSpan, type DayRules } from "@/lib/booking-days";
 import { formatRange, fromISO, toISO, todayIn, type ISODate } from "@/lib/dates";
 import { getMessages } from "@/lib/i18n/server";
 import { formatNumber, isLocale, LOCALES, messagesFor, type Locale, type Messages } from "@/lib/i18n";
@@ -398,6 +398,25 @@ function vacationDaysInYear(membershipId: string, rules: DayRules, year: number)
   return vacationDaysBetween(membershipId, rules, `${year}-01-01`, `${year}-12-31`);
 }
 
+/**
+ * Call before changing allowances: keeps each member's current value as last year's, so the days
+ * they carry over into this year don't change after the fact. A year already kept stays as it was.
+ */
+export async function keepLastYearsAllowance(
+  memberships: readonly { id: string; annualAllowanceDays: Prisma.Decimal | null }[],
+  newDays: number | null,
+  thisYear: number,
+) {
+  const changing = memberships.filter(
+    (m) => (m.annualAllowanceDays === null ? null : Number(m.annualAllowanceDays)) !== newDays,
+  );
+  if (changing.length === 0) return;
+  await db.allowanceYear.createMany({
+    data: changing.map((m) => ({ membershipId: m.id, year: thisYear - 1, days: m.annualAllowanceDays })),
+    skipDuplicates: true,
+  });
+}
+
 export async function allowanceSummary(
   membership: {
     id: string;
@@ -414,19 +433,25 @@ export async function allowanceSummary(
   today: ISODate = todayIn("UTC"),
 ): Promise<AllowanceSummary> {
   const rules = rulesFor(membership, settings, holidays ?? (await loadHolidays(membership.workspaceId, regionOf(membership, settings))));
-  const { used, pending } = await vacationDaysInYear(membership.id, rules, year);
-  if (membership.annualAllowanceDays === null) {
+  const [{ used, pending }, past] = await Promise.all([
+    vacationDaysInYear(membership.id, rules, year),
+    db.allowanceYear.findMany({ where: { membershipId: membership.id, year: { in: [year - 1, year] } } }),
+  ]);
+  const current = membership.annualAllowanceDays === null ? null : Number(membership.annualAllowanceDays);
+  const kept = past.map((p) => ({ year: p.year, days: p.days === null ? null : Number(p.days) }));
+  const yearly = allowanceIn(year, current, kept);
+  if (yearly === null) {
     return { year, allowance: null, carriedOver: 0, carryOverExpiresOn: null, carryOverLeft: 0, carryOverExpired: 0, used, pending, remaining: null };
   }
-  const yearly = Number(membership.annualAllowanceDays);
   const employmentStart = membership.employmentStart ? toISO(membership.employmentStart) : null;
   const base = proratedAllowance(yearly, employmentStart, year);
   let carriedOver = 0;
   // Nothing carries over from a year the person wasn't here yet (by start date, else by joining date).
   const since = employmentStart ?? toISO(membership.joinedAt);
-  if (settings.maxCarryOverDays && Number(since.slice(0, 4)) < year) {
+  const lastYearly = allowanceIn(year - 1, current, kept);
+  if (settings.maxCarryOverDays && lastYearly !== null && Number(since.slice(0, 4)) < year) {
     const last = await vacationDaysInYear(membership.id, rules, year - 1);
-    carriedOver = carryOver(proratedAllowance(yearly, employmentStart, year - 1), last.used + last.pending, settings.maxCarryOverDays);
+    carriedOver = carryOver(proratedAllowance(lastYearly, employmentStart, year - 1), last.used + last.pending, settings.maxCarryOverDays);
   }
   let carryOverExpiresOn: ISODate | null = null;
   let carryOverLeft = 0;

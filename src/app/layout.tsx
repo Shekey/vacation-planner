@@ -43,6 +43,14 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                 <LogoMark />
                 <span>{t.appName}</span>
               </Link>
+              {!session?.user && (
+                <nav aria-label={t.productNav.label} className="hidden items-center gap-5 text-sm text-muted md:flex [&_a:hover]:text-foreground">
+                  <Link href="/#for-whom">{t.productNav.forWhom}</Link>
+                  <Link href="/#features">{t.productNav.features}</Link>
+                  <Link href="/#pricing">{t.productNav.pricing}</Link>
+                  <Link href="/#faq">{t.productNav.faq}</Link>
+                </nav>
+              )}
               <div className="flex items-center gap-3">
                 <LanguageSwitch locale={locale} />
                 {!session?.user && (
