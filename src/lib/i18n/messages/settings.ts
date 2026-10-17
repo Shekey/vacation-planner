@@ -42,7 +42,7 @@ export const settings = defineMessages({
     save: "Save settings",
     deleteHeading: "Delete workspace",
     deleteBody: (name: string) =>
-      `Deletes ${name} with all its members' bookings, allowances and holidays, for everyone. This can't be undone. To hand the workspace over instead, make someone else an admin in Members.`,
+      `Deletes ${name} with all its members' bookings, allowances and holidays, for everyone. A paid plan is cancelled with it, so nothing more is charged. This can't be undone. To hand the workspace over instead, make someone else an admin in Members.`,
     typeToConfirm: (name: string) => `Type ${name} to confirm`,
     deleteButton: "Delete workspace",
     errors: {
@@ -104,7 +104,7 @@ export const settings = defineMessages({
     save: "Einstellungen speichern",
     deleteHeading: "Workspace löschen",
     deleteBody: (name: string) =>
-      `Löscht ${name} mit allen Buchungen, Urlaubsansprüchen und Feiertagen aller Mitglieder, für alle. Das lässt sich nicht rückgängig machen. Um den Workspace stattdessen zu übergeben, mach unter Mitglieder jemand anderen zum Admin.`,
+      `Löscht ${name} mit allen Buchungen, Urlaubsansprüchen und Feiertagen aller Mitglieder, für alle. Ein bezahlter Tarif wird dabei gekündigt, es wird also nichts mehr abgebucht. Das lässt sich nicht rückgängig machen. Um den Workspace stattdessen zu übergeben, mach unter Mitglieder jemand anderen zum Admin.`,
     typeToConfirm: (name: string) => `Gib zur Bestätigung ${name} ein`,
     deleteButton: "Workspace löschen",
     errors: {

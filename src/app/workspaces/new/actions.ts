@@ -45,6 +45,7 @@ export async function createWorkspaceAction(_prev: CreateWorkspaceState, formDat
     locale,
     approvalsEnabled: TEAM_TYPES[teamType].approvals,
     allowanceDays: allowance,
+    teamType,
   });
 
   // Public holidays right away, so the first booking already skips them. If the holiday service

@@ -11,6 +11,8 @@ export async function createWorkspace(input: {
   approvalsEnabled?: boolean;
   /** Yearly allowance for new members, the creator included. */
   allowanceDays?: number;
+  /** Kind of team picked at setup, for the sample team's names. */
+  teamType?: string;
 }) {
   const slug = await uniqueSlug(input.name, async (s) =>
     Boolean(await db.workspace.findUnique({ where: { slug: s }, select: { id: true } })),
@@ -24,7 +26,12 @@ export async function createWorkspace(input: {
       createdById: input.userId,
       trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 86_400_000),
       settings: {
-        create: { locale: input.locale, approvalsEnabled: input.approvalsEnabled ?? false, defaultAllowanceDays: allowance },
+        create: {
+          locale: input.locale,
+          approvalsEnabled: input.approvalsEnabled ?? false,
+          defaultAllowanceDays: allowance,
+          teamType: input.teamType,
+        },
       },
       memberships: { create: { userId: input.userId, role: "ADMIN", annualAllowanceDays: allowance } },
     },

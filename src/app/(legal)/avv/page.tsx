@@ -12,7 +12,7 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
   const agb = legalHref("/agb", locale, forced);
   if (locale === "en") {
     return (
-      <LegalPage locale="en" path="/avv" title="Data Processing Agreement (DPA) pursuant to Art. 28 GDPR" updated="2026-10-03">
+      <LegalPage locale="en" path="/avv" title="Data Processing Agreement (DPA) pursuant to Art. 28 GDPR" updated="2026-10-17">
         <p>
           This agreement applies between the customer that uses a workspace in Vacation Planner (“Controller”) and the following provider
           (“Processor”). It is concluded through use of the service in accordance with the <a href={agb}>terms and conditions</a>.
@@ -21,16 +21,18 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
 
         <h2>1. Subject matter and duration</h2>
         <p>
-          The Processor operates software for planning vacation and absences on behalf of the Controller. The agreement runs for as long as
-          the service is used.
+          The Processor operates software for planning vacation and absences on behalf of the Controller. Purpose of the processing:
+          planning and approving vacation and absences, keeping track of allowances, and notifying the team by email and, if the Controller
+          connects them, in Microsoft Teams or Slack. The agreement runs for as long as the service is used, on a paid plan or the Free plan.
         </p>
 
         <h2>2. Types of data and data subjects</h2>
         <ul>
           <li>Data subjects: employees and administrators of the Controller.</li>
           <li>
-            Data: name, email address, role, vacation allowance, working days, start date, region for public holidays, bookings with period
-            and type (vacation or other absence).
+            Data: name, email address, preferred language, role, vacation allowance, working days, start date, region for public holidays,
+            bookings with period and type (vacation or other absence), who decided on a request and when, and the secret link of a
+            personal calendar feed if it is turned on.
           </li>
           <li>Special categories (Art. 9 GDPR): none. The service does not record sick days or free-text notes.</li>
         </ul>
@@ -45,32 +47,40 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
         <p>Persons with access to the data are bound to confidentiality. Technical and organisational measures (Art. 32 GDPR):</p>
         <ul>
           <li>Hosting and database in the EU (Frankfurt am Main), encryption in transit (TLS) and at rest.</li>
-          <li>Sign-in without passwords via time-limited email links, limits on sign-in attempts.</li>
+          <li>
+            Sign-in without passwords via email links that work once and expire after one hour, at most three links per address in ten
+            minutes; invitation links are stored only as a hash.
+          </li>
           <li>
             Strict separation of workspaces, role-based permissions, data minimisation (no sick days, no notes, automatic deletion after
             three years).
           </li>
-          <li>Security headers, regular updates of dependencies, daily backups with point-in-time recovery.</li>
+          <li>
+            Security headers, regular updates of dependencies, continuous backups by the database provider with point-in-time recovery.
+          </li>
         </ul>
 
         <h2>5. Subprocessors</h2>
         <p>The Controller approves the following subprocessors:</p>
         <SubprocessorList locale="en" />
         <p>
-          The Processor informs the Controller of new subprocessors by email at least 30 days in advance; the Controller may object for good
-          cause and in that case terminate the agreement for cause.
+          The Processor imposes the same data protection obligations on subprocessors by contract. It informs the Controller of new
+          subprocessors by email at least 30 days in advance; the Controller may object for good cause and in that case terminate the
+          agreement for cause.
         </p>
 
         <h2>6. Assistance and notifications</h2>
         <p>
           The Processor assists the Controller with requests from data subjects (among other things through data export and deletion in the
-          product) and reports personal data breaches without undue delay, at the latest within 48 hours of becoming aware of them.
+          product), with security measures, data protection impact assessments and consultations of the supervisory authority (Art. 32 to
+          36 GDPR), and reports personal data breaches without undue delay, at the latest within 48 hours of becoming aware of them.
         </p>
 
         <h2>7. Deletion and return</h2>
         <p>
           After the end of the agreement, or when the Controller deletes the workspace, all data is deleted; from backups after 30 days at
-          the latest. Before that, the Controller can have each person export their data.
+          the latest. Before that, the Controller can have each person export their data. When only a paid plan ends, the workspace
+          continues on the Free plan and nothing is deleted.
         </p>
 
         <h2>8. Audits</h2>
@@ -82,7 +92,7 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
     );
   }
   return (
-    <LegalPage locale="de" path="/avv" title="Auftragsverarbeitungsvertrag (AVV) nach Art. 28 DSGVO" updated="2026-10-03">
+    <LegalPage locale="de" path="/avv" title="Auftragsverarbeitungsvertrag (AVV) nach Art. 28 DSGVO" updated="2026-10-17">
       <p>
         Dieser Vertrag gilt zwischen dem Kunden, der einen Workspace im Vacation Planner nutzt („Verantwortlicher“), und dem folgenden
         Anbieter („Auftragsverarbeiter“). Er wird mit der Nutzung des Dienstes gemäß den <a href={agb}>AGB</a> geschlossen.
@@ -91,16 +101,19 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
 
       <h2>1. Gegenstand und Dauer</h2>
       <p>
-        Der Auftragsverarbeiter betreibt für den Verantwortlichen eine Software zur Urlaubs- und Abwesenheitsplanung. Der Vertrag läuft so
-        lange wie die Nutzung des Dienstes.
+        Der Auftragsverarbeiter betreibt für den Verantwortlichen eine Software zur Urlaubs- und Abwesenheitsplanung. Zweck der
+        Verarbeitung: Planung und Freigabe von Urlaub und Abwesenheiten, Führen der Urlaubsansprüche und Benachrichtigung des Teams per
+        E-Mail und, wenn der Verantwortliche sie verbindet, in Microsoft Teams oder Slack. Der Vertrag läuft so lange wie die Nutzung des
+        Dienstes, im bezahlten Tarif oder im Free-Tarif.
       </p>
 
       <h2>2. Art der Daten und betroffene Personen</h2>
       <ul>
         <li>Betroffene: Mitarbeitende und Administratoren des Verantwortlichen.</li>
         <li>
-          Daten: Name, E-Mail-Adresse, Rolle, Urlaubskontingent, Arbeitstage, Eintrittsdatum, Region für Feiertage, Buchungen mit Zeitraum
-          und Art (Urlaub oder sonstige Abwesenheit).
+          Daten: Name, E-Mail-Adresse, bevorzugte Sprache, Rolle, Urlaubskontingent, Arbeitstage, Eintrittsdatum, Region für Feiertage,
+          Buchungen mit Zeitraum und Art (Urlaub oder sonstige Abwesenheit), wer wann über einen Antrag entschieden hat, und der geheime
+          Link eines persönlichen Kalender-Feeds, wenn er eingeschaltet ist.
         </li>
         <li>Besondere Kategorien (Art. 9 DSGVO): keine. Der Dienst erfasst keine Krankheitstage und keine Freitext-Notizen.</li>
       </ul>
@@ -117,32 +130,41 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
       </p>
       <ul>
         <li>Hosting und Datenbank in der EU (Frankfurt am Main), Verschlüsselung bei der Übertragung (TLS) und im Ruhezustand.</li>
-        <li>Anmeldung ohne Passwörter über zeitlich begrenzte E-Mail-Links, Begrenzung von Anmeldeversuchen.</li>
+        <li>
+          Anmeldung ohne Passwörter über E-Mail-Links, die nur einmal funktionieren und nach einer Stunde ablaufen, höchstens drei Links je
+          Adresse in zehn Minuten; Einladungslinks werden nur als Hash gespeichert.
+        </li>
         <li>
           Strikte Trennung der Workspaces, Rechte nach Rollen, Datensparsamkeit (keine Krankheitstage, keine Notizen, automatische Löschung
           nach drei Jahren).
         </li>
-        <li>Sicherheits-Header, regelmäßige Updates von Abhängigkeiten, tägliche Sicherungen mit Wiederherstellung zu einem Zeitpunkt.</li>
+        <li>
+          Sicherheits-Header, regelmäßige Updates von Abhängigkeiten, fortlaufende Sicherung beim Datenbankanbieter mit Wiederherstellung zu
+          einem Zeitpunkt.
+        </li>
       </ul>
 
       <h2>5. Unterauftragsverarbeiter</h2>
       <p>Der Verantwortliche genehmigt die folgenden Unterauftragsverarbeiter:</p>
       <SubprocessorList locale="de" />
       <p>
-        Über neue Unterauftragsverarbeiter informiert der Auftragsverarbeiter mindestens 30 Tage vorher per E-Mail; der Verantwortliche kann
-        aus wichtigem Grund widersprechen und in diesem Fall außerordentlich kündigen.
+        Der Auftragsverarbeiter verpflichtet Unterauftragsverarbeiter vertraglich auf dieselben Datenschutzpflichten. Über neue
+        Unterauftragsverarbeiter informiert er mindestens 30 Tage vorher per E-Mail; der Verantwortliche kann aus wichtigem Grund
+        widersprechen und in diesem Fall außerordentlich kündigen.
       </p>
 
       <h2>6. Unterstützung und Meldungen</h2>
       <p>
-        Der Auftragsverarbeiter unterstützt den Verantwortlichen bei Anfragen Betroffener (u. a. durch Datenexport und Löschung im Produkt)
-        und meldet Verletzungen des Schutzes personenbezogener Daten unverzüglich, spätestens innerhalb von 48 Stunden nach Kenntnis.
+        Der Auftragsverarbeiter unterstützt den Verantwortlichen bei Anfragen Betroffener (u. a. durch Datenexport und Löschung im Produkt),
+        bei Sicherheitsmaßnahmen, Datenschutz-Folgenabschätzungen und Konsultationen der Aufsichtsbehörde (Art. 32 bis 36 DSGVO) und meldet
+        Verletzungen des Schutzes personenbezogener Daten unverzüglich, spätestens innerhalb von 48 Stunden nach Kenntnis.
       </p>
 
       <h2>7. Löschung und Rückgabe</h2>
       <p>
         Nach Vertragsende oder wenn der Verantwortliche den Workspace löscht, werden alle Daten gelöscht; aus Sicherungskopien spätestens
-        nach 30 Tagen. Vorher kann der Verantwortliche jede Person ihre Daten exportieren lassen.
+        nach 30 Tagen. Vorher kann der Verantwortliche jede Person ihre Daten exportieren lassen. Endet nur ein bezahlter Tarif, läuft der
+        Workspace im Free-Tarif weiter und es wird nichts gelöscht.
       </p>
 
       <h2>8. Kontrollen</h2>

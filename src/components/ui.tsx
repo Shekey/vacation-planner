@@ -20,9 +20,13 @@ const AVATAR_COLORS = [
   "bg-orange-500",
 ];
 
-/** "Ada Lovelace" → "AL", "ada@x.com" → "A". */
+/** "Ada Lovelace" → "AL", "ada@x.com" → "A", "Marie Schmitt (Empfang)" → "MS". */
 export function initials(label: string): string {
-  const words = label.split("@")[0].split(/[\s._-]+/).filter(Boolean);
+  const words = label
+    .split("@")[0]
+    .replace(/\s*\(.*\)\s*$/, "")
+    .split(/[\s._-]+/)
+    .filter(Boolean);
   if (words.length === 0) return "?";
   const letters = words.length === 1 ? words[0][0] : words[0][0] + words[words.length - 1][0];
   return letters.toUpperCase();
@@ -55,5 +59,14 @@ export function EmptyState({ icon, children }: { icon: string; children: React.R
       </span>
       <div>{children}</div>
     </div>
+  );
+}
+
+/** Marks a made-up person from "Fill with a sample team". */
+export function SampleBadge({ label, className = "ml-1.5" }: { label: string; className?: string }) {
+  return (
+    <span className={`${className} inline-block rounded bg-amber-100 px-1.5 py-px align-middle text-[10px] font-semibold tracking-wide text-amber-900 uppercase dark:bg-amber-900/40 dark:text-amber-200`}>
+      {label}
+    </span>
   );
 }

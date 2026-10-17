@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Legend, typeColor, typeLabel } from "@/components/badges";
 import { ScrollToToday } from "@/components/scroll-to-today";
-import { Avatar } from "@/components/ui";
+import { Avatar, SampleBadge } from "@/components/ui";
 import { portionOn } from "@/lib/booking-days";
 import { activeBookingsBetween, forViewer, regionOf, spanOf } from "@/lib/bookings";
 import { eachDay, formatDate, fromISO, isWeekend, isYearMonth, monthBounds, shiftMonth, toISO, todayIn } from "@/lib/dates";
@@ -118,9 +118,13 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
                   >
                     <span className="flex items-center gap-1.5">
                       <Avatar label={label(m)} seed={m.user.email} className="hidden size-5 text-[9px] sm:inline-grid" />
-                      <span className="truncate">
-                        {label(m)}
-                        {m.id === membership.id && <span className="font-normal opacity-60">{t.you}</span>}
+                      <span className="min-w-0">
+                        <span className="block truncate">
+                          {label(m)}
+                          {m.id === membership.id && <span className="font-normal opacity-60">{t.you}</span>}
+                        </span>
+                        {/* Under the name, so the narrow column still shows who it is. */}
+                        {m.isSample && <SampleBadge label={common.sample} className="ml-0" />}
                       </span>
                     </span>
                   </th>

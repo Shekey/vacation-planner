@@ -37,7 +37,7 @@ export async function inviteAction(slug: string, _prev: ActionResult, formData: 
   // People already in, plus invitations still open, plus these must fit the plan.
   const access = accessOf(invite.workspace);
   const [members, open] = await Promise.all([
-    db.membership.count({ where: { workspaceId: invite.workspace.id, removedAt: null } }),
+    db.membership.count({ where: { workspaceId: invite.workspace.id, removedAt: null, isSample: false } }),
     db.invitation.count({
       where: { workspaceId: invite.workspace.id, acceptedAt: null, revokedAt: null, expiresAt: { gt: new Date() }, email: { notIn: valid } },
     }),
@@ -82,7 +82,7 @@ export async function revokeInviteAction(slug: string, invitationId: string): Pr
 /** Admin-only changes must never leave a workspace without an admin. */
 async function wouldRemoveLastAdmin(workspaceId: string, membershipId: string) {
   const admins = await db.membership.findMany({
-    where: { workspaceId, role: "ADMIN", removedAt: null },
+    where: { workspaceId, role: "ADMIN", removedAt: null, isSample: false },
     select: { id: true },
   });
   return admins.length === 1 && admins[0].id === membershipId;
@@ -101,7 +101,8 @@ export async function updateMemberAction(
   });
   if (!member) return { error: t.errors.memberNotFound };
 
-  const role = formData.get("role") === "ADMIN" ? "ADMIN" : "MEMBER";
+  // Sample people can't sign in, so they never become admins.
+  const role = formData.get("role") === "ADMIN" && !member.isSample ? "ADMIN" : "MEMBER";
   if (role === "MEMBER" && member.role === "ADMIN" && (await wouldRemoveLastAdmin(ctx.workspace.id, member.id))) {
     return { error: t.errors.lastAdmin };
   }

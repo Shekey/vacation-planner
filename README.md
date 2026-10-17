@@ -19,8 +19,29 @@ The privacy policy, the DPA (`/avv`) and the landing page already say data is st
 
 1. In Vercel → *Environment Variables* set `LEGAL_NAME`, `LEGAL_ADDRESS`, `LEGAL_EMAIL` and, if you have them, `LEGAL_PHONE`, `LEGAL_VAT_ID` (USt-IdNr.) and `LEGAL_RESPONSIBLE`.
 2. Register your business (Gewerbeanmeldung) if you haven't, and get a USt-IdNr. from the Bundeszentralamt für Steuern so business customers in other EU countries can be billed with reverse charge.
-3. Have a lawyer (IT law, e.g. via your IHK or a fixed-price service) review `/impressum`, `/datenschutz`, `/agb` and `/avv`. Ask them about the claims on the landing page too ("cancel any time", support promises).
+3. Fill in the rest of the gaps below, then have a lawyer (IT law, e.g. via your IHK or a fixed-price service) review `/impressum`, `/datenschutz`, `/agb` and `/avv`. Ask them about the claims on the landing page too ("cancel any time", support promises).
 4. Set `LEGAL_REVIEWED=1` and redeploy. The draft notice disappears.
+
+**Only a lawyer can confirm the four pages are legally sound.** The code keeps them true to what the app does (checked 2026-10-17: cookies, stored data, deletion after 3 years, what happens when the trial or a plan ends), but it can't judge whether they are complete or enforceable. What you must fill in or decide, and what to ask the lawyer:
+
+| Page | Missing or open | What to do |
+|---|---|---|
+| All | Operator name, address, email | `LEGAL_NAME`, `LEGAL_ADDRESS`, `LEGAL_EMAIL` (placeholders like `[Name or company]` show until then) |
+| Impressum (§ 5 DDG) | Legal form and representative (e.g. "UG (haftungsbeschränkt), vertreten durch …") | `LEGAL_REPRESENTATIVE`; leave empty as a sole trader |
+| Impressum | Commercial register and number, if registered | `LEGAL_REGISTER`, e.g. `Amtsgericht Bielefeld, HRB 12345` |
+| Impressum | A second fast way to reach you besides email | `LEGAL_PHONE` (recommended) |
+| Impressum | USt-IdNr. | `LEGAL_VAT_ID` once you have it |
+| Impressum | Whether "§ 18 Abs. 2 MStV" and the consumer-dispute sentence are needed for a B2B tool | Ask the lawyer |
+| Datenschutz | Your data protection authority (that of your federal state, e.g. LDI NRW for Bielefeld) | `LEGAL_SUPERVISORY_AUTHORITY` with name and address |
+| Datenschutz | "Server logs kept at most 30 days" | Check your Vercel plan's log retention and correct the sentence if needed |
+| Datenschutz, AVV | "Hosting in Frankfurt" | Only true after step 1 above |
+| Datenschutz, AVV | "Deleted from backups after 30 days" | Check the history/restore window of your Neon plan and correct it if needed |
+| Datenschutz | Whether you need a data protection officer, and whether the right to object (Art. 21) must be shown separately | Ask the lawyer |
+| Datenschutz, AVV | Microsoft and Slack are listed as *our* subprocessors, but posts go to the customer's own Teams/Slack channel | Ask the lawyer whether they belong in the list |
+| AVV (Art. 28) | The technical and organisational measures (TOMs) are a short list | Write the TOM annex (step 5.1 below) and have it attached to the AVV |
+| AVV | Liability, place of processing for support access from the USA, and who signs | Ask the lawyer; bigger customers may want a signed AVV |
+| AGB | "Stripe retries a failed payment" | In Stripe's Billing settings (*Revenue recovery*), turn on retries and the customer emails about failed payments, and set "if all retries fail" to cancel the subscription |
+| AGB | Refunds when a workspace is deleted mid-period (the app cancels the subscription at once, Stripe refunds nothing by default) | Decide, then ask the lawyer to add it |
 
 ### 3. Turn on email and payments (blocks selling)
 
@@ -28,7 +49,8 @@ The privacy policy, the DPA (`/avv`) and the landing page already say data is st
 2. **Stripe**: activate your account (company details, bank account), then follow [Payments (Stripe)](#payments-stripe) below with the **new prices** (Team €29 / €290, Business €69 / €690).
 3. In Stripe → *Settings* → *Payment methods* turn on **SEPA Direct Debit** (the landing page promises it; practices and trades often don't pay by card). Optionally turn on *Invoices* (pay by bank transfer) for bigger customers.
 4. In Stripe → *Tax* set up Stripe Tax with your German address and VAT number, then set `STRIPE_AUTOMATIC_TAX=1`.
-5. Test once in test mode: subscribe, cancel in the Customer Portal, and check the workspace's Billing page follows.
+5. In Stripe's Billing settings (*Revenue recovery*) turn on retries and the customer emails about failed payments, and let Stripe cancel the subscription when all retries fail. The workspace then moves to Free by itself, and the terms (`/agb`) describe exactly that.
+6. Test once in test mode: subscribe, cancel in the Customer Portal (the Billing page should say "cancelled, runs until …"), and check the workspace's Billing page follows.
 
 ### 4. Get a custom domain
 
@@ -72,7 +94,7 @@ Without `AUTH_RESEND_KEY`, sign-in links are printed to the dev server console i
    | `AUTH_SECRET` | output of `npx auth secret` (or any long random string) |
    | `AUTH_RESEND_KEY` | API key from resend.com |
    | `EMAIL_FROM` | e.g. `Vacation Planner <vacations@yourdomain.com>` (a domain verified in Resend) |
-   | `CRON_SECRET` | any long random string (enables the weekday Teams digest) |
+   | `CRON_SECRET` | any long random string (enables the weekday Teams/Slack digest and the emails to admins before their trial ends) |
    Don't set `AUTH_URL` on Vercel unless you add a custom domain; then set it to exactly that address (e.g. `https://vacations.yourcompany.com`). A wrong `AUTH_URL` sends sign-in links and redirects to another site.
 4. **Redeploy** so the variables apply. Open the site, sign in with your email and create your workspace.
 
@@ -95,7 +117,7 @@ New workspaces get a 30-day trial with everything for up to 75 people, then fall
 
 ### Legal pages
 
-`/impressum`, `/datenschutz`, `/agb` and `/avv` read the operator's details from `LEGAL_NAME`, `LEGAL_ADDRESS`, `LEGAL_EMAIL`, and optionally `LEGAL_PHONE`, `LEGAL_VAT_ID` and `LEGAL_RESPONSIBLE`. They show a draft notice until `LEGAL_REVIEWED=1`; have a lawyer check the texts first. Subprocessors are listed in `src/lib/legal.ts`.
+`/impressum`, `/datenschutz`, `/agb` and `/avv` read the operator's details from `LEGAL_NAME`, `LEGAL_ADDRESS`, `LEGAL_EMAIL`, and optionally `LEGAL_PHONE`, `LEGAL_VAT_ID`, `LEGAL_RESPONSIBLE`, `LEGAL_REPRESENTATIVE`, `LEGAL_REGISTER` and `LEGAL_SUPERVISORY_AUTHORITY`. They show a draft notice until `LEGAL_REVIEWED=1`; have a lawyer check the texts first. Subprocessors are listed in `src/lib/legal.ts`.
 
 Without a verified domain, Resend only delivers to the email address of your Resend account, which is enough to try it yourself. Verify a domain in Resend before inviting the team. While `EMAIL_FROM` is unset or on `resend.dev`, the Members page shows a warning, and invites that Resend rejects say so instead of reporting success.
 

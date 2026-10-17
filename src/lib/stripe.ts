@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import type { Plan } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
-import type { PaidPlan } from "@/lib/plans";
+import { shouldSyncSubscription, type PaidPlan } from "@/lib/plans";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 
 /**
@@ -80,23 +80,48 @@ export async function createPortal(customerId: string, returnUrl: string): Promi
   return session.url;
 }
 
-/** Copies a subscription's plan, status and renewal date onto its workspace. */
+/**
+ * Copies a subscription's plan, status and renewal date onto its workspace. When it ends (canceled,
+ * or unpaid after Stripe's retries) the workspace falls back to Free; no data is deleted.
+ */
 export async function syncSubscription(sub: Stripe.Subscription) {
   const workspaceId = sub.metadata?.workspaceId;
   const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
-  const item = sub.items.data[0];
-  const plan: Plan = planOfPrice(item?.price.id) ?? "FREE";
-  const data = {
-    plan,
-    billingStatus: sub.status,
-    stripeCustomerId: customerId,
-    stripeSubscriptionId: sub.id,
-    currentPeriodEnd: item ? new Date(item.current_period_end * 1000) : null,
-  };
   // Prefer the id we put in the metadata; fall back to the customer for subscriptions changed in the portal.
   const where = workspaceId ? { id: workspaceId } : { stripeCustomerId: customerId };
-  const { count } = await db.workspace.updateMany({ where, data });
-  if (count === 0) console.warn("[stripe] no workspace for subscription", sub.id);
+  const workspace = await db.workspace.findFirst({ where, select: { id: true, stripeSubscriptionId: true, billingStatus: true } });
+  if (!workspace) {
+    console.warn("[stripe] no workspace for subscription", sub.id);
+    return;
+  }
+  if (!shouldSyncSubscription(workspace, sub)) return;
+  const item = sub.items.data[0];
+  const plan: Plan = planOfPrice(item?.price.id) ?? "FREE";
+  const periodEnd = item ? new Date(item.current_period_end * 1000) : null;
+  await db.workspace.update({
+    where: { id: workspace.id },
+    data: {
+      plan,
+      billingStatus: sub.status,
+      stripeCustomerId: customerId,
+      stripeSubscriptionId: sub.id,
+      currentPeriodEnd: periodEnd,
+      // A cancel in the portal keeps the plan until then, so the Billing page says "ends" instead of "renews".
+      cancelAt: sub.status === "canceled" ? null : sub.cancel_at ? new Date(sub.cancel_at * 1000) : sub.cancel_at_period_end ? periodEnd : null,
+    },
+  });
+}
+
+/** Ends a workspace's subscription right away, before the workspace is deleted, so the customer isn't charged again. */
+export async function cancelSubscriptionNow(subscriptionId: string | null) {
+  const s = stripe();
+  if (!s || !subscriptionId) return;
+  try {
+    await s.subscriptions.cancel(subscriptionId);
+  } catch (e) {
+    // Already cancelled, or unknown in this Stripe account: nothing left to charge.
+    if (!(e instanceof Stripe.errors.StripeInvalidRequestError)) throw e;
+  }
 }
 
 /** Handles the webhook events this app subscribes to. */
@@ -114,7 +139,9 @@ export async function handleStripeEvent(event: Stripe.Event) {
     case "customer.subscription.created":
     case "customer.subscription.updated":
     case "customer.subscription.deleted":
-      await syncSubscription(event.data.object);
+      // Stripe doesn't promise the order of events, so an older "updated" could arrive after "deleted".
+      // Fetching the subscription now always stores its latest state.
+      await syncSubscription(await s.subscriptions.retrieve(event.data.object.id));
       return;
   }
 }

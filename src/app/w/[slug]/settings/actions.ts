@@ -8,8 +8,10 @@ import { isMonthDay } from "@/lib/booking-days";
 import { approveAllPending, keepLastYearsAllowance } from "@/lib/bookings";
 import { todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
+import { removeSampleTeam } from "@/lib/sample-team-db";
 import { requireAdmin, settingsOf } from "@/lib/session";
 import { isSlackWebhookUrl } from "@/lib/slack";
+import { cancelSubscriptionNow } from "@/lib/stripe";
 import { isTeamsWebhookUrl } from "@/lib/teams";
 import { isLocale, type Messages } from "@/lib/i18n";
 import { getMessages } from "@/lib/i18n/server";
@@ -114,7 +116,9 @@ export async function deleteWorkspaceAction(slug: string, _prev: ActionResult, f
   if (String(formData.get("confirmName") ?? "").trim() !== ctx.workspace.name) {
     return { error: (await getMessages()).settings.errors.confirmName };
   }
-  // Memberships, bookings, invitations, holidays and settings cascade.
+  // Memberships, bookings, invitations, holidays and settings cascade; sample people's placeholder users don't.
+  await cancelSubscriptionNow(ctx.workspace.stripeSubscriptionId);
+  await removeSampleTeam([ctx.workspace.id]);
   await db.workspace.delete({ where: { id: ctx.workspace.id } });
   redirect("/");
 }

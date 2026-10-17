@@ -99,6 +99,11 @@ model Workspace {
   stripeCustomerId     String?   @unique
   stripeSubscriptionId String?   @unique
   currentPeriodEnd     DateTime?
+  // When the subscription stops after a cancel in the portal; null while it renews.
+  cancelAt             DateTime?
+  // When the "trial ends in 7 days" and "ends tomorrow" emails went to the admins, so each goes out once.
+  trialReminder7SentAt DateTime?
+  trialReminder1SentAt DateTime?
 
   createdBy   User?              @relation("WorkspaceCreator", fields: [createdById], references: [id], onDelete: SetNull)
   settings    WorkspaceSettings?
@@ -153,6 +158,8 @@ model WorkspaceSettings {
   locale                String    @default("en")
   // Set when an admin hides the getting-started checklist.
   onboardingDismissedAt DateTime?
+  // Kind of team picked at setup (keys of TEAM_TYPES in src/lib/team-types.ts); null for older workspaces.
+  teamType              String?
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
@@ -175,6 +182,8 @@ model Membership {
   workDays            Int[]     @default([])
   // First day of employment; the allowance in that year is pro-rated. Null means no pro-rating.
   employmentStart     DateTime? @db.Date
+  // A made-up person from "Fill with a sample team": never emailed, can't sign in, not counted toward the plan.
+  isSample            Boolean   @default(false)
 
   workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)

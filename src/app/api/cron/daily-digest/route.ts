@@ -6,10 +6,12 @@ import { isCronRequest } from "@/lib/security";
 import { messagesFor } from "@/lib/i18n";
 import { postToChannels } from "@/lib/notify";
 import { settingsOf } from "@/lib/session";
+import { sendTrialReminders } from "@/lib/trial-reminders";
 import { appOrigin } from "@/lib/url";
 
 /**
- * Morning "who's out today" post for every workspace with a Teams or Slack webhook.
+ * Morning "who's out today" post for every workspace with a Teams or Slack webhook (weekdays only),
+ * and the trial reminder emails to admins (every day, so a weekend doesn't swallow one).
  * Vercel Cron calls this daily (see vercel.json) with the CRON_SECRET bearer token.
  */
 export async function GET(req: Request) {
@@ -34,7 +36,7 @@ export async function GET(req: Request) {
 
     const t = messagesFor(channels.locale ?? "en").chat;
     const out = (await activeBookingsBetween(ws.id, today, today))
-      .filter((b) => b.status === "APPROVED")
+      .filter((b) => b.status === "APPROVED" && !b.membership.isSample)
       .map((b) => {
         const span = spanOf(b);
         const portion = portionOn(span, today);
@@ -57,5 +59,6 @@ export async function GET(req: Request) {
     });
     posted++;
   }
-  return Response.json({ posted });
+  const trialReminders = await sendTrialReminders(origin);
+  return Response.json({ posted, trialReminders });
 }

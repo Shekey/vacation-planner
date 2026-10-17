@@ -52,6 +52,33 @@ export function planFor(members: number): Plan | null {
   return null;
 }
 
+/**
+ * Whether a subscription update from Stripe should be copied onto the workspace. A workspace has one
+ * subscription at a time, but an older one can still send events, e.g. an abandoned checkout expiring
+ * after the customer subscribed again. Those must not knock out the live one.
+ */
+export function shouldSyncSubscription(
+  current: { stripeSubscriptionId: string | null; billingStatus: string | null },
+  incoming: { id: string; status: string },
+): boolean {
+  if (!current.stripeSubscriptionId || current.stripeSubscriptionId === incoming.id) return true;
+  return LIVE_STATUSES.has(incoming.status) || !current.billingStatus || !LIVE_STATUSES.has(current.billingStatus);
+}
+
+/** Which trial reminder email is due: "first" a week before the end, "last" in the final two days, each once. */
+export function trialReminderDue(
+  ws: BillingRow & { trialReminder7SentAt: Date | null; trialReminder1SentAt: Date | null },
+  now = new Date(),
+): "first" | "last" | null {
+  const access = accessOf(ws, now);
+  // Nothing to say once they pay or when the trial is already over.
+  if (access.kind !== "trial") return null;
+  // Two days, not one: the cron runs once a morning and the trial ends at the time of day it started.
+  if (access.trialDaysLeft <= 2) return ws.trialReminder1SentAt ? null : "last";
+  if (access.trialDaysLeft <= 7) return ws.trialReminder7SentAt ? null : "first";
+  return null;
+}
+
 /** Over the limit, people can still see and cancel bookings but not add new ones. */
 export function isOverLimit(access: Access, activeMembers: number): boolean {
   return activeMembers > access.maxMembers;

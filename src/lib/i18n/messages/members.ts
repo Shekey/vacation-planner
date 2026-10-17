@@ -45,6 +45,18 @@ export const members = defineMessages({
     remove: "Remove",
     allowanceHint:
       "Change anyone's yearly allowance here, including people who joined before the default was set. Leave it empty to not track it for that person. A change counts from this year on; last year's number and carry-over stay as they were.",
+    sample: {
+      fill: "Fill with a sample team",
+      fillHint:
+        "Adds 6 made-up people with time off over the next 6 weeks, so you can see how the calendar looks before inviting anyone. They get no emails, can't sign in and don't count toward your plan.",
+      remove: "Remove sample team",
+      removeHint: "Deletes the sample people and their bookings. Your real team and its bookings stay as they are.",
+      removeConfirm: "Remove the sample people and all their bookings?",
+      present: (n: number) => `${n} made-up ${n === 1 ? "person is" : "people are"} in this workspace, marked “Sample”.`,
+      added: "Sample team added. Have a look at the calendar.",
+      removed: "Sample team removed.",
+      alreadyThere: "There's already a sample team. Remove it first.",
+    },
     errors: {
       invalidEmail: (emails: string) => `Not a valid email: ${emails}`,
       noEmail: "Enter at least one email.",
@@ -111,6 +123,18 @@ export const members = defineMessages({
     remove: "Entfernen",
     allowanceHint:
       "Hier kannst du den Jahresurlaub von allen ändern, auch von Leuten, die vor dem Festlegen des Standards beigetreten sind. Lass das Feld leer, um für diese Person keinen Urlaub zu erfassen. Eine Änderung gilt ab diesem Jahr; der Wert und Übertrag des Vorjahres bleiben, wie sie waren.",
+    sample: {
+      fill: "Mit Beispielteam füllen",
+      fillHint:
+        "Legt 6 erfundene Personen mit Urlaub in den nächsten 6 Wochen an, damit du siehst, wie der Kalender aussieht, bevor du jemanden einlädst. Sie bekommen keine E-Mails, können sich nicht anmelden und zählen nicht zu deinem Tarif.",
+      remove: "Beispielteam entfernen",
+      removeHint: "Löscht die Beispielpersonen und ihre Buchungen. Dein echtes Team und seine Buchungen bleiben, wie sie sind.",
+      removeConfirm: "Beispielpersonen und alle ihre Buchungen entfernen?",
+      present: (n: number) => `In diesem Workspace ${n === 1 ? "ist 1 erfundene Person" : `sind ${n} erfundene Personen`}, markiert mit „Beispiel“.`,
+      added: "Beispielteam angelegt. Schau dir den Kalender an.",
+      removed: "Beispielteam entfernt.",
+      alreadyThere: "Es gibt schon ein Beispielteam. Entferne es zuerst.",
+    },
     errors: {
       invalidEmail: (emails: string) => `Keine gültige E-Mail-Adresse: ${emails}`,
       noEmail: "Gib mindestens eine E-Mail-Adresse ein.",

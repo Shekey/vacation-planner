@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { emailFrom, sendEmail } from "@/lib/email";
 import { messagesFor } from "@/lib/i18n";
 import { localeOfEmail, requestLocaleOr } from "@/lib/i18n/server";
+import { isSampleEmail } from "@/lib/sample-team";
 import { MAGIC_LINK_MAX_AGE_SECONDS } from "@/lib/sign-in-limit";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -12,6 +13,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "database" },
   // Errors land back on the sign-in page as ?error=<code> instead of Auth.js's bare error page.
   pages: { signIn: "/sign-in", verifyRequest: "/sign-in?sent=1", error: "/sign-in" },
+  // Sample team members are placeholders and never get a sign-in link.
+  callbacks: { signIn: ({ user }) => !isSampleEmail(user.email ?? "") },
   providers: [
     Resend({
       maxAge: MAGIC_LINK_MAX_AGE_SECONDS,

@@ -9,6 +9,12 @@ export const OPERATOR = {
   phone: process.env.LEGAL_PHONE ?? "",
   /** USt-IdNr., if registered for VAT. */
   vatId: process.env.LEGAL_VAT_ID ?? "",
+  /** Legal form and who represents the business, e.g. "UG (haftungsbeschränkt), vertreten durch …"; empty for a sole trader. */
+  representative: process.env.LEGAL_REPRESENTATIVE ?? "",
+  /** Commercial register entry, e.g. "Amtsgericht Bielefeld, HRB 12345"; empty when not registered. */
+  register: process.env.LEGAL_REGISTER ?? "",
+  /** The data protection authority for the operator's federal state, named in the privacy policy. */
+  supervisoryAuthority: process.env.LEGAL_SUPERVISORY_AUTHORITY ?? "[Data protection authority of your federal state, with address]",
   /** Person responsible for content under § 18 Abs. 2 MStV. */
   responsible: process.env.LEGAL_RESPONSIBLE ?? process.env.LEGAL_NAME ?? "[Name]",
   /** Set to "1" once a lawyer has checked the texts. */
