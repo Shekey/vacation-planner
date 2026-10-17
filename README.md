@@ -2,6 +2,51 @@
 
 Book and plan vacations inside invite-only workspaces. See the v1 plan for scope: workspaces with admins and members, invite-only membership, vacation bookings with half days and yearly allowances, and an optional approval workflow behind a per-workspace flag.
 
+## Before you sell: your to-do list
+
+The code is ready for a first paying customer once these are done. They are things only you can do (accounts, contracts, money). Work through them top to bottom; the first three block selling. The bigger plan, with pricing reasoning and next features, is in [`docs/sales-plan.md`](docs/sales-plan.md).
+
+### 1. Move hosting to Frankfurt (blocks selling)
+
+The privacy policy, the DPA (`/avv`) and the landing page already say data is stored in Frankfurt. Until it is, that statement is false.
+
+1. **Neon**: create a new project in region *AWS Europe Central 1 (Frankfurt)*. Neon can't move a project, so copy the data: `pg_dump "$OLD_URL" | psql "$NEW_URL"` (run it from your computer with both URLs from the Neon dashboard), or start empty if nobody uses it yet.
+2. In Vercel → *Storage*, connect the new Neon database and disconnect the old one, so `DATABASE_URL` points to Frankfurt.
+3. **Vercel functions**: *Settings* → *Functions* → *Function Region* → `fra1` (Frankfurt).
+4. Redeploy, sign in and check that your workspace is there.
+
+### 2. Fill in the legal details and get them checked (blocks selling)
+
+1. In Vercel → *Environment Variables* set `LEGAL_NAME`, `LEGAL_ADDRESS`, `LEGAL_EMAIL` and, if you have them, `LEGAL_PHONE`, `LEGAL_VAT_ID` (USt-IdNr.) and `LEGAL_RESPONSIBLE`.
+2. Register your business (Gewerbeanmeldung) if you haven't, and get a USt-IdNr. from the Bundeszentralamt für Steuern so business customers in other EU countries can be billed with reverse charge.
+3. Have a lawyer (IT law, e.g. via your IHK or a fixed-price service) review `/impressum`, `/datenschutz`, `/agb` and `/avv`. Ask them about the claims on the landing page too ("cancel any time", support promises).
+4. Set `LEGAL_REVIEWED=1` and redeploy. The draft notice disappears.
+
+### 3. Turn on email and payments (blocks selling)
+
+1. **Resend**: add your domain (*Domains* → *Add domain*), put the DNS records it shows at your domain provider, wait for "Verified", then set `EMAIL_FROM` to an address on that domain (e.g. `Vacation Planner <hallo@your-domain.de>`).
+2. **Stripe**: activate your account (company details, bank account), then follow [Payments (Stripe)](#payments-stripe) below with the **new prices** (Team €29 / €290, Business €69 / €690).
+3. In Stripe → *Settings* → *Payment methods* turn on **SEPA Direct Debit** (the landing page promises it; practices and trades often don't pay by card). Optionally turn on *Invoices* (pay by bank transfer) for bigger customers.
+4. In Stripe → *Tax* set up Stripe Tax with your German address and VAT number, then set `STRIPE_AUTOMATIC_TAX=1`.
+5. Test once in test mode: subscribe, cancel in the Customer Portal, and check the workspace's Billing page follows.
+
+### 4. Get a custom domain
+
+1. Buy a `.de` domain (e.g. at INWX, Hetzner or Strato), add it in Vercel → *Settings* → *Domains*, and set `AUTH_URL` to exactly that address.
+2. Use the same domain for Resend (step 3) and for `LEGAL_EMAIL`.
+
+### 5. Prepare for the first customers
+
+1. Write a one-page **TOM** (technical and organisational measures) PDF from the list in `/avv`; practices and care services will ask for it.
+2. Write a short **information sheet for works councils**: what is stored (dates, type vacation/other, no sick days, no notes), who sees it, deletion after 3 years, no performance monitoring. Bigger customers with a Betriebsrat need it before they may start.
+3. Make a support address that you actually read, and decide what "priority support" (Business) means for you, e.g. answer within one working day.
+4. Take 3 screenshots (overview, calendar, booking on a phone) for the landing page, Google Business profile and LinkedIn.
+5. Ask 3 to 5 friendly businesses (a practice, a care service, a trades business) to use it for free for 3 months in return for honest feedback and, if they like it, a quote you may put on the landing page. Only add real quotes.
+
+### 6. Start selling
+
+Follow the launch steps in [`docs/sales-plan.md`](docs/sales-plan.md#5-how-to-find-customers): local practices and care services first, then industry directories and partners such as tax advisors.
+
 ## Stack
 
 Next.js (App Router, TypeScript) · PostgreSQL + Prisma · Auth.js email magic links (Resend) · Tailwind · Vitest
@@ -35,7 +80,7 @@ Without `AUTH_RESEND_KEY`, sign-in links are printed to the dev server console i
 
 Billing stays off until these are set; the Billing page then says to write to the support address instead.
 
-1. In Stripe, create two products, **Team** and **Business**, each with a monthly and a yearly recurring price (net prices: €15 / €150 and €35 / €350).
+1. In Stripe, create two products, **Team** and **Business**, each with a monthly and a yearly recurring price (net prices: Team €29 / month and €290 / year, Business €69 / month and €690 / year; they must match `src/lib/plans.ts`).
 2. Add a webhook endpoint `https://<your-domain>/api/stripe/webhook` with the events `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated` and `customer.subscription.deleted`.
 3. Turn on the Customer Portal (*Settings* → *Billing* → *Customer portal*) and allow switching between the four prices, cancelling and invoice history.
 4. Set the variables:
@@ -46,7 +91,7 @@ Billing stays off until these are set; the Billing page then says to write to th
    | `STRIPE_PRICE_TEAM_MONTHLY`, `STRIPE_PRICE_TEAM_YEARLY`, `STRIPE_PRICE_BUSINESS_MONTHLY`, `STRIPE_PRICE_BUSINESS_YEARLY` | the price ids (`price_…`) |
    | `STRIPE_AUTOMATIC_TAX` | `1` once Stripe Tax is set up, so VAT is added per customer country |
 
-New workspaces get a 30-day trial with everything for up to 50 people, then fall back to Free (5 people, no Teams or Slack) unless they subscribe.
+New workspaces get a 30-day trial with everything for up to 75 people, then fall back to Free (5 people, no Teams or Slack) unless they subscribe.
 
 ### Legal pages
 
@@ -65,9 +110,10 @@ Without a verified domain, Resend only delivers to the email address of your Res
 
 ## What's in it
 
+- **Guided setup**: a new workspace asks for the kind of team (practice, care, Kita, trades, restaurant, office), which sets approvals and a typical allowance, and imports public holidays for the chosen country and state right away.
 - **Workspaces** with admins and members. Anyone can create a workspace; others join only through an emailed invite (7-day link, single use, must match the invited email).
-- **Bookings**: vacation, sick leave or other, with half days (morning/afternoon). Weekends aren't counted unless the workspace says so. A member can't double-book, but a morning and an afternoon can share a date.
-- **Yearly allowance** per member (default set per workspace), with days taken, pending and left shown while booking.
+- **Bookings**: vacation or other time off (no sick leave, see `docs/sales-plan.md`), with half days (morning/afternoon). Weekends aren't counted unless the workspace says so. A member can't double-book, but a morning and an afternoon can share a date.
+- **Yearly allowance** per member (default set per workspace), with days taken, pending and left shown while booking. Changing it keeps last year's value, so carry-over doesn't change after the fact.
 - **Approvals** behind a per-workspace switch. With it on, members' bookings wait for an admin; admins' own bookings are confirmed. Switching it off approves everything pending.
 - **Public holidays** per workspace: import a country's from date.nager.at or add days by hand. They're skipped when counting days off.
 - **Carry-over**: up to a set number of unused vacation days roll into the next year.

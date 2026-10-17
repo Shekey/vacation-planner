@@ -20,13 +20,13 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts           Account[]
-  sessions           Session[]
-  memberships        Membership[]
-  createdWorkspaces  Workspace[]  @relation("WorkspaceCreator")
-  sentInvitations    Invitation[] @relation("InvitationSender")
-  createdBookings    Booking[]    @relation("BookingCreator")
-  decidedBookings    Booking[]    @relation("BookingDecider")
+  accounts          Account[]
+  sessions          Session[]
+  memberships       Membership[]
+  createdWorkspaces Workspace[]  @relation("WorkspaceCreator")
+  sentInvitations   Invitation[] @relation("InvitationSender")
+  createdBookings   Booking[]    @relation("BookingCreator")
+  decidedBookings   Booking[]    @relation("BookingDecider")
 }
 
 model Account {
@@ -127,30 +127,30 @@ model Holiday {
 
 // Per-workspace feature flags.
 model WorkspaceSettings {
-  workspaceId      String  @id
-  approvalsEnabled Boolean @default(false)
-  countWeekends    Boolean @default(false)
-  allowHalfDays    Boolean @default(true)
+  workspaceId           String    @id
+  approvalsEnabled      Boolean   @default(false)
+  countWeekends         Boolean   @default(false)
+  allowHalfDays         Boolean   @default(true)
   // Yearly allowance given to new members; null means allowances are not tracked by default.
-  defaultAllowanceDays Decimal? @default(20) @db.Decimal(4, 1)
+  defaultAllowanceDays  Decimal?  @default(20) @db.Decimal(4, 1)
   // Most unused vacation days that roll into the next year; null or 0 means none.
-  maxCarryOverDays     Decimal? @db.Decimal(4, 1)
+  maxCarryOverDays      Decimal?  @db.Decimal(4, 1)
   // "MM-DD" by which carried-over days must be taken, e.g. "03-31"; null means they never expire.
-  carryOverExpiry      String?
+  carryOverExpiry       String?
   // Warn when fewer people than this would be working on a day; null turns the check off.
-  minPeoplePresent     Int?
+  minPeoplePresent      Int?
   // ISO 3166 country code last used to import public holidays, e.g. "BA".
-  holidayCountry       String?
+  holidayCountry        String?
   // Default ISO 3166-2 region for members' regional holidays, e.g. "DE-BE"; null means nationwide only.
-  holidayRegion        String?
+  holidayRegion         String?
   // Microsoft Teams webhook (Workflows or connector) for booking notifications.
-  teamsWebhookUrl      String?
+  teamsWebhookUrl       String?
   // Colleagues see sick leave as "Other" without its note; admins and the person still see it as sick.
-  hideSickType         Boolean @default(true)
+  hideSickType          Boolean   @default(true)
   // Slack incoming webhook, posted to alongside Teams.
-  slackWebhookUrl      String?
+  slackWebhookUrl       String?
   // Language of Teams/Slack posts and of emails to people who haven't picked one: "en" or "de".
-  locale               String  @default("en")
+  locale                String    @default("en")
   // Set when an admin hides the getting-started checklist.
   onboardingDismissedAt DateTime?
 
@@ -158,29 +158,43 @@ model WorkspaceSettings {
 }
 
 model Membership {
-  id                   String    @id @default(cuid())
-  workspaceId          String
-  userId               String
-  role                 Role      @default(MEMBER)
+  id                  String    @id @default(cuid())
+  workspaceId         String
+  userId              String
+  role                Role      @default(MEMBER)
   // Days per calendar year; null means the allowance is not tracked for this member.
-  annualAllowanceDays  Decimal?  @db.Decimal(4, 1)
-  joinedAt             DateTime  @default(now())
+  annualAllowanceDays Decimal?  @db.Decimal(4, 1)
+  joinedAt            DateTime  @default(now())
   // Soft removal keeps booking history intact.
-  removedAt            DateTime?
+  removedAt           DateTime?
   // Secret for the personal iCal feed URL; null until the member turns the feed on.
-  calendarToken        String?   @unique
+  calendarToken       String?   @unique
   // Where this member works, for regional holidays, e.g. "DE-NW"; null uses the workspace default.
-  holidayRegion        String?
+  holidayRegion       String?
   // ISO weekdays this member works (1 = Monday ... 7 = Sunday); empty means the workspace default.
-  workDays             Int[]     @default([])
+  workDays            Int[]     @default([])
   // First day of employment; the allowance in that year is pro-rated. Null means no pro-rating.
-  employmentStart      DateTime? @db.Date
+  employmentStart     DateTime? @db.Date
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bookings  Booking[]
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings       Booking[]
+  pastAllowances AllowanceYear[]
 
   @@unique([workspaceId, userId])
+}
+
+// The allowance a member had in a past year, kept when an admin changes it so last year's carry-over stays the same.
+// Years without a row use the member's current annualAllowanceDays.
+model AllowanceYear {
+  membershipId String
+  year         Int
+  // Null means the allowance wasn't tracked that year.
+  days         Decimal? @db.Decimal(4, 1)
+
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@id([membershipId, year])
 }
 
 model Invitation {

@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/components/action-form";
 import { normalizeWorkDays } from "@/lib/booking-days";
-import { fromISO, isISODate } from "@/lib/dates";
+import { keepLastYearsAllowance } from "@/lib/bookings";
+import { fromISO, isISODate, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { isHolidayRegion } from "@/lib/holiday-regions";
 import { getMessages } from "@/lib/i18n/server";
@@ -137,6 +138,7 @@ export async function updateMemberAction(
     employmentStart = rawStart ? fromISO(rawStart) : null;
   }
 
+  await keepLastYearsAllowance([member], allowance, Number(todayIn(ctx.workspace.timezone).slice(0, 4)));
   await db.membership.update({
     where: { id: member.id },
     data: { role, annualAllowanceDays: allowance, holidayRegion, workDays, employmentStart },

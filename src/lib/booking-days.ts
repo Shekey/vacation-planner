@@ -112,6 +112,19 @@ export function carriedOverStatus(carried: number, takenByDeadline: number, dead
 }
 
 /**
+ * The yearly allowance that applied in `year`: the value kept for that year when an admin changed it later,
+ * else the member's current one. Null means it isn't tracked.
+ */
+export function allowanceIn(
+  year: number,
+  current: number | null,
+  past: readonly { year: number; days: number | null }[],
+): number | null {
+  const kept = past.find((p) => p.year === year);
+  return kept ? kept.days : current;
+}
+
+/**
  * The allowance for `year` when employment starts during it: 1/12 per full month employed,
  * rounded up to a half day (German practice under BUrlG section 5). Starting before the year
  * keeps the full allowance; starting after it gives none.

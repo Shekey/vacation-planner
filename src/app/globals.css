@@ -108,6 +108,20 @@ input[type="radio"]:focus-visible {
   }
 }
 
+/* Gentle bobbing for the landing page's example notifications; off with reduced motion (above). */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+.float {
+  animation: float 4s ease-in-out infinite;
+}
+
 /* Diagonal stripes mark bookings still waiting for approval. */
 .pending-stripes {
   background-image: repeating-linear-gradient(

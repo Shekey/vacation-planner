@@ -1,27 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ActionForm, type ActionResult } from "@/components/action-form";
 import { useI18n } from "@/components/i18n-provider";
-import { HOLIDAY_COUNTRIES, countryName, regionsOf } from "@/lib/holiday-regions";
-import { intlLocale, type Locale } from "@/lib/i18n";
-
-// Germany first, then the rest alphabetically by name.
-function countriesIn(locale: Locale) {
-  return [...HOLIDAY_COUNTRIES]
-    .map((code) => ({ code, name: countryName(code, locale) }))
-    .sort((a, b) => Number(b.code === "DE") - Number(a.code === "DE") || a.name.localeCompare(b.name, intlLocale(locale)));
-}
+import { regionsOf } from "@/lib/holiday-regions";
 
 export function HolidayImportForm(props: {
   action: (prev: ActionResult, formData: FormData) => Promise<ActionResult>;
+  /** Named on the server, so the names match what was rendered there. */
+  countries: { code: string; name: string }[];
   country: string;
   region: string;
   year: number;
 }) {
   const { locale, t: messages } = useI18n();
   const t = messages.holidays;
-  const countries = useMemo(() => countriesIn(locale), [locale]);
+  const { countries } = props;
   const [country, setCountry] = useState(props.country || "DE");
   const regions = regionsOf(country, locale);
 

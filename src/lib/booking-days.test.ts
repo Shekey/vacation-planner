@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  allowanceIn,
   carriedOverStatus,
   carryOver,
   countDays,
@@ -96,6 +97,16 @@ describe("part-time work days", () => {
     expect(normalizeWorkDays([5, 4, 3, 2, 1], false)).toEqual([]);
     expect(normalizeWorkDays([1, 2, 3, 4, 5], true)).toEqual([1, 2, 3, 4, 5]);
     expect(normalizeWorkDays([1, 2, 3, 4, 5, 6, 7], true)).toEqual([]);
+  });
+});
+
+describe("allowanceIn", () => {
+  const past = [{ year: 2025, days: 25 }, { year: 2024, days: null }];
+  it("uses the value kept for a past year", () => expect(allowanceIn(2025, 30, past)).toBe(25));
+  it("keeps a year that wasn't tracked untracked", () => expect(allowanceIn(2024, 30, past)).toBeNull());
+  it("falls back to the current allowance", () => {
+    expect(allowanceIn(2026, 30, past)).toBe(30);
+    expect(allowanceIn(2026, null, [])).toBeNull();
   });
 });
 

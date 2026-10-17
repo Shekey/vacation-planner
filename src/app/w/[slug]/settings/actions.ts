@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { ActionResult } from "@/components/action-form";
 import { isMonthDay } from "@/lib/booking-days";
-import { approveAllPending } from "@/lib/bookings";
+import { approveAllPending, keepLastYearsAllowance } from "@/lib/bookings";
+import { todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { requireAdmin, settingsOf } from "@/lib/session";
 import { isSlackWebhookUrl } from "@/lib/slack";
@@ -89,6 +90,14 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
     where: { workspaceId: ctx.workspace.id, removedAt: null },
     data: { annualAllowanceDays: flags.defaultAllowanceDays },
   });
+  if (applyToAll) {
+    const members = await db.membership.findMany({
+      where: { workspaceId: ctx.workspace.id, removedAt: null },
+      select: { id: true, annualAllowanceDays: true },
+    });
+    const newDays = flags.defaultAllowanceDays === null ? null : Number(flags.defaultAllowanceDays);
+    await keepLastYearsAllowance(members, newDays, Number(todayIn(ctx.workspace.timezone).slice(0, 4)));
+  }
   const [, applied] = applyToAll ? await db.$transaction([updateWorkspace, applyAllowance]) : [await updateWorkspace];
 
   let note = applied ? t.allowanceApplied(applied.count) : "";

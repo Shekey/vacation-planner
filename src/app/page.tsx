@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getMessages } from "@/lib/i18n/server";
+import { TRIAL_DAYS } from "@/lib/plans";
 import { requireUser } from "@/lib/session";
 import { listWorkspacesForUser } from "@/lib/workspaces";
 import { Landing } from "./landing";
@@ -24,7 +25,28 @@ export default async function HomePage() {
         </Link>
       </div>
       {memberships.length === 0 ? (
-        <p className="opacity-80">{t.empty}</p>
+        <div className="space-y-4">
+          <p className="text-muted">{t.welcome}</p>
+          <div className="grid gap-4 md:grid-cols-2">
+            <section className="card space-y-3 bg-gradient-to-br from-sky-50 to-teal-50 dark:from-sky-950/40 dark:to-teal-950/30">
+              <h2 className="text-lg font-semibold">
+                <span aria-hidden>🚀 </span>
+                {t.startTitle}
+              </h2>
+              <p className="text-sm text-muted">{t.startBody(TRIAL_DAYS)}</p>
+              <Link href="/workspaces/new" className="btn">
+                {t.startButton}
+              </Link>
+            </section>
+            <section className="card space-y-3">
+              <h2 className="text-lg font-semibold">
+                <span aria-hidden>✉️ </span>
+                {t.invitedTitle}
+              </h2>
+              <p className="text-sm text-muted">{t.invitedBody(user.email)}</p>
+            </section>
+          </div>
+        </div>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
           {memberships.map(({ workspace, role }) => (

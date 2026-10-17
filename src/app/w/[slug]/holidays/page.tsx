@@ -4,7 +4,7 @@ import { ActionForm } from "@/components/action-form";
 import { regionOf } from "@/lib/bookings";
 import { formatDate, fromISO, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
-import { countryName, regionName as localRegionName, regionsOf } from "@/lib/holiday-regions";
+import { countryName, regionName as localRegionName, regionsOf, sortedCountries } from "@/lib/holiday-regions";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { requireMembership, settingsOf } from "@/lib/session";
 import { addHolidayAction, deleteHolidayAction, importHolidaysAction, setMyRegionAction } from "./actions";
@@ -137,6 +137,7 @@ export default async function HolidaysPage({ params, searchParams }: PageProps<"
           <section className="card space-y-3">
             <h3 className="font-medium">{t.importHeading}</h3>
             <HolidayImportForm
+              countries={sortedCountries(locale)}
               action={importHolidaysAction.bind(null, slug)}
               country={country}
               region={settings.holidayRegion ?? ""}
