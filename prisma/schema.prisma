@@ -82,17 +82,19 @@ enum Plan {
 }
 
 model Workspace {
-  id          String    @id @default(cuid())
-  name        String
-  slug        String    @unique
+  id                 String    @id @default(cuid())
+  name               String
+  slug               String    @unique
   // IANA timezone used for date math, e.g. "Europe/Sarajevo".
-  timezone    String    @default("UTC")
+  timezone           String    @default("UTC")
   // Null once the creator deleted their account.
-  createdById String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdById        String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
   // Set when an admin deletes the workspace. It is hidden and can be restored for RESTORE_DAYS; the monthly purge then deletes it for good.
-  deletedAt   DateTime?
+  deletedAt          DateTime?
+  // While in the future, the operator's team may look at this workspace's members for support. Set by a workspace admin, 24 hours at a time.
+  supportAccessUntil DateTime?
 
   // Billing. Everything is unlocked until trialEndsAt; after that the paid plan applies while Stripe says it's active.
   plan                 Plan      @default(FREE)

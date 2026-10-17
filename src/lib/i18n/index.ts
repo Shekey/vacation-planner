@@ -21,6 +21,7 @@ import { overview } from "./messages/overview";
 import { people } from "./messages/people";
 import { settings } from "./messages/settings";
 import { signIn } from "./messages/signIn";
+import { superadmin } from "./messages/superadmin";
 import { workspace } from "./messages/workspace";
 
 export * from "./config";
@@ -48,6 +49,7 @@ const NAMESPACES = {
   people,
   settings,
   signIn,
+  superadmin,
   workspace,
 };
 

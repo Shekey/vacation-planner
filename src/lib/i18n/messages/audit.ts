@@ -28,6 +28,16 @@ export const audit = defineMessages({
           return `${actor} deleted the workspace`;
         case "workspace.restored":
           return `${actor} restored the workspace`;
+        case "support.access_granted":
+          return `${actor} allowed support access (24 hours)`;
+        case "support.access_revoked":
+          return `${actor} turned support access off`;
+        case "support.access_used":
+          return `Support (${actor}) looked at the workspace`;
+        case "support.trial_extended":
+          return `Support (${actor}) extended the trial${detail ? ` by ${detail} days` : ""}`;
+        case "support.workspace_restored":
+          return `Support (${actor}) restored the workspace`;
         default:
           return `${actor}: ${action}`;
       }
@@ -64,6 +74,16 @@ export const audit = defineMessages({
           return `${actor} hat den Workspace gelöscht`;
         case "workspace.restored":
           return `${actor} hat den Workspace wiederhergestellt`;
+        case "support.access_granted":
+          return `${actor} hat den Support-Zugriff erlaubt (24 Stunden)`;
+        case "support.access_revoked":
+          return `${actor} hat den Support-Zugriff ausgeschaltet`;
+        case "support.access_used":
+          return `Support (${actor}) hat sich den Workspace angesehen`;
+        case "support.trial_extended":
+          return `Support (${actor}) hat die Testphase${detail ? ` um ${detail} Tage` : ""} verlängert`;
+        case "support.workspace_restored":
+          return `Support (${actor}) hat den Workspace wiederhergestellt`;
         default:
           return `${actor}: ${action}`;
       }

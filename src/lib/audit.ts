@@ -10,6 +10,12 @@ export const AUDIT_ACTIONS = [
   "booking.declined",
   "workspace.deleted",
   "workspace.restored",
+  // Support access: granted and revoked by a workspace admin, the rest by the operator's team.
+  "support.access_granted",
+  "support.access_revoked",
+  "support.access_used",
+  "support.trial_extended",
+  "support.workspace_restored",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

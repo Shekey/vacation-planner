@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { getMessages } from "@/lib/i18n/server";
 import { TRIAL_DAYS } from "@/lib/plans";
 import { requireUser } from "@/lib/session";
+import { isSuperAdminEmail } from "@/lib/superadmin";
 import { restoreDaysLeft, RESTORE_DAYS } from "@/lib/undo";
 import { listDeletedWorkspacesForAdmin, listWorkspacesForUser } from "@/lib/workspaces";
 import { ActionForm } from "@/components/action-form";
@@ -17,7 +18,7 @@ export default async function HomePage() {
   // First visit: ask for a name so teammates don't see a bare email.
   if (!user.name) redirect("/account?next=/");
   const [memberships, deleted] = await Promise.all([listWorkspacesForUser(user.id), listDeletedWorkspacesForAdmin(user.id)]);
-  const { home: t, common } = await getMessages();
+  const { home: t, common, superadmin } = await getMessages();
 
   return (
     <div className="space-y-6">
@@ -61,6 +62,13 @@ export default async function HomePage() {
             </li>
           ))}
         </ul>
+      )}
+      {isSuperAdminEmail(user.email) && (
+        <p className="text-sm">
+          <Link href="/admin" className="text-primary hover:underline">
+            {superadmin.title} →
+          </Link>
+        </p>
       )}
       {deleted.length > 0 && (
         <section className="card space-y-3">

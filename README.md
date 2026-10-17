@@ -6,6 +6,15 @@ Book and plan vacations inside invite-only workspaces. See the v1 plan for scope
 
 The code is ready for a first paying customer once these are done. They are things only you can do (accounts, contracts, money). Work through them top to bottom; the first three block selling. The bigger plan, with pricing reasoning and next features, is in [`docs/sales-plan.md`](docs/sales-plan.md).
 
+### After the super-admin update
+
+There is now an operator area at `/admin` for you and your team. It lists all workspaces (plan, trial, people, status), lets you extend a trial, restore a workspace that was deleted in the last 30 days, and see a workspace's members while its admin has switched on "Support access" (24 hours, logged on that workspace's Activity page). Without that switch you only see plan data and the admins' contact data, never anyone's time off. What you must do:
+
+1. In Vercel set `SUPERADMIN_EMAILS` to the email addresses of you and your team (comma separated) and redeploy. Sign in with that address as usual; a "Super admin" link appears on the workspace list. Anyone not on the list gets a 404.
+2. **There is no second factor in the app yet.** Anyone who can open the mailbox of a listed address is a super admin. Use mailboxes with two-factor sign-in, keep the list as short as possible, and remove people who leave.
+3. Show your lawyer the new support-access sentence in `/avv` (staff access only while the customer allows it, logged) and decide whether your support promise on the landing page needs to mention it.
+4. Try it: set `SUPERADMIN_EMAILS` locally, switch on *Settings → Support access* in a test workspace, open `/admin`, and check the entry appears on the workspace's Activity page.
+
 ### After the undo and activity-log update
 
 Customers can now undo their own mistakes: bring back a removed person (with their cancelled time off), undo a cancelled booking, and restore a deleted workspace, each for 30 days. Admins also have an *Activity* page (who removed, cancelled, approved or deleted what, kept 12 months). The database change runs by itself on the next deploy. What you must do:
