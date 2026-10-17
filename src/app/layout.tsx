@@ -46,7 +46,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-2.5">
               <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
                 <LogoMark />
-                <span>{t.appName}</span>
+                {/* Signed in on a phone, the logo alone leaves room for the account and sign-out. */}
+                <span className={session?.user ? "hidden sm:inline" : ""}>{t.appName}</span>
               </Link>
               {!session?.user && (
                 <nav aria-label={t.productNav.label} className="hidden items-center gap-5 text-sm text-muted md:flex [&_a:hover]:text-foreground">

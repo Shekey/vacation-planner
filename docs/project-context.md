@@ -58,6 +58,8 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 - Crons (`vercel.json`): `/api/cron/daily-digest` weekdays 06:00, `/api/cron/holidays` monthly. Both need `CRON_SECRET`.
 - Build: `scripts/vercel-build.mjs` migrates on production, skips migrations on preview.
 - Security: headers in `next.config.ts`; helpers in `src/lib/security.ts`; magic-link throttle (3 per address per 10 min) in `src/lib/sign-in-limit.ts`.
+- Landing page (2026-10-17, round 2): own look instead of template SaaS: Bricolage Grotesque headings and Caveat handwriting via next/font (self-hosted), looping product demo in the hero (`src/components/landing/hero-demo.tsx`), team-type tabs with scenario calendars (`team-switcher.tsx`), price slider (`price-picker.tsx`), line icons (`icons.tsx`), scroll reveal (`reveal.tsx`). No emoji icons, no gradient blobs.
+- App navigation: everyday pages first, admin pages grouped under an "Admin" label; on phones a fixed bottom bar (`src/components/bottom-nav.tsx`) with Home, Calendar, Book, People, Me.
 - Look: theme tokens (`background`, `surface`, `muted`, `border`, `primary`) and `.btn`, `.btn-secondary`, `.card`, `.card-link` in `src/app/globals.css`; `Avatar`, `LogoMark`, `EmptyState` in `src/components/ui.tsx`.
 
 ## Deploy notes

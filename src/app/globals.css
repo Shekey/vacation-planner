@@ -59,6 +59,13 @@ label:has(> input[type="radio"]) {
   cursor: pointer;
 }
 
+/* The phone's bottom bar is fixed; room under the footer keeps the legal links clear of it. */
+@media (width < 40rem) {
+  body:has(.bottom-nav) footer {
+    padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));
+  }
+}
+
 @layer components {
   /* German legal texts: plain document typography. */
   .legal h2 {
