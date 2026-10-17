@@ -1,95 +1,19 @@
 import Link from "next/link";
+import { HeroDemo } from "@/components/landing/hero-demo";
+import { icons } from "@/components/landing/icons";
+import { PricePicker } from "@/components/landing/price-picker";
+import { Reveal } from "@/components/landing/reveal";
+import { TeamSwitcher } from "@/components/landing/team-switcher";
 import { intlLocale, type Locale, type Messages } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
+import { OPERATOR } from "@/lib/legal";
 import { PLANS, TRIAL_DAYS } from "@/lib/plans";
 
 /** The public home page, shown at / to anyone who isn't signed in. */
 
 type T = Messages["landing"];
 
-/* A small team calendar, drawn with plain elements so it stays sharp and themable. */
-const TEAM = [
-  { name: "Anna", days: "....vvvvv..........." },
-  { name: "Ben", days: "..........hhpp......" },
-  { name: "Clara", days: "vv.................." },
-  { name: "Deniz", days: "........vvvvvvv....." },
-  { name: "Emil", days: "..............aa...." },
-];
-const CELL: Record<string, string> = {
-  v: "bg-sky-500",
-  h: "bg-sky-500 [clip-path:inset(0_50%_0_0)]",
-  p: "pending-stripes bg-sky-500/70",
-  a: "bg-violet-500",
-};
-
-/* Small notifications floating around the hero calendar, the way the app tells people things. */
-function Toast({ className, icon, children }: { className: string; icon: string; children: React.ReactNode }) {
-  return (
-    <div
-      aria-hidden
-      className={`float absolute z-10 flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium whitespace-nowrap shadow-lg shadow-sky-900/10 ${className}`}
-    >
-      <span>{icon}</span>
-      {children}
-    </div>
-  );
-}
-
-function HeroVisual({ t }: { t: T }) {
-  return (
-    <div className="relative pt-6 pb-8 sm:px-4">
-      <Toast className="-top-1 left-2 sm:left-0" icon="✅">
-        {t.hero.toastApproved}
-      </Toast>
-      <CalendarPreview t={t} />
-      <Toast className="right-2 -bottom-1 [animation-delay:1.5s] sm:right-0" icon="⚠️">
-        {t.hero.toastWarning}
-      </Toast>
-      <Toast className="top-1/2 right-0 hidden [animation-delay:0.8s] lg:flex" icon="🌴">
-        {t.hero.toastLeft}
-      </Toast>
-    </div>
-  );
-}
-
-function CalendarPreview({ t }: { t: T }) {
-  return (
-    <figure className="card space-y-3 bg-surface shadow-2xl shadow-sky-900/15">
-      <div role="img" aria-label={t.preview.label} className="space-y-1.5">
-        <div className="grid grid-cols-[3.5rem_repeat(20,minmax(0,1fr))] gap-px text-[10px] opacity-60" aria-hidden>
-          <span />
-          {Array.from({ length: 20 }, (_, i) => (
-            <span key={i} className={`text-center ${i % 2 ? "invisible sm:visible" : ""}`}>
-              {i + 1}
-            </span>
-          ))}
-        </div>
-        {TEAM.map((p) => (
-          <div key={p.name} className="grid grid-cols-[3.5rem_repeat(20,minmax(0,1fr))] items-center gap-px" aria-hidden>
-            <span className="truncate text-xs font-medium">{p.name}</span>
-            {[...p.days].map((c, i) => (
-              <span
-                key={i}
-                className={`h-4 ${c === "." ? (i % 7 === 5 || i % 7 === 6 ? "bg-black/10 dark:bg-white/10" : "bg-black/[0.04] dark:bg-white/[0.06]") : CELL[c]}`}
-              />
-            ))}
-          </div>
-        ))}
-      </div>
-      <figcaption className="flex flex-wrap gap-x-4 gap-y-1 text-xs opacity-80">
-        <span className="flex items-center gap-1.5">
-          <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full bg-sky-500" /> {t.preview.vacation}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full bg-violet-500" /> {t.preview.other}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span aria-hidden className="pending-stripes inline-block h-2.5 w-4 rounded-sm bg-sky-500" /> {t.preview.pending}
-        </span>
-      </figcaption>
-    </figure>
-  );
-}
+const panel = "rounded-2xl border border-border bg-surface p-5";
 
 function AllowanceRing({ t }: { t: T }) {
   // 30 days: 12 taken, 3 pending, 15 left.
@@ -97,7 +21,7 @@ function AllowanceRing({ t }: { t: T }) {
   const c = 2 * Math.PI * r;
   const arc = (days: number) => (days / 30) * c;
   return (
-    <figure className="card flex flex-col items-center gap-4 text-center">
+    <figure className={`${panel} flex flex-col items-center gap-4 text-center`}>
       <svg viewBox="0 0 140 140" className="h-40 w-40 -rotate-90" role="img" aria-labelledby="ring-title">
         <title id="ring-title">{t.ring.label}</title>
         <circle cx="70" cy="70" r={r} fill="none" strokeWidth="16" className="stroke-black/10 dark:stroke-white/15" />
@@ -114,8 +38,8 @@ function AllowanceRing({ t }: { t: T }) {
         />
       </svg>
       <figcaption className="space-y-1">
-        <div className="text-3xl font-semibold">{t.ring.left}</div>
-        <div className="text-sm opacity-70">{t.ring.detail}</div>
+        <div className="font-display text-3xl font-semibold">{t.ring.left}</div>
+        <div className="text-sm text-muted">{t.ring.detail}</div>
       </figcaption>
     </figure>
   );
@@ -141,7 +65,7 @@ function BridgeDay({ t, locale }: { t: T; locale: Locale }) {
     weekend: "bg-black/5 ring-black/10 dark:bg-white/10 dark:ring-white/15",
   };
   return (
-    <figure className="card space-y-4">
+    <figure className={`${panel} space-y-4`}>
       <ol className="grid grid-cols-4 gap-2" aria-label={t.bridge.label}>
         {days.map((x) => (
           <li key={x.d} className={`rounded-lg p-2 text-center ring-1 ${style[x.kind]}`}>
@@ -152,8 +76,8 @@ function BridgeDay({ t, locale }: { t: T; locale: Locale }) {
         ))}
       </ol>
       <figcaption className="text-center">
-        <span className="text-3xl font-semibold">{t.bridge.result}</span>
-        <span className="block text-sm opacity-70">{t.bridge.note}</span>
+        <span className="font-display text-3xl font-semibold">{t.bridge.result}</span>
+        <span className="block text-sm text-muted">{t.bridge.note}</span>
       </figcaption>
     </figure>
   );
@@ -165,33 +89,56 @@ function RegionCompare({ t }: { t: T }) {
     { place: t.regions.bielefeld, count: 11, extra: t.regions.bielefeldExtra },
   ];
   return (
-    <figure className="card space-y-4">
+    <figure className={`${panel} space-y-4`}>
       <dl className="space-y-4">
         {rows.map((r) => (
           <div key={r.place} className="space-y-1.5">
             <dt className="flex items-baseline justify-between gap-2 text-sm">
               <span className="font-medium">{r.place}</span>
-              <span className="opacity-70">{t.regions.count(r.count)}</span>
+              <span className="text-muted">{t.regions.count(r.count)}</span>
             </dt>
             <dd>
               <div className="flex h-3 overflow-hidden rounded-full bg-black/10 dark:bg-white/15" aria-hidden>
                 <div className="bg-rose-500/70" style={{ width: `${(9 / 11) * 100}%` }} />
                 <div className="bg-rose-500" style={{ width: `${((r.count - 9) / 11) * 100}%` }} />
               </div>
-              <p className="mt-1 text-xs opacity-70">{t.regions.breakdown(9, r.extra)}</p>
+              <p className="mt-1 text-xs text-muted">{t.regions.breakdown(9, r.extra)}</p>
             </dd>
           </div>
         ))}
       </dl>
-      <figcaption className="text-sm opacity-80">{t.regions.note}</figcaption>
+      <figcaption className="text-sm text-muted">{t.regions.note}</figcaption>
     </figure>
   );
 }
 
-function SectionHeading({ id, title, subtitle, center }: { id: string; title: string; subtitle?: string; center?: boolean }) {
+/** The sun-over-waves from the logo, used as a quiet signature in the hero and the closing section. */
+function Sun({ className }: { className: string }) {
   return (
-    <div className={`max-w-2xl space-y-2 ${center ? "mx-auto text-center" : ""}`}>
-      <h2 id={id} className="text-3xl font-semibold tracking-tight sm:text-4xl">
+    <svg viewBox="0 0 120 120" className={className} aria-hidden>
+      <g className="sun-turn">
+        {Array.from({ length: 12 }, (_, i) => (
+          <rect key={i} x="58" y="4" width="4" height="14" rx="2" fill="currentColor" transform={`rotate(${i * 30} 60 60)`} />
+        ))}
+      </g>
+      <circle cx="60" cy="60" r="26" fill="currentColor" />
+    </svg>
+  );
+}
+
+function Waves({ className }: { className: string }) {
+  return (
+    <svg viewBox="0 0 400 40" preserveAspectRatio="none" className={className} aria-hidden>
+      <path d="M0 20c33-14 67-14 100 0s67 14 100 0 67-14 100 0 67 14 100 0" fill="none" stroke="currentColor" strokeWidth="2" />
+      <path d="M0 32c33-14 67-14 100 0s67 14 100 0 67-14 100 0 67 14 100 0" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.5" />
+    </svg>
+  );
+}
+
+function Heading({ id, title, subtitle }: { id: string; title: string; subtitle?: string }) {
+  return (
+    <div className="max-w-2xl space-y-3">
+      <h2 id={id} className="font-display text-3xl font-semibold tracking-tight text-balance sm:text-[2.5rem] sm:leading-[1.1]">
         {title}
       </h2>
       {subtitle && <p className="text-lg text-muted">{subtitle}</p>}
@@ -202,259 +149,194 @@ function SectionHeading({ id, title, subtitle, center }: { id: string; title: st
 export async function Landing() {
   const [locale, m] = await Promise.all([getLocale(), getMessages()]);
   const t = m.landing;
-  const euro = (n: number, decimals = 0) =>
-    new Intl.NumberFormat(intlLocale(locale), {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    }).format(n);
   return (
-    <div className="space-y-24 pb-8 sm:space-y-28">
-      <section className="relative grid items-center gap-10 overflow-x-clip pt-4 md:grid-cols-2" aria-labelledby="hero-title">
-        {/* Soft color behind the hero; purely decorative. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 -top-24 -z-10 h-[34rem] bg-[radial-gradient(40rem_20rem_at_20%_20%,rgb(14_165_233/0.18),transparent),radial-gradient(30rem_18rem_at_85%_40%,rgb(20_184_166/0.16),transparent)]"
-        />
-        <div className="space-y-6">
-          <p className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-sm font-medium text-sky-700 dark:text-sky-300">
-            <span aria-hidden>🌴</span> {t.hero.eyebrow}
-          </p>
-          <h1 id="hero-title" className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-            {t.hero.title}
+    <div className="space-y-24 pb-8 sm:space-y-32">
+      {/* ---------- Hero ---------- */}
+      <section className="relative grid items-center gap-12 pt-2 sm:pt-8 lg:grid-cols-[1.05fr_1fr]" aria-labelledby="hero-title">
+        <Sun className="pointer-events-none absolute -top-10 right-0 -z-10 size-40 text-amber-300/40 sm:size-56 dark:text-amber-300/15" />
+        <div className="space-y-7">
+          <h1
+            id="hero-title"
+            className="font-display text-[2.6rem] leading-[1.05] font-semibold tracking-tight text-balance sm:text-6xl"
+          >
+            {t.hero.titleLead}{" "}
+            <span className="scribble text-sky-700 dark:text-sky-300">{t.hero.titleAccent}</span>
           </h1>
-          <p className="text-lg text-muted">{t.hero.body}</p>
+          <p className="max-w-xl text-lg text-muted">{t.hero.body}</p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/sign-in" className="btn px-5 py-3 text-base shadow-lg shadow-sky-600/25">
+            <Link href="/sign-in" className="btn px-5 py-3 text-base">
               {t.hero.cta(TRIAL_DAYS)}
             </Link>
             <a href="#pricing" className="btn-secondary px-5 py-3 text-base">
               {t.hero.pricing}
             </a>
           </div>
-          <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted">
+          <ul className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-muted">
             {t.hero.ticks.map((tick) => (
               <li key={tick} className="flex items-center gap-1.5">
-                <span aria-hidden className="font-semibold text-green-600 dark:text-green-400">
-                  ✓
-                </span>
+                <icons.check className="size-4 text-green-600 dark:text-green-400" />
                 {tick}
               </li>
             ))}
           </ul>
           <p className="text-sm text-muted">{t.hero.invite}</p>
         </div>
-        <HeroVisual t={t} />
+        <HeroDemo />
       </section>
 
-      <section aria-label={t.trust.label} className="-mt-8 sm:-mt-12">
-        <ul className="flex flex-wrap justify-center gap-2">
-          {t.trust.items.map((item) => (
-            <li
-              key={item.text}
-              className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-sm shadow-xs"
-            >
-              <span aria-hidden>{item.icon}</span>
-              {item.text}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <ul
+        className="-mt-12 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted sm:-mt-20"
+        aria-label={t.trust.label}
+      >
+        {t.trust.items.map((item) => (
+          <li key={item} className="flex items-center gap-1.5 whitespace-nowrap">
+            <icons.check className="size-4 text-sky-600 dark:text-sky-400" />
+            {item}
+          </li>
+        ))}
+      </ul>
 
-      <section id="for-whom" className="scroll-mt-20 space-y-8" aria-labelledby="audiences-title">
-        <SectionHeading id="audiences-title" title={t.audiences.title} subtitle={t.audiences.subtitle} />
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {t.audiences.items.map((a) => (
-            <li key={a.title} className="card card-link flex flex-col gap-3">
-              <div className="flex items-center gap-3">
-                <span aria-hidden className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-2xl">
-                  {a.icon}
-                </span>
-                <h3 className="font-semibold leading-snug">{a.title}</h3>
-              </div>
-              <p className="flex-1 text-sm text-muted">
-                <span className="mr-1.5 rounded bg-black/5 px-1.5 py-0.5 text-[11px] font-medium tracking-wide uppercase dark:bg-white/10">
-                  {t.audiences.example}
-                </span>
-                {a.story}
-              </p>
-              <ul className="flex flex-wrap gap-1.5" aria-label={a.title}>
-                {a.tags.map((tag) => (
-                  <li key={tag} className="rounded-full bg-sky-500/10 px-2.5 py-0.5 text-xs font-medium text-sky-800 dark:text-sky-300">
-                    {tag}
+      {/* ---------- Who it's for ---------- */}
+      <Reveal>
+        <section id="for-whom" className="scroll-mt-20 space-y-10" aria-labelledby="audiences-title">
+          <Heading id="audiences-title" title={t.audiences.title} subtitle={t.audiences.subtitle} />
+          <TeamSwitcher />
+        </section>
+      </Reveal>
+
+      {/* ---------- Before / after ---------- */}
+      <Reveal>
+        <section className="space-y-10" aria-labelledby="compare-title">
+          <Heading id="compare-title" title={t.compare.title} />
+          <div className="grid items-center gap-8 md:grid-cols-2 md:gap-12">
+            <figure className="relative mx-auto w-full max-w-sm -rotate-2 rounded-sm bg-amber-100 p-6 pt-8 text-stone-800 shadow-[0_18px_30px_-12px_rgb(120_80_0/0.35)] dark:bg-amber-200">
+              <span aria-hidden className="absolute -top-3 left-1/2 h-6 w-20 -translate-x-1/2 rotate-2 bg-white/60 shadow-sm" />
+              <figcaption className="sr-only">{t.compare.beforeTitle}</figcaption>
+              <ul className="font-hand space-y-1.5 text-2xl leading-snug">
+                {t.compare.note.map((line, i) => (
+                  <li key={line} className={i === 0 || i === 2 ? "line-through decoration-red-500/70 decoration-2" : ""}>
+                    {line}
                   </li>
                 ))}
               </ul>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="space-y-8" aria-labelledby="compare-title">
-        <SectionHeading id="compare-title" title={t.compare.title} center />
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="card space-y-3 bg-black/[0.02] dark:bg-white/[0.02]">
-            <h3 className="font-semibold text-muted">{t.compare.beforeTitle}</h3>
-            <ul className="space-y-2.5">
-              {t.compare.before.map((line) => (
-                <li key={line} className="flex gap-2.5 text-sm text-muted">
-                  <span aria-hidden className="text-red-500">
-                    ✕
-                  </span>
-                  {line}
-                </li>
-              ))}
-            </ul>
+            </figure>
+            <div className="space-y-4">
+              <h3 className="font-display text-xl font-semibold">{t.compare.afterTitle}</h3>
+              <ul className="space-y-3">
+                {t.compare.after.map((line) => (
+                  <li key={line} className="flex gap-3">
+                    <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-green-600/10 text-green-700 dark:text-green-400">
+                      <icons.check className="size-4" />
+                    </span>
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-          <div className="card space-y-3 ring-2 ring-primary/40">
-            <h3 className="font-semibold">{t.compare.afterTitle}</h3>
-            <ul className="space-y-2.5">
-              {t.compare.after.map((line) => (
-                <li key={line} className="flex gap-2.5 text-sm">
-                  <span aria-hidden className="font-semibold text-green-600 dark:text-green-400">
-                    ✓
-                  </span>
-                  {line}
+        </section>
+      </Reveal>
+
+      {/* ---------- Features ---------- */}
+      <Reveal>
+        <section id="features" className="scroll-mt-20 space-y-10" aria-labelledby="features-title">
+          <Heading id="features-title" title={t.features.title} subtitle={t.features.subtitle} />
+          <ul className="grid gap-x-10 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
+            {t.features.items.map((f) => {
+              const Icon = icons[f.icon];
+              return (
+                <li key={f.title} className="space-y-2">
+                  <Icon className="size-7 text-sky-600 dark:text-sky-400" />
+                  <h3 className="font-semibold">{f.title}</h3>
+                  <p className="text-sm text-muted">{f.body}</p>
                 </li>
-              ))}
-            </ul>
+              );
+            })}
+          </ul>
+        </section>
+      </Reveal>
+
+      {/* ---------- Numbers ---------- */}
+      <Reveal>
+        <section className="space-y-10" aria-labelledby="numbers-title">
+          <Heading id="numbers-title" title={t.numbers.title} subtitle={t.numbers.subtitle} />
+          <div className="grid gap-4 md:grid-cols-3">
+            <AllowanceRing t={t} />
+            <BridgeDay t={t} locale={locale} />
+            <RegionCompare t={t} />
           </div>
-        </div>
-      </section>
+        </section>
+      </Reveal>
 
-      <section id="features" className="scroll-mt-20 space-y-8" aria-labelledby="features-title">
-        <SectionHeading id="features-title" title={t.features.title} subtitle={t.features.subtitle} />
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {t.features.items.map((f) => (
-            <li key={f.title} className="card space-y-2">
-              <span aria-hidden className="grid size-9 place-items-center rounded-lg bg-primary/10 text-lg">
-                {f.icon}
-              </span>
-              <h3 className="font-semibold">{f.title}</h3>
-              <p className="text-sm text-muted">{f.body}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="space-y-8" aria-labelledby="numbers-title">
-        <SectionHeading id="numbers-title" title={t.numbers.title} subtitle={t.numbers.subtitle} />
-        <div className="grid gap-4 md:grid-cols-3">
-          <AllowanceRing t={t} />
-          <BridgeDay t={t} locale={locale} />
-          <RegionCompare t={t} />
-        </div>
-      </section>
-
-      <section className="space-y-8" aria-labelledby="how-title">
-        <SectionHeading id="how-title" title={t.steps.title} />
-        <ol className="grid gap-4 md:grid-cols-3">
-          {t.steps.items.map((s, i) => (
-            <li key={s.title} className="card flex gap-4">
-              <span
-                aria-hidden
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground"
-              >
-                {i + 1}
-              </span>
-              <div className="space-y-1">
+      {/* ---------- Steps ---------- */}
+      <Reveal>
+        <section className="space-y-10" aria-labelledby="how-title">
+          <Heading id="how-title" title={t.steps.title} />
+          <ol className="grid gap-8 md:grid-cols-3">
+            {t.steps.items.map((s, i) => (
+              <li key={s.title} className="relative space-y-2 border-t-2 border-foreground pt-4">
+                <span aria-hidden className="font-display text-4xl font-semibold text-sky-600 dark:text-sky-400">
+                  {i + 1}
+                </span>
                 <h3 className="font-semibold">{s.title}</h3>
                 <p className="text-sm text-muted">{s.body}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </Reveal>
 
-      <section id="pricing" className="scroll-mt-20 space-y-8" aria-labelledby="pricing-title">
-        <SectionHeading id="pricing-title" title={t.pricing.title} subtitle={t.pricing.subtitle(TRIAL_DAYS)} center />
-        <div className="grid items-start gap-4 md:grid-cols-3">
-          {(["FREE", "TEAM", "BUSINESS"] as const).map((key) => {
-            const plan = PLANS[key];
-            const popular = key === "TEAM";
-            return (
-              <div
-                key={key}
-                className={`card relative flex h-full flex-col gap-4 ${popular ? "ring-2 ring-primary shadow-xl shadow-sky-900/10 md:-translate-y-2" : ""}`}
-              >
-                {popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-xs font-semibold text-primary-foreground">
-                    {t.pricing.popular}
-                  </span>
-                )}
-                <div className="space-y-1">
-                  <h3 className="font-semibold">{plan.name}</h3>
-                  <p className="text-sm text-muted">{t.pricing.upTo(plan.maxMembers)}</p>
-                </div>
-                <div>
-                  <p>
-                    <span className="text-4xl font-semibold tracking-tight">{euro(plan.monthly)}</span>
-                    <span className="text-sm text-muted">{t.pricing.perMonth}</span>
-                  </p>
-                  {plan.yearly > 0 && (
-                    <p className="mt-1 text-xs text-muted">
-                      {t.pricing.orYearly(euro(plan.yearly))}
-                      <br />
-                      {t.pricing.perPerson(euro(plan.monthly / plan.maxMembers, 2))}
-                    </p>
-                  )}
-                </div>
-                <ul className="flex-1 space-y-2 text-sm">
-                  {t.pricing.features[key].map((f) => (
-                    <li key={f} className="flex gap-2">
-                      <span aria-hidden className="font-semibold text-green-600 dark:text-green-400">
-                        ✓
-                      </span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/sign-in" className={popular ? "btn w-full" : "btn-secondary w-full"}>
-                  {key === "FREE" ? t.pricing.startFree : t.pricing.start}
-                </Link>
-              </div>
-            );
-          })}
-        </div>
-        <p className="text-center text-sm text-muted">{t.pricing.footnote(PLANS.BUSINESS.maxMembers)}</p>
-      </section>
+      {/* ---------- Pricing ---------- */}
+      <Reveal>
+        <section id="pricing" className="scroll-mt-20 space-y-10" aria-labelledby="pricing-title">
+          <Heading id="pricing-title" title={t.pricing.title} subtitle={t.pricing.subtitle(TRIAL_DAYS)} />
+          <PricePicker contactEmail={OPERATOR.email} />
+          <p className="text-sm text-muted">{t.pricing.footnote(PLANS.BUSINESS.maxMembers)}</p>
+        </section>
+      </Reveal>
 
-      <section id="faq" className="scroll-mt-20 space-y-6" aria-labelledby="faq-title">
-        <SectionHeading id="faq-title" title={t.faq.title} />
-        <div className="divide-y divide-border rounded-xl border border-border bg-surface">
-          {t.faq.items.map((f) => (
-            <details key={f.q} className="group p-4 sm:px-5">
-              <summary className="cursor-pointer list-none font-medium">
-                <span className="flex items-center justify-between gap-4">
+      {/* ---------- FAQ ---------- */}
+      <Reveal>
+        <section id="faq" className="scroll-mt-20 grid gap-8 lg:grid-cols-[1fr_2fr]" aria-labelledby="faq-title">
+          <Heading id="faq-title" title={t.faq.title} />
+          <div className="divide-y divide-border border-y border-border">
+            {t.faq.items.map((f) => (
+              <details key={f.q} className="group py-4">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 font-medium">
                   {f.q}
-                  <span aria-hidden className="text-xl leading-none text-muted transition-transform group-open:rotate-45">
+                  <span
+                    aria-hidden
+                    className="grid size-7 shrink-0 place-items-center rounded-full border border-border text-muted transition-transform group-open:rotate-45"
+                  >
                     +
                   </span>
-                </span>
-              </summary>
-              <p className="mt-2 text-sm text-muted">{f.a}</p>
-            </details>
-          ))}
-        </div>
-      </section>
+                </summary>
+                <p className="mt-2 pr-10 text-muted">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+      </Reveal>
 
+      {/* ---------- Closing ---------- */}
       <section
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-600 to-teal-600 px-6 py-12 text-center text-white shadow-xl shadow-sky-900/20"
+        className="relative overflow-hidden rounded-3xl bg-[#0f2433] px-6 pt-14 pb-20 text-center text-white sm:px-12"
         aria-labelledby="cta-title"
       >
-        <div className="mx-auto max-w-xl space-y-4">
-          <h2 id="cta-title" className="text-3xl font-semibold tracking-tight">
+        <Sun className="absolute -top-8 right-6 size-28 text-amber-300 sm:right-16 sm:size-36" />
+        <div className="relative mx-auto max-w-xl space-y-5">
+          <h2 id="cta-title" className="font-display text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
             {t.cta.title}
           </h2>
-          <p className="text-white/85">{t.cta.body}</p>
+          <p className="text-white/75">{t.cta.body}</p>
           <Link
             href="/sign-in"
-            className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-3 font-semibold text-sky-800 shadow-sm transition-colors hover:bg-sky-50"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-amber-300 px-6 py-3 font-semibold text-stone-900 transition-colors hover:bg-amber-200"
           >
             {t.cta.button}
           </Link>
         </div>
+        <Waves className="absolute inset-x-0 bottom-4 h-8 w-full text-sky-300/40" />
       </section>
     </div>
   );

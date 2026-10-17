@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BottomNav } from "@/components/bottom-nav";
 import { NavLink } from "@/components/nav-link";
 import { db } from "@/lib/db";
 import { getMessages } from "@/lib/i18n/server";
@@ -36,38 +37,47 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
             </Link>
           </div>
         </div>
-        <Link href={`${base}/book`} className="btn shrink-0 whitespace-nowrap">
+        <Link href={`${base}/book`} className="btn hidden shrink-0 whitespace-nowrap sm:inline-flex">
           <span aria-hidden>+</span> {t.bookTimeOff}
         </Link>
       </div>
       <nav
         aria-label={t.navLabel}
-        className="-mx-4 flex gap-1 overflow-x-auto whitespace-nowrap border-b border-border px-3 pb-2 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0"
+        className="-mx-4 flex items-center gap-1 overflow-x-auto whitespace-nowrap border-b border-border px-3 pb-2 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0"
       >
-        <NavLink href={base} exact>
-          {t.nav.overview}
-        </NavLink>
-        <NavLink href={`${base}/calendar`}>{t.nav.calendar}</NavLink>
-        <NavLink href={`${base}/people`}>{t.nav.people}</NavLink>
-        <NavLink href={`${base}/me`}>{t.nav.me}</NavLink>
-        <NavLink href={`${base}/holidays`}>{t.nav.holidays}</NavLink>
-        {isAdmin && settings.approvalsEnabled && (
-          <NavLink href={`${base}/approvals`}>
-            {t.nav.approvals}
-            {pendingCount > 0 && (
-              <span
-                className="ml-1.5 rounded-full bg-amber-600 px-1.5 text-xs font-semibold text-white"
-                aria-label={t.waitingAria(pendingCount)}
-              >
-                {pendingCount}
-                <span className="sr-only">{t.waiting}</span>
-              </span>
-            )}
+        {/* Everyday pages; on phones the first four live in the bottom bar instead. */}
+        <span className="hidden sm:contents">
+          <NavLink href={base} exact>
+            {t.nav.overview}
           </NavLink>
+          <NavLink href={`${base}/calendar`}>{t.nav.calendar}</NavLink>
+          <NavLink href={`${base}/people`}>{t.nav.people}</NavLink>
+          <NavLink href={`${base}/me`}>{t.nav.me}</NavLink>
+        </span>
+        <NavLink href={`${base}/holidays`}>{t.nav.holidays}</NavLink>
+        {isAdmin && (
+          <>
+            <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-border sm:ml-auto sm:mr-1" />
+            <span className="px-1 text-[11px] font-semibold tracking-wide text-muted uppercase">{t.nav.admin}</span>
+            {settings.approvalsEnabled && (
+              <NavLink href={`${base}/approvals`}>
+                {t.nav.approvals}
+                {pendingCount > 0 && (
+                  <span
+                    className="ml-1.5 rounded-full bg-amber-600 px-1.5 text-xs font-semibold text-white"
+                    aria-label={t.waitingAria(pendingCount)}
+                  >
+                    {pendingCount}
+                    <span className="sr-only">{t.waiting}</span>
+                  </span>
+                )}
+              </NavLink>
+            )}
+            <NavLink href={`${base}/members`}>{t.nav.members}</NavLink>
+            <NavLink href={`${base}/settings`}>{t.nav.settings}</NavLink>
+            <NavLink href={`${base}/billing`}>{t.nav.billing}</NavLink>
+          </>
         )}
-        {isAdmin && <NavLink href={`${base}/members`}>{t.nav.members}</NavLink>}
-        {isAdmin && <NavLink href={`${base}/settings`}>{t.nav.settings}</NavLink>}
-        {isAdmin && <NavLink href={`${base}/billing`}>{t.nav.billing}</NavLink>}
       </nav>
       {overLimit && (
         <p role="status" className="card border-red-500/40 bg-red-50 text-sm dark:bg-red-900/20">
@@ -90,6 +100,16 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
         </p>
       )}
       {children}
+      <BottomNav
+        label={t.nav.mobileLabel}
+        items={[
+          { href: base, label: t.nav.short.overview, icon: "home", exact: true },
+          { href: `${base}/calendar`, label: t.nav.short.calendar, icon: "calendar" },
+          { href: `${base}/book`, label: t.nav.short.book, icon: "plus", primary: true, exact: true },
+          { href: `${base}/people`, label: t.nav.short.people, icon: "people" },
+          { href: `${base}/me`, label: t.nav.short.me, icon: "me" },
+        ]}
+      />
     </div>
   );
 }

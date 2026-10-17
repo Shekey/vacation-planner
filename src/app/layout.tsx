@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Bricolage_Grotesque, Caveat } from "next/font/google";
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
 import { I18nProvider } from "@/components/i18n-provider";
@@ -6,6 +7,10 @@ import { LanguageSwitch } from "@/components/language-switch";
 import { Avatar, LogoMark } from "@/components/ui";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import "./globals.css";
+
+// Self-hosted at build time by next/font: visitors' browsers never contact Google.
+const display = Bricolage_Grotesque({ subsets: ["latin", "latin-ext"], variable: "--font-bricolage", display: "swap" });
+const hand = Caveat({ subsets: ["latin", "latin-ext"], variable: "--font-caveat", display: "swap" });
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = (await getMessages()).common;
@@ -28,7 +33,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
   const t = (await getMessages()).common;
   return (
-    <html lang={locale} className="h-full antialiased">
+    <html lang={locale} className={`h-full antialiased ${display.variable} ${hand.variable}`}>
       <body className="min-h-full flex flex-col">
         <I18nProvider locale={locale}>
           <a
@@ -41,7 +46,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-2.5">
               <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
                 <LogoMark />
-                <span>{t.appName}</span>
+                {/* Signed in on a phone, the logo alone leaves room for the account and sign-out. */}
+                <span className={session?.user ? "hidden sm:inline" : ""}>{t.appName}</span>
               </Link>
               {!session?.user && (
                 <nav aria-label={t.productNav.label} className="hidden items-center gap-5 text-sm text-muted md:flex [&_a:hover]:text-foreground">
