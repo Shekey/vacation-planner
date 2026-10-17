@@ -12,7 +12,7 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
   const agb = legalHref("/agb", locale, forced);
   if (locale === "en") {
     return (
-      <LegalPage locale="en" path="/avv" title="Data Processing Agreement (DPA) pursuant to Art. 28 GDPR" updated="2026-10-19">
+      <LegalPage locale="en" path="/avv" title="Data Processing Agreement (DPA) pursuant to Art. 28 GDPR" updated="2026-10-20">
         <p>
           This agreement applies between the customer that uses a workspace in Vacation Planner (“Controller”) and the following provider
           (“Processor”). It is concluded through use of the service in accordance with the <a href={agb}>terms and conditions</a>.
@@ -56,6 +56,9 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
             three years).
           </li>
           <li>
+            Staff of the Processor sign in to the operator area with a second factor (authenticator app) in addition to the email link.
+          </li>
+          <li>
             Access by the Processor’s staff to a workspace’s members only while a workspace administrator has switched on support access
             (24 hours at a time, switching off by itself); each use is logged in the workspace’s activity log. Without it, staff see only
             plan data and the contact data of administrators, and never bookings.
@@ -97,7 +100,7 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
     );
   }
   return (
-    <LegalPage locale="de" path="/avv" title="Auftragsverarbeitungsvertrag (AVV) nach Art. 28 DSGVO" updated="2026-10-19">
+    <LegalPage locale="de" path="/avv" title="Auftragsverarbeitungsvertrag (AVV) nach Art. 28 DSGVO" updated="2026-10-20">
       <p>
         Dieser Vertrag gilt zwischen dem Kunden, der einen Workspace im Vacation Planner nutzt („Verantwortlicher“), und dem folgenden
         Anbieter („Auftragsverarbeiter“). Er wird mit der Nutzung des Dienstes gemäß den <a href={agb}>AGB</a> geschlossen.
@@ -142,6 +145,10 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
         <li>
           Strikte Trennung der Workspaces, Rechte nach Rollen, Datensparsamkeit (keine Krankheitstage, keine Notizen, automatische Löschung
           nach drei Jahren).
+        </li>
+        <li>
+          Mitarbeitende des Auftragsverarbeiters melden sich im Betreiberbereich zusätzlich zum E-Mail-Link mit einem zweiten Faktor
+          (Authenticator-App) an.
         </li>
         <li>
           Zugriff der Mitarbeitenden des Auftragsverarbeiters auf die Mitglieder eines Workspaces nur, solange ein Administrator des

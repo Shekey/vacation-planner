@@ -6,12 +6,21 @@ Book and plan vacations inside invite-only workspaces. See the v1 plan for scope
 
 The code is ready for a first paying customer once these are done. They are things only you can do (accounts, contracts, money). Work through them top to bottom; the first three block selling. The bigger plan, with pricing reasoning and next features, is in [`docs/sales-plan.md`](docs/sales-plan.md).
 
+### After the two-factor update
+
+Everyone on `SUPERADMIN_EMAILS` now needs a second factor to open `/admin`: after the email link they scan a QR code once with an authenticator app (1Password, Authy, Google or Microsoft Authenticator) and type a 6-digit code at each sign-in, valid for 12 hours. It is not optional. At setup they get 8 one-time recovery codes for a lost phone; 5 wrong codes lock the account for 15 minutes. Customers' sign-in is unchanged. What you must do:
+
+1. After the deploy, each person on the list opens `/admin` once, sets up the app and **saves the recovery codes** in a password manager.
+2. If someone loses both phone and recovery codes, reset them (the next sign-in starts setup again): `update "User" set "totpSecret"=null, "totpEnabledAt"=null, "totpLastStep"=null, "totpFailedCount"=0, "totpLockedUntil"=null, "recoveryHashes"='{}' where email='their@address';` in the Neon SQL editor. Check first that the request really comes from them.
+3. `AUTH_SECRET` also encrypts the stored secrets. If you ever change it, every operator has to set up the second factor again (run the reset above for them).
+4. Optional: tell your lawyer that operators now sign in with two factors; the DPA's list of security measures says so.
+
 ### After the super-admin update
 
 There is now an operator area at `/admin` for you and your team. It lists all workspaces (plan, trial, people, status), lets you extend a trial, restore a workspace that was deleted in the last 30 days, and see a workspace's members while its admin has switched on "Support access" (24 hours, logged on that workspace's Activity page). Without that switch you only see plan data and the admins' contact data, never anyone's time off. What you must do:
 
 1. In Vercel set `SUPERADMIN_EMAILS` to the email addresses of you and your team (comma separated) and redeploy. Sign in with that address as usual; a "Super admin" link appears on the workspace list. Anyone not on the list gets a 404.
-2. **There is no second factor in the app yet.** Anyone who can open the mailbox of a listed address is a super admin. Use mailboxes with two-factor sign-in, keep the list as short as possible, and remove people who leave.
+2. Keep the list as short as possible and remove people who leave. Everyone on it needs two-factor sign-in (see the section above).
 3. Show your lawyer the new support-access sentence in `/avv` (staff access only while the customer allows it, logged) and decide whether your support promise on the landing page needs to mention it.
 4. Try it: set `SUPERADMIN_EMAILS` locally, switch on *Settings → Support access* in a test workspace, open `/admin`, and check the entry appears on the workspace's Activity page.
 
