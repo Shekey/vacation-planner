@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/components/action-form";
 import { recordAudit } from "@/lib/audit";
@@ -61,4 +62,14 @@ export async function startPostBetaTrialAction(): Promise<ActionResult> {
   });
   revalidatePath("/admin");
   return { ok: t.done(count) };
+}
+
+/** For the launch checklist: proves Sentry receives errors from the server. The operator sees the result at once. */
+export async function sendSentryTestAction(): Promise<ActionResult> {
+  await requireSuperAdmin();
+  const t = (await getMessages()).superadmin.monitoring;
+  if (!Sentry.getClient()?.getOptions().enabled) return { error: t.off };
+  Sentry.captureException(new Error("Sentry test from /admin (server)"));
+  await Sentry.flush(3000);
+  return { ok: t.sent };
 }

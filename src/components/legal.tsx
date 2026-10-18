@@ -89,12 +89,12 @@ export function Operator({ locale }: { locale: Locale }) {
   );
 }
 
-/** The subprocessors with purpose and location, as list items. */
-export function SubprocessorList({ locale }: { locale: Locale }) {
+/** The subprocessors with purpose and location, as list items. `dpaOnly` leaves out services that never see customers' employee data. */
+export function SubprocessorList({ locale, dpaOnly = false }: { locale: Locale; dpaOnly?: boolean }) {
   const t = messagesFor(locale).legal;
   return (
     <ul>
-      {SUBPROCESSORS.map((s) => (
+      {SUBPROCESSORS.filter((s) => !dpaOnly || s.dpa).map((s) => (
         <li key={s.name}>
           {s.name}: {s.purpose[locale]}. {t.location}: {s.location[locale]}.
         </li>

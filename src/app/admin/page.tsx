@@ -10,6 +10,7 @@ import { supportAccessActive } from "@/lib/superadmin";
 import { requireSuperAdmin } from "@/lib/superadmin-session";
 import { restoreCutoff } from "@/lib/undo";
 import { startPostBetaTrialAction } from "./actions";
+import { MonitoringCheck } from "./monitoring-check";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getMessages()).superadmin.title, robots: { index: false, follow: false } };
@@ -87,6 +88,8 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
           </ActionForm>
         </section>
       )}
+
+      <MonitoringCheck />
 
       <form className="flex flex-wrap gap-2" role="search">
         <input name="q" defaultValue={query} className="input max-w-sm" placeholder={t.search} aria-label={t.search} />

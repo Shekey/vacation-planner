@@ -6,6 +6,33 @@ Book and plan vacations inside invite-only workspaces. See the v1 plan for scope
 
 The code is ready for a first paying customer once these are done. They are things only you can do (accounts, contracts, money). Work through them top to bottom; the first three block selling. The bigger plan, with pricing reasoning and next features, is in [`docs/sales-plan.md`](docs/sales-plan.md).
 
+### Monitoring: Sentry, PostHog and an uptime check
+
+The app reports errors to **Sentry**, counts visits with **PostHog**, and has a health address for an **uptime monitor**. All three stay off until their variables are set, so local runs and previews send nothing. The privacy side is built in; please read "what is not sent" before you switch them on.
+
+**What is not sent (by design):** the app shows employees' names and absences, so
+- *Sentry* gets errors only, with emails, invite and calendar tokens, cookies, IP address, request contents and local variables removed first (`src/lib/sentry-scrub.ts`). No performance traces, no Sentry replay.
+- *PostHog* runs **cookieless** (nothing stored in the browser) and **nobody is identified**: no email, no user ID. On the public pages (home, sign-in, legal) it counts visits and clicks and records session replays with every input masked. **Inside the signed-in app it only counts page views with slugs and ids removed, and records no replay**; in `/admin` and `/two-factor` nothing at all (`src/lib/analytics.ts`, with tests). Browsers that send "Do Not Track" are not counted.
+- Two things differ from the generic guide you were given: no `posthog.identify(email)` (it would tie employees' emails to their browsing), and no replay of the signed-in app (names and absences are on screen).
+
+**1. Sentry (about 10 minutes).** The wizard isn't needed; the code is already in place.
+1. Create a project at sentry.io: platform *Next.js*, and choose the **EU data region** when you create the organisation (`de.sentry.io`).
+2. Copy the project's **DSN** (*Settings → Client Keys*) into Vercel as `NEXT_PUBLIC_SENTRY_DSN`.
+3. For readable stack traces create an *internal integration* token (*Settings → Developer Settings*, permissions *Releases: Admin* and *Organization: Read*) and set `SENTRY_AUTH_TOKEN` (secret), `SENTRY_ORG` (the org slug) and `SENTRY_PROJECT` in Vercel. The build then uploads the source maps and removes them from the deployed files.
+4. Redeploy. Then open `/admin` and press **Send a test error** (server) and **Crash this page** (browser): both should appear in Sentry within a minute.
+
+**2. PostHog (about 10 minutes).**
+1. Create a project at **eu.posthog.com** (EU cloud, Frankfurt).
+2. In *Project settings* turn on **Discard client IP data** (required: the browser can't do this itself) and keep **session replay** on with "mask all inputs".
+3. Put the project API key into Vercel as `NEXT_PUBLIC_POSTHOG_KEY` and set `NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com`. To switch replay off, set `NEXT_PUBLIC_POSTHOG_REPLAY=false`.
+4. Redeploy and open the landing page: a visit should show up in PostHog (*Activity*), and a replay of that visit after a few minutes. In a workspace you will only see page views like `/w/*/calendar`.
+
+**3. Uptime check (2 minutes).** In UptimeRobot (free) or Better Stack add an HTTP monitor for `https://<your-domain>/api/health` (not the home page: this one also checks the database), interval 5 minutes, keyword `ok`, and alert your email or phone. `/api/health` returns 200 with `{"status":"ok"}` or 503.
+
+**Launch check:** (1) the two test errors in Sentry, (2) a landing-page visit and replay in PostHog and nothing from `/admin`, (3) the monitor is green.
+
+**Legal:** the privacy policy (`/datenschutz`) now describes both tools, and Sentry and PostHog are in the subprocessor list (PostHog only in the privacy policy, not the customer DPA, because it never sees employee data). "Cookieless" means no consent banner is needed under § 25 TDDDG, but GDPR still applies: the legal basis is legitimate interest (Art. 6(1)(f)). **Show your lawyer the new paragraphs, especially the session replay on public pages and whether the Sentry and PostHog entries and the regions are right**; I couldn't verify the providers' current data-centre locations and contract terms from here.
+
 ### Beta mode (free beta) and how to end it
 
 The app starts in **beta mode**: `NEXT_PUBLIC_ENABLE_BETA_MODE` is unset or anything except `false`. In beta mode:

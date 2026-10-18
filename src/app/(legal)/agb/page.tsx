@@ -77,7 +77,7 @@ export default async function TermsPage({ searchParams }: PageProps<"/agb">) {
         <h2>7. Data protection</h2>
         <p>
           Insofar as the Provider processes personal data on behalf of the customer, the <a href={avv}>data processing agreement</a> agreed
-          together with these terms applies. Subprocessors used: {SUBPROCESSORS.map((s) => s.name).join(", ")}.
+          together with these terms applies. Subprocessors used: {SUBPROCESSORS.filter((s) => s.dpa).map((s) => s.name).join(", ")}.
         </p>
 
         <h2>8. Liability</h2>
@@ -167,7 +167,7 @@ export default async function TermsPage({ searchParams }: PageProps<"/agb">) {
       <p>
         Soweit der Anbieter personenbezogene Daten im Auftrag des Kunden verarbeitet, gilt der{" "}
         <a href={avv}>Auftragsverarbeitungsvertrag</a>, der mit diesen AGB vereinbart wird. Eingesetzte Unterauftragsverarbeiter:{" "}
-        {SUBPROCESSORS.map((s) => s.name).join(", ")}.
+        {SUBPROCESSORS.filter((s) => s.dpa).map((s) => s.name).join(", ")}.
       </p>
 
       <h2>8. Haftung</h2>

@@ -21,10 +21,15 @@ export const OPERATOR = {
   reviewed: process.env.LEGAL_REVIEWED === "1",
 };
 
-/** Subprocessors listed in the privacy policy and DPA, with purpose and location in both languages. */
+/**
+ * Subprocessors listed in the privacy policy and DPA, with purpose and location in both languages.
+ * `dpa: false` means the service never receives customers' employee data (it is only about visitors of the public
+ * pages), so it is named in the privacy policy but not in the customer DPA.
+ */
 export const SUBPROCESSORS = [
   {
     name: "Vercel Inc.",
+    dpa: true,
     purpose: { en: "Hosting of the application (region Frankfurt, EU)", de: "Hosting der Anwendung (Region Frankfurt, EU)" },
     location: {
       en: "EU (Frankfurt); USA for support, under EU standard contractual clauses",
@@ -33,6 +38,7 @@ export const SUBPROCESSORS = [
   },
   {
     name: "Neon Inc.",
+    dpa: true,
     purpose: { en: "Database (region Frankfurt, EU)", de: "Datenbank (Region Frankfurt, EU)" },
     location: {
       en: "EU (Frankfurt); USA for support, under EU standard contractual clauses",
@@ -41,11 +47,13 @@ export const SUBPROCESSORS = [
   },
   {
     name: "Resend Inc.",
+    dpa: true,
     purpose: { en: "Sending sign-in and notification emails", de: "Versand von Anmelde- und Benachrichtigungs-E-Mails" },
     location: { en: "USA, under EU standard contractual clauses", de: "USA, auf Grundlage der EU-Standardvertragsklauseln" },
   },
   {
     name: "Stripe Payments Europe Ltd.",
+    dpa: true,
     purpose: {
       en: "Payments and invoices (admins of paying workspaces only)",
       de: "Zahlungen und Rechnungen (nur Admins zahlender Workspaces)",
@@ -53,7 +61,32 @@ export const SUBPROCESSORS = [
     location: { en: "Ireland, EU", de: "Irland, EU" },
   },
   {
+    name: "Functional Software, Inc. (Sentry)",
+    dpa: true,
+    purpose: {
+      en: "Error monitoring (error reports with email addresses, tokens and request contents removed before they are sent)",
+      de: "Fehlerüberwachung (Fehlerberichte, aus denen E-Mail-Adressen, Tokens und Anfrageinhalte vor dem Senden entfernt werden)",
+    },
+    location: {
+      en: "EU region; USA for support, under EU standard contractual clauses",
+      de: "EU-Region; USA für Support, auf Grundlage der EU-Standardvertragsklauseln",
+    },
+  },
+  {
+    name: "PostHog Inc.",
+    dpa: false,
+    purpose: {
+      en: "Anonymous, cookieless usage statistics of the public pages and page counts in the app (EU cloud)",
+      de: "Anonyme Nutzungsstatistik ohne Cookies für die öffentlichen Seiten und Seitenaufrufe in der App (EU-Cloud)",
+    },
+    location: {
+      en: "EU (Frankfurt); USA for support, under EU standard contractual clauses",
+      de: "EU (Frankfurt); USA für Support, auf Grundlage der EU-Standardvertragsklauseln",
+    },
+  },
+  {
     name: "Microsoft Ireland Operations Ltd.",
+    dpa: true,
     purpose: {
       en: "Microsoft Teams posts, only when a workspace connects Teams",
       de: "Nachrichten in Microsoft Teams, nur wenn ein Workspace Teams verbindet",
@@ -62,6 +95,7 @@ export const SUBPROCESSORS = [
   },
   {
     name: "Slack Technologies Ltd.",
+    dpa: true,
     purpose: {
       en: "Slack posts, only when a workspace connects Slack",
       de: "Nachrichten in Slack, nur wenn ein Workspace Slack verbindet",
