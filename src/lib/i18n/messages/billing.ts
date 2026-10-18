@@ -33,6 +33,8 @@ export const billing = defineMessages({
     vatNote: (max: number, email: string) =>
       `Prices are net; German VAT (19%) is added for German customers, and EU businesses with a VAT ID get reverse charge. More than ${max} people? Write to ${email} for an offer with invoice billing.`,
     noSubscription: "There is no subscription yet.",
+    setupNote: (price: string, email: string) =>
+      `Moving a big team over? Import it yourself from Excel under Members, or we do it for you: ${price} once, included with a yearly Business plan. Write to ${email}.`,
     dataHeading: "What happens to your data",
     dataTrial: (date: string, max: number) =>
       `When the trial ends on ${date}, nothing is deleted. The workspace moves to the free plan, for up to ${max} people and without Teams and Slack posts.`,
@@ -77,6 +79,8 @@ export const billing = defineMessages({
     vatNote: (max: number, email: string) =>
       `Alle Preise sind netto. Kunden in Deutschland zahlen zusätzlich 19 % USt., Unternehmen in der EU mit USt-IdNr. erhalten Reverse Charge. Mehr als ${max} Personen? Schreib an ${email} für ein Angebot mit Zahlung auf Rechnung.`,
     noSubscription: "Es gibt noch kein Abo.",
+    setupNote: (price: string, email: string) =>
+      `Ein großes Team zieht um? Importiere es selbst aus Excel unter Mitglieder, oder wir machen es für dich: einmalig ${price}, im Jahres-Tarif Business enthalten. Schreib an ${email}.`,
     dataHeading: "Was mit euren Daten passiert",
     dataTrial: (date: string, max: number) =>
       `Wenn die Testphase am ${date} endet, wird nichts gelöscht. Der Workspace wechselt in den Tarif Free, für bis zu ${max} Personen und ohne Posts in Teams und Slack.`,

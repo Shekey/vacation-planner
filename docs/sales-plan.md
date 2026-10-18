@@ -24,13 +24,15 @@ Flat price per team, not per person (easy to understand, nobody counts heads):
 | Plan | People | Monthly | Yearly | Per person at full size |
 |---|---|---|---|---|
 | Free | up to 5 | €0 | €0 | — |
-| Team | up to 25 | €29 | €290 | €1.16 |
-| Business | up to 75 | €69 | €690 | €0.92 |
+| Team | up to 25 | €39 | €390 | €1.56 |
+| Business | up to 75 | €89 | €890 | €1.19 |
 | More than 75 | — | offer, about €1 per person | | |
 
 All prices are net (plus VAT). The 30-day trial includes everything. Yearly is two months free.
 
-Why these numbers: per-person tools in this market cost roughly €1.50 to €4 per person and month (check competitors' current price pages before changing anything). The old prices (€15 for 20, €35 for 50) were about €0.70 per person, which reads as "not serious" to a practice owner and leaves no room for discounts. Even the new prices undercut most competitors for a full team.
+Why these numbers: per-person tools in this market cost roughly €1.50 to €4 per person and month (absence.io about €3 to €5 per person by plan, Vacation Tracker $2 to $4, Timetastic $1.50 to $2.50; from review sites on 2026-10-18, check their own price pages before changing anything). For a team of 8 we are mid-range, from 15 people up we are the cheapest by a wide margin, so the flat prices were raised: Team €29 → €39, Business €69 → €89. Running costs are about €150 to €350 a month before the first customer (hosting €25 to €60, the rest tax advisor, legal and insurance), so 5 to 10 paying teams cover everything; the margin per customer is about 95%, which means the price follows the value to the customer, not our costs. If teams of 6 to 10 hesitate at €39, add a small plan up to 10 people at €29 (needs a new `Plan` value and Stripe prices).
+
+**Setup service for bigger teams:** moving 50 people from Excel is the biggest obstacle. Admins can import people and their time off themselves (Members → Import). For those who would rather not, we do it for €99 once (`SETUP_SERVICE_EUR`), included with a yearly Business plan.
 
 Changing prices later: edit `PLANS` in `src/lib/plans.ts` (landing page, billing page and terms follow), create new prices in Stripe and set the `STRIPE_PRICE_*` variables. Existing subscribers keep their old Stripe price until you move them.
 
@@ -57,6 +59,18 @@ Each item is something customers in the segments above will ask for. Rough size 
 8. **Sick leave as an opt-in** (medium, needs a lawyer's OK first): off by default, no reason or note, never counted against the allowance, visible only to the person and admins, shown as "absent" to colleagues and in chat posts, deleted earlier than other bookings, and "sick during vacation" gives the days back. Under GDPR even a bare "sick on this day" flag is health data (Art. 9), so the DPA must say so when a workspace turns it on. Never build sick-day statistics or rankings.
 9. **Hours instead of days** (large): for care and retail with irregular shifts.
 10. **Leave years not matching the calendar year, monthly accrual, more languages** (large): needed for France, the Netherlands, Spain and others. Stay focused on Germany, Austria and Switzerland until there are paying customers.
+
+Ideas from what competitors offer (absence.io, Personio, Vacation Tracker, Timetastic; from general market knowledge, not a checked feature comparison), in the order I would build them for our customers:
+
+- **Groups with their own minimum staffing and a calendar filter** (reception, treatment, nursing): the department view every competitor has, and what a practice needs for "at least 1 dentist and 2 assistants". Same as item 5 above, plus the filter.
+- **People without email** (item 2 above) moves up: many care and trades employees have no work email, and the Excel import can only add people with an address.
+- **Substitute ("Vertretung")**: when booking, pick who covers; shown on the calendar and in the approval. Common in German practices, cheap to build.
+- **Request and approve inside Teams or Slack** (buttons or a command): Vacation Tracker's core feature; we only post today. Medium to large.
+- **Set the Teams or Slack status to "away"** and write the absence into Outlook or Google calendars: medium, nice for office teams.
+- **Installable on the phone** (home-screen icon, works offline for the calendar): small, helps shift and trades teams.
+- **Payroll export, custom leave types, company closures**: already items 1, 3 and 4 above.
+- **Sign in with Microsoft or Google**: low priority, magic links already need no password.
+- Not for us now: time tracking, shift planning, multi-level approval chains, overtime accounts.
 
 Smaller ideas already noted: undo after cancel, a reminder the day before, admin view of who has the most days left, calendar filter, selecting a range on the calendar.
 

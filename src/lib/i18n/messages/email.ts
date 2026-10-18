@@ -24,6 +24,11 @@ export const email = defineMessages({
       text: (who: string, days: string, range: string, workspace: string, url: string) =>
         `${who} requested ${days} off, ${range}, in ${workspace}.\n\nReview it: ${url}`,
     },
+    welcome: {
+      subject: (workspace: string) => `You're on the vacation planner of ${workspace}`,
+      text: (workspace: string, url: string) =>
+        `Your team now plans time off in Vacation Planner, in the workspace ${workspace}.\n\nSign in with this email address: ${url}\n\nYou get a sign-in link by email, no password needed. There you see the team calendar and your days left, and you can book time off.`,
+    },
     trialEnding: {
       subject: (workspace: string, date: string, last: boolean) =>
         `${last ? "Last reminder: the" : "The"} free trial of ${workspace} ends on ${date}`,
@@ -64,6 +69,11 @@ export const email = defineMessages({
       subject: (who: string) => `${who} hat frei beantragt`,
       text: (who: string, days: string, range: string, workspace: string, url: string) =>
         `${who} hat ${days} frei beantragt, ${range}, in ${workspace}.\n\nAntrag ansehen: ${url}`,
+    },
+    welcome: {
+      subject: (workspace: string) => `Du bist im Urlaubsplaner von ${workspace}`,
+      text: (workspace: string, url: string) =>
+        `Dein Team plant Urlaub jetzt im Vacation Planner, im Workspace ${workspace}.\n\nMelde dich mit dieser E-Mail-Adresse an: ${url}\n\nDu bekommst einen Anmeldelink per E-Mail, ein Passwort brauchst du nicht. Dort siehst du den Teamkalender und deine übrigen Urlaubstage und kannst Urlaub buchen.`,
     },
     trialEnding: {
       subject: (workspace: string, date: string, last: boolean) =>

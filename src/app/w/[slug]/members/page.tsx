@@ -7,6 +7,7 @@ import { usingTestSender } from "@/lib/email";
 import { regionsOf } from "@/lib/holiday-regions";
 import type { Locale } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
+import Link from "next/link";
 import { requireAdmin } from "@/lib/session";
 import { restoreCutoff, restoreDaysLeft } from "@/lib/undo";
 import { SampleTeamButton } from "../sample-team-button";
@@ -36,7 +37,7 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
   const { slug } = await params;
   const { workspace, membership: me } = await requireAdmin(slug);
   const locale: Locale = await getLocale();
-  const { members: t, common } = await getMessages();
+  const { members: t, common, importer } = await getMessages();
   const WEEKDAYS = t.weekdays;
 
   const [members, invites, samples, removed] = await Promise.all([
@@ -89,6 +90,12 @@ export default async function MembersPage({ params }: PageProps<"/w/[slug]/membe
         </ActionForm>
         <p className="text-xs opacity-60">
           {t.inviteHint}
+        </p>
+        <p className="text-sm">
+          <Link href={`/w/${slug}/import`} className="font-medium text-primary hover:underline">
+            {importer.link} →
+          </Link>
+          <span className="block text-xs opacity-60">{importer.linkHint}</span>
         </p>
         <SampleTeamButton slug={slug} samples={samples} />
       </section>

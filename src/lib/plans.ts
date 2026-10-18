@@ -2,11 +2,14 @@ import type { Plan } from "@/generated/prisma/enums";
 
 export const TRIAL_DAYS = 30;
 
+/** One-off price, in euros net, to have us import a team from Excel or an old tool; included with a yearly Business plan. */
+export const SETUP_SERVICE_EUR = 99;
+
 /** Prices are net, in euros. Larger teams talk to us. */
 export const PLANS = {
   FREE: { name: "Free", maxMembers: 5, monthly: 0, yearly: 0, chat: false },
-  TEAM: { name: "Team", maxMembers: 25, monthly: 29, yearly: 290, chat: true },
-  BUSINESS: { name: "Business", maxMembers: 75, monthly: 69, yearly: 690, chat: true },
+  TEAM: { name: "Team", maxMembers: 25, monthly: 39, yearly: 390, chat: true },
+  BUSINESS: { name: "Business", maxMembers: 75, monthly: 89, yearly: 890, chat: true },
 } as const satisfies Record<Plan, { name: string; maxMembers: number; monthly: number; yearly: number; chat: boolean }>;
 
 export type PaidPlan = Exclude<Plan, "FREE">;

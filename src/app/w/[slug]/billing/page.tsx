@@ -5,7 +5,7 @@ import { formatDate, todayIn } from "@/lib/dates";
 import { intlLocale, type Locale } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { OPERATOR } from "@/lib/legal";
-import { accessOf, isOverLimit, planFor, PLANS, type PaidPlan } from "@/lib/plans";
+import { accessOf, isOverLimit, planFor, PLANS, SETUP_SERVICE_EUR, type PaidPlan } from "@/lib/plans";
 import { RETENTION_YEARS } from "@/lib/retention";
 import { requireAdmin } from "@/lib/session";
 import { priceId, stripe } from "@/lib/stripe";
@@ -128,6 +128,7 @@ export default async function BillingPage({ params, searchParams }: PageProps<"/
 
       {!ready && <p className="text-sm text-muted">{t.notReady(OPERATOR.email)}</p>}
       <p className="text-sm text-muted">{t.vatNote(PLANS.BUSINESS.maxMembers, OPERATOR.email)}</p>
+      <p className="text-sm text-muted">{t.setupNote(`${SETUP_SERVICE_EUR} €`, OPERATOR.email)}</p>
     </div>
   );
 }

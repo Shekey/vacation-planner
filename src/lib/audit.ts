@@ -10,6 +10,8 @@ export const AUDIT_ACTIONS = [
   "booking.declined",
   "workspace.deleted",
   "workspace.restored",
+  "import.people",
+  "import.timeoff",
   // Support access: granted and revoked by a workspace admin, the rest by the operator's team.
   "support.access_granted",
   "support.access_revoked",
