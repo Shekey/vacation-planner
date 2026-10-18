@@ -28,6 +28,10 @@ export const audit = defineMessages({
           return `${actor} deleted the workspace`;
         case "workspace.restored":
           return `${actor} restored the workspace`;
+        case "import.people":
+          return `${actor} imported ${detail} ${detail === "1" ? "person" : "people"} from a list`;
+        case "import.timeoff":
+          return `${actor} imported ${detail} ${detail === "1" ? "booking" : "bookings"} from a list`;
         case "support.access_granted":
           return `${actor} allowed support access (24 hours)`;
         case "support.access_revoked":
@@ -74,6 +78,10 @@ export const audit = defineMessages({
           return `${actor} hat den Workspace gelöscht`;
         case "workspace.restored":
           return `${actor} hat den Workspace wiederhergestellt`;
+        case "import.people":
+          return `${actor} hat ${detail} ${detail === "1" ? "Person" : "Personen"} aus einer Liste importiert`;
+        case "import.timeoff":
+          return `${actor} hat ${detail} ${detail === "1" ? "Buchung" : "Buchungen"} aus einer Liste importiert`;
         case "support.access_granted":
           return `${actor} hat den Support-Zugriff erlaubt (24 Stunden)`;
         case "support.access_revoked":

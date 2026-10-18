@@ -6,6 +6,15 @@ Book and plan vacations inside invite-only workspaces. See the v1 plan for scope
 
 The code is ready for a first paying customer once these are done. They are things only you can do (accounts, contracts, money). Work through them top to bottom; the first three block selling. The bigger plan, with pricing reasoning and next features, is in [`docs/sales-plan.md`](docs/sales-plan.md).
 
+### After the pricing and import update
+
+Prices are now Free ≤5, **Team €39 ≤25, Business €89 ≤75** (yearly = 10× monthly). Admins can import a whole team from Excel (*Members → Import many people from Excel*): paste cells or open a CSV, see every row checked, then add the people and, as a second step, their booked time off. People are added right away (no invitation to wait for) and optionally get an email saying where to sign in. What you must do:
+
+1. **Create new prices in Stripe** (Team €39 monthly and €390 yearly, Business €89 monthly and €890 yearly) and put their ids into the `STRIPE_PRICE_*` variables in Vercel. The old prices can stay for anyone who already subscribed; nobody has yet.
+2. **Assisted import** (the "we import your team for you" offer for bigger teams): €99 once, included with a yearly Business plan. The amount is `SETUP_SERVICE_EUR` in `src/lib/plans.ts`. Send the invoice yourself (Stripe invoice or payment link). To do the import you need to be an admin of the customer's workspace: ask them to invite your support address as admin for the day and remove you afterwards. Check with your lawyer that this fits your DPA.
+3. Try the import in a test workspace with a German Excel sheet (save as CSV or copy the cells), including a few wrong rows, to see the messages.
+4. Look at the pricing cards on the landing page and the Billing page: they follow `plans.ts`, plus the two new texts about import and setup help.
+
 ### After the two-factor update
 
 Everyone on `SUPERADMIN_EMAILS` now needs a second factor to open `/admin`: after the email link they scan a QR code once with an authenticator app (1Password, Authy, Google or Microsoft Authenticator) and type a 6-digit code at each sign-in, valid for 12 hours. It is not optional. At setup they get 8 one-time recovery codes for a lost phone; 5 wrong codes lock the account for 15 minutes. Customers' sign-in is unchanged. What you must do:
@@ -83,7 +92,7 @@ The privacy policy, the DPA (`/avv`) and the landing page already say data is st
 ### 3. Turn on email and payments (blocks selling)
 
 1. **Resend**: add your domain (*Domains* → *Add domain*), put the DNS records it shows at your domain provider, wait for "Verified", then set `EMAIL_FROM` to an address on that domain (e.g. `Vacation Planner <hallo@your-domain.de>`).
-2. **Stripe**: activate your account (company details, bank account), then follow [Payments (Stripe)](#payments-stripe) below with the **new prices** (Team €29 / €290, Business €69 / €690).
+2. **Stripe**: activate your account (company details, bank account), then follow [Payments (Stripe)](#payments-stripe) below with the **new prices** (Team €39 / €390, Business €89 / €890).
 3. In Stripe → *Settings* → *Payment methods* turn on **SEPA Direct Debit** (the landing page promises it; practices and trades often don't pay by card). Optionally turn on *Invoices* (pay by bank transfer) for bigger customers.
 4. In Stripe → *Tax* set up Stripe Tax with your German address and VAT number, then set `STRIPE_AUTOMATIC_TAX=1`.
 5. In Stripe's Billing settings (*Revenue recovery*) turn on retries and the customer emails about failed payments, and let Stripe cancel the subscription when all retries fail. The workspace then moves to Free by itself, and the terms (`/agb`) describe exactly that.
@@ -139,7 +148,7 @@ Without `AUTH_RESEND_KEY`, sign-in links are printed to the dev server console i
 
 Billing stays off until these are set; the Billing page then says to write to the support address instead.
 
-1. In Stripe, create two products, **Team** and **Business**, each with a monthly and a yearly recurring price (net prices: Team €29 / month and €290 / year, Business €69 / month and €690 / year; they must match `src/lib/plans.ts`).
+1. In Stripe, create two products, **Team** and **Business**, each with a monthly and a yearly recurring price (net prices: Team €39 / month and €390 / year, Business €89 / month and €890 / year; they must match `src/lib/plans.ts`).
 2. Add a webhook endpoint `https://<your-domain>/api/stripe/webhook` with the events `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated` and `customer.subscription.deleted`.
 3. Turn on the Customer Portal (*Settings* → *Billing* → *Customer portal*) and allow switching between the four prices, cancelling and invoice history.
 4. Set the variables:

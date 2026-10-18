@@ -11,6 +11,7 @@ import { email } from "./messages/email";
 import { errors } from "./messages/errors";
 import { holidays } from "./messages/holidays";
 import { home } from "./messages/home";
+import { importer } from "./messages/importer";
 import { invite } from "./messages/invite";
 import { landing } from "./messages/landing";
 import { legal } from "./messages/legal";
@@ -40,6 +41,7 @@ const NAMESPACES = {
   errors,
   holidays,
   home,
+  importer,
   invite,
   landing,
   legal,

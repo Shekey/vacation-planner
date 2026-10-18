@@ -205,14 +205,14 @@ export const landing = defineMessages({
       sizeLabel: "How many people are in your team?",
       people: (n: number) => (n === 1 ? "1 person" : `${n} people`),
       fits: "fits your team",
-      offer: "More than 75 people? We make you an offer, roughly €1 per person.",
+      offer: "More than 75 people? We make you an offer, roughly €1.20 per person.",
       contact: "Get in touch",
       start: "Start free trial",
       startFree: "Start for free",
       features: {
-        FREE: ["Team calendar and days left", "Half days and public holidays", "Approvals and staffing warning", "Calendar feed for Outlook and Google"],
+        FREE: ["Team calendar and days left", "Half days and public holidays", "Approvals and staffing warning", "Import your team from Excel", "Calendar feed for Outlook and Google"],
         TEAM: ["Everything in Free", "Microsoft Teams and Slack posts", "Morning summary of who's out", "Email support"],
-        BUSINESS: ["Everything in Team", "For larger practices and companies", "Several locations and states", "Priority support"],
+        BUSINESS: ["Everything in Team", "For larger practices and companies", "Several locations and states", "We import your team for you", "Priority support"],
       },
       footnote: (people: number) =>
         `Prices plus VAT. Pay monthly or yearly by card or SEPA direct debit, cancel any time. More than ${people} people? Get in touch for an offer.`,
@@ -239,6 +239,10 @@ export const landing = defineMessages({
         {
           q: "Can we change allowances later?",
           a: "Yes. Admins can change anyone's yearly allowance at any time, for one person or for everyone at once.",
+        },
+        {
+          q: "We have 50 people in Excel. Do we have to type them in?",
+          a: "No. Copy the columns from Excel, paste them in and check the preview: names, emails, vacation days, work days, start dates and even booked time off come over in minutes. Rather not do it yourself? For a small one-off fee we import it for you, free with a yearly Business plan.",
         },
         {
           q: "Do people need a password?",
@@ -473,14 +477,14 @@ export const landing = defineMessages({
       sizeLabel: "Wie viele Personen hat dein Team?",
       people: (n: number) => (n === 1 ? "1 Person" : `${n} Personen`),
       fits: "passt zu deinem Team",
-      offer: "Mehr als 75 Personen? Wir machen dir ein Angebot, etwa 1 € pro Person.",
+      offer: "Mehr als 75 Personen? Wir machen dir ein Angebot, etwa 1,20 € pro Person.",
       contact: "Schreib uns",
       start: "Kostenlos testen",
       startFree: "Kostenlos starten",
       features: {
-        FREE: ["Teamkalender und Resturlaub", "Halbe Tage und Feiertage", "Freigaben und Besetzungswarnung", "Kalender-Feed für Outlook und Google"],
+        FREE: ["Teamkalender und Resturlaub", "Halbe Tage und Feiertage", "Freigaben und Besetzungswarnung", "Team aus Excel importieren", "Kalender-Feed für Outlook und Google"],
         TEAM: ["Alles aus Free", "Nachrichten in Microsoft Teams und Slack", "Morgens eine Übersicht, wer fehlt", "Support per E-Mail"],
-        BUSINESS: ["Alles aus Team", "Für größere Praxen und Betriebe", "Mehrere Standorte und Bundesländer", "Bevorzugter Support"],
+        BUSINESS: ["Alles aus Team", "Für größere Praxen und Betriebe", "Mehrere Standorte und Bundesländer", "Wir importieren dein Team für dich", "Bevorzugter Support"],
       },
       footnote: (people: number) =>
         `Preise zzgl. MwSt. Monatlich oder jährlich per Karte oder SEPA-Lastschrift, jederzeit kündbar. Mehr als ${people} Personen? Sprich uns an, wir machen dir ein Angebot.`,
@@ -507,6 +511,10 @@ export const landing = defineMessages({
         {
           q: "Können wir den Urlaubsanspruch später ändern?",
           a: "Ja. Admins können den Jahresurlaub jederzeit ändern, für eine Person oder für alle auf einmal.",
+        },
+        {
+          q: "Wir haben 50 Leute in Excel. Müssen wir die alle abtippen?",
+          a: "Nein. Kopiere die Spalten aus Excel, füge sie ein und prüfe die Vorschau: Namen, E-Mails, Urlaubstage, Arbeitstage, Eintrittsdaten und sogar schon gebuchter Urlaub sind in Minuten drin. Lieber nicht selbst machen? Für eine kleine Einmalgebühr importieren wir es für dich, im Jahres-Tarif Business enthalten.",
         },
         {
           q: "Brauchen die Leute ein Passwort?",
