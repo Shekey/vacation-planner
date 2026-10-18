@@ -77,6 +77,7 @@ export default async function AdminWorkspacePage({ params }: PageProps<"/admin/w
             {ws._count.memberships} / {access.maxMembers}
           </Item>
           <Item label={t.detail.stripe}>{ws.stripeCustomerId ?? t.detail.none}</Item>
+          <Item label={t.beta.founder}>{ws.founderRate ? t.support.yes : t.support.no}</Item>
           <Item label={t.detail.admins}>
             {admins.map((a) => (
               <div key={a.id}>

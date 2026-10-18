@@ -5,6 +5,7 @@ import { auth, signOut } from "@/auth";
 import { I18nProvider } from "@/components/i18n-provider";
 import { LanguageSwitch } from "@/components/language-switch";
 import { Avatar, LogoMark } from "@/components/ui";
+import { isBetaMode } from "@/lib/beta";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import "./globals.css";
 
@@ -98,6 +99,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/datenschutz">{t.footer.privacy}</Link>
               <Link href="/agb">{t.footer.terms}</Link>
               <Link href="/avv">{t.footer.dpa}</Link>
+              {isBetaMode() && <span className="basis-full text-xs">{t.footer.beta}</span>}
             </nav>
           </footer>
         </I18nProvider>

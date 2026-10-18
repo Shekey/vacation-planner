@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import { submitKeepingInput } from "@/components/action-form";
 import { useI18n } from "@/components/i18n-provider";
 import { regionsOf } from "@/lib/holiday-regions";
+import { isBetaMode } from "@/lib/beta";
 import { TRIAL_DAYS } from "@/lib/plans";
 import { TEAM_TYPE_KEYS, TEAM_TYPES, type TeamType } from "@/lib/team-types";
 import { createWorkspaceAction } from "./actions";
@@ -142,7 +143,7 @@ export function NewWorkspaceForm({
         <button className="btn px-5 py-2.5" disabled={pending}>
           {pending ? t.creating : t.create}
         </button>
-        <span className="text-sm text-muted">{t.trialNote(TRIAL_DAYS)}</span>
+        <span className="text-sm text-muted">{isBetaMode() ? t.betaNote : t.trialNote(TRIAL_DAYS)}</span>
       </div>
     </form>
   );

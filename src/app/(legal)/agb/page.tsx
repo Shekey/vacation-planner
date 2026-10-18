@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage, legalHref, legalLocale } from "@/components/legal";
+import { FOUNDER_DISCOUNT_PERCENT, isBetaMode } from "@/lib/beta";
 import { messagesFor } from "@/lib/i18n";
 import { OPERATOR, SUBPROCESSORS } from "@/lib/legal";
 import { PLANS, TRIAL_DAYS } from "@/lib/plans";
@@ -12,9 +13,10 @@ export async function generateMetadata({ searchParams }: PageProps<"/agb">): Pro
 export default async function TermsPage({ searchParams }: PageProps<"/agb">) {
   const { locale, forced } = await legalLocale(searchParams);
   const avv = legalHref("/avv", locale, forced);
+  const beta = isBetaMode();
   if (locale === "en") {
     return (
-      <LegalPage locale="en" path="/agb" title="General Terms and Conditions" updated="2026-10-17">
+      <LegalPage locale="en" path="/agb" title="General Terms and Conditions" updated="2026-10-20">
         <h2>1. Scope</h2>
         <p>
           These terms apply to the use of Vacation Planner, offered by {OPERATOR.name}, {OPERATOR.address} (“Provider”). The service is
@@ -30,13 +32,26 @@ export default async function TermsPage({ searchParams }: PageProps<"/agb">) {
           maintenance and disruptions beyond its control.
         </p>
 
-        <h2>3. Trial period and conclusion of contract</h2>
+        <h2>{beta ? "3. Free beta phase" : "3. Trial period and conclusion of contract"}</h2>
+        {beta && (
+          <p>
+            Vacation Planner is in a public beta phase. Until the Provider announces its end by email, the service is free of charge with
+            all features and without a limit on team size; the plans and the 99% availability in section 2 do not apply. In the beta the
+            service is provided as it is, may change or be interrupted, and the Provider may end the beta with reasonable notice; no data
+            is deleted when it ends. A customer who creates a workspace during the beta receives a permanent discount of{" "}
+            {FOUNDER_DISCOUNT_PERCENT}% on the then-current list price of the Team or Business plan for as long as it keeps a paid plan
+            without interruption (“founder rate”). No fee arises automatically: a paid contract is only concluded when the customer
+            completes an order via the payment service Stripe.
+          </p>
+        )}
+        {!beta && (
         <p>
           Every new workspace can be used free of charge with all features for {TRIAL_DAYS} days. After that, the Free plan applies until a
           paid plan is booked; no data is deleted. If the workspace has more people than the current plan allows, everyone can still sign
           in, see existing bookings and cancel them, but no new bookings or invitations can be made until a larger plan is booked or people
           are removed. The paid contract is concluded when the order is completed via the payment service Stripe.
         </p>
+        )}
 
         <h2>4. Prices and payment</h2>
         <p>
@@ -89,7 +104,7 @@ export default async function TermsPage({ searchParams }: PageProps<"/agb">) {
     );
   }
   return (
-    <LegalPage locale="de" path="/agb" title="Allgemeine Geschäftsbedingungen" updated="2026-10-17">
+    <LegalPage locale="de" path="/agb" title="Allgemeine Geschäftsbedingungen" updated="2026-10-20">
       <h2>1. Geltungsbereich</h2>
       <p>
         Diese AGB gelten für die Nutzung des Vacation Planner, angeboten von {OPERATOR.name}, {OPERATOR.address} („Anbieter“). Das Angebot
@@ -105,7 +120,19 @@ export default async function TermsPage({ searchParams }: PageProps<"/agb">) {
         Wartungen und Störungen außerhalb seines Einflussbereichs.
       </p>
 
-      <h2>3. Testphase und Vertragsschluss</h2>
+      <h2>{beta ? "3. Kostenlose Beta-Phase" : "3. Testphase und Vertragsschluss"}</h2>
+      {beta && (
+        <p>
+          Der Vacation Planner befindet sich in einer öffentlichen Beta-Phase. Bis der Anbieter ihr Ende per E-Mail ankündigt, ist der Dienst
+          mit allen Funktionen und ohne Begrenzung der Teamgröße kostenlos; die Tarife und die Verfügbarkeit von 99 % aus Ziffer 2 gelten
+          nicht. In der Beta wird der Dienst so bereitgestellt, wie er ist, kann sich ändern oder unterbrochen werden, und der Anbieter kann
+          die Beta mit angemessener Frist beenden; dabei werden keine Daten gelöscht. Ein Kunde, der in der Beta einen Workspace anlegt,
+          erhält dauerhaft {FOUNDER_DISCOUNT_PERCENT} % Rabatt auf den dann gültigen Listenpreis des Tarifs Team oder Business, solange er
+          ohne Unterbrechung einen kostenpflichtigen Tarif behält („Gründerpreis“). Es entstehen nicht automatisch Kosten: Ein
+          kostenpflichtiger Vertrag kommt erst zustande, wenn der Kunde die Bestellung über den Bezahldienst Stripe abschließt.
+        </p>
+      )}
+      {!beta && (
       <p>
         Jeder neue Workspace kann {TRIAL_DAYS} Tage kostenlos mit allen Funktionen genutzt werden. Danach gilt der Free-Tarif, bis ein
         kostenpflichtiger Tarif gebucht wird; Daten werden dabei nicht gelöscht. Hat der Workspace mehr Personen, als der aktuelle Tarif
@@ -113,6 +140,7 @@ export default async function TermsPage({ searchParams }: PageProps<"/agb">) {
         anlegen, bis ein größerer Tarif gebucht ist oder Personen entfernt sind. Der kostenpflichtige Vertrag kommt mit Abschluss der
         Bestellung über den Bezahldienst Stripe zustande.
       </p>
+      )}
 
       <h2>4. Preise und Zahlung</h2>
       <p>

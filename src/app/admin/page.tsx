@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ActionForm } from "@/components/action-form";
+import { isBetaMode } from "@/lib/beta";
 import { formatDate, toISO } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { getLocale, getMessages } from "@/lib/i18n/server";
@@ -7,6 +9,7 @@ import { accessOf, isOverLimit } from "@/lib/plans";
 import { supportAccessActive } from "@/lib/superadmin";
 import { requireSuperAdmin } from "@/lib/superadmin-session";
 import { restoreCutoff } from "@/lib/undo";
+import { startPostBetaTrialAction } from "./actions";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getMessages()).superadmin.title, robots: { index: false, follow: false } };
@@ -74,6 +77,16 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
           </div>
         ))}
       </dl>
+
+      {!isBetaMode() && (
+        <section className="card space-y-2">
+          <h2 className="font-medium">{t.beta.heading}</h2>
+          <p className="max-w-2xl text-sm text-muted">{t.beta.body}</p>
+          <ActionForm action={startPostBetaTrialAction} confirm={t.beta.confirm}>
+            <button className="btn-secondary">{t.beta.button}</button>
+          </ActionForm>
+        </section>
+      )}
 
       <form className="flex flex-wrap gap-2" role="search">
         <input name="q" defaultValue={query} className="input max-w-sm" placeholder={t.search} aria-label={t.search} />

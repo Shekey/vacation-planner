@@ -33,6 +33,13 @@ export const billing = defineMessages({
     vatNote: (max: number, email: string) =>
       `Prices are net; German VAT (19%) is added for German customers, and EU businesses with a VAT ID get reverse charge. More than ${max} people? Write to ${email} for an offer with invoice billing.`,
     noSubscription: "There is no subscription yet.",
+    betaNoPayments: "Payments aren't open yet: everything is free during the beta.",
+    statusBeta: "Free beta: everything is included for your whole team, at no cost.",
+    dataBeta: "Nothing is charged during the beta. When it ends we tell you by email, nothing is deleted, and you choose a plan yourself.",
+    founderTitle: "Your founder discount",
+    founderBody: (percent: number, team: string, business: string, teamList: string, businessList: string) =>
+      `Your workspace joined during the beta, so it keeps ${percent}% off the regular price for good once you subscribe: Team ${team} instead of ${teamList} a month, Business ${business} instead of ${businessList}.`,
+    betaPricesHeading: "Regular prices after the beta",
     setupNote: (price: string, email: string) =>
       `Moving a big team over? Import it yourself from Excel under Members, or we do it for you: ${price} once, included with a yearly Business plan. Write to ${email}.`,
     dataHeading: "What happens to your data",
@@ -79,6 +86,13 @@ export const billing = defineMessages({
     vatNote: (max: number, email: string) =>
       `Alle Preise sind netto. Kunden in Deutschland zahlen zusätzlich 19 % USt., Unternehmen in der EU mit USt-IdNr. erhalten Reverse Charge. Mehr als ${max} Personen? Schreib an ${email} für ein Angebot mit Zahlung auf Rechnung.`,
     noSubscription: "Es gibt noch kein Abo.",
+    betaNoPayments: "Zahlungen sind noch nicht geöffnet: In der Beta ist alles kostenlos.",
+    statusBeta: "Kostenlose Beta: Alles ist für dein ganzes Team inklusive, ohne Kosten.",
+    dataBeta: "In der Beta wird nichts abgebucht. Wenn sie endet, sagen wir dir per E-Mail Bescheid, es wird nichts gelöscht, und du wählst selbst einen Tarif.",
+    founderTitle: "Dein Gründerrabatt",
+    founderBody: (percent: number, team: string, business: string, teamList: string, businessList: string) =>
+      `Dein Workspace ist in der Beta dabei, deshalb behält er dauerhaft ${percent} % Rabatt auf den regulären Preis, sobald du abonnierst: Team ${team} statt ${teamList} im Monat, Business ${business} statt ${businessList}.`,
+    betaPricesHeading: "Reguläre Preise nach der Beta",
     setupNote: (price: string, email: string) =>
       `Ein großes Team zieht um? Importiere es selbst aus Excel unter Mitglieder, oder wir machen es für dich: einmalig ${price}, im Jahres-Tarif Business enthalten. Schreib an ${email}.`,
     dataHeading: "Was mit euren Daten passiert",

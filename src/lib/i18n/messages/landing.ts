@@ -262,6 +262,35 @@ export const landing = defineMessages({
         },
       ],
     },
+    beta: {
+      heroCta: "Join the Free Beta",
+      heroNote: "100% Free during Beta · No credit card needed",
+      badge: "🎁 Exclusive Beta Phase",
+      title: "Free Access Today, Guaranteed Founder Rate Later",
+      subtitle: "We are testing with selected teams in Germany and Europe. Use all features completely free during our Beta phase.",
+      now: {
+        title: "Beta Tester Access",
+        perMonth: " / month",
+        features: [
+          "Unlimited members",
+          "All features included: Slack and Microsoft Teams integration, calendar feeds, public holidays",
+          "Direct support",
+        ],
+        cta: "Start Free Beta",
+      },
+      later: {
+        title: "Post-Beta Pricing (Regular)",
+        team: (people: number, price: string) => `Team Plan (up to ${people} people): ${price} / month flat`,
+        business: (people: number, price: string) => `Business Plan (up to ${people} people): ${price} / month flat`,
+      },
+      founder: (percent: number, price: string) =>
+        `⭐ Early Tester Guarantee: Teams who join and test during the Beta will lock in a permanent ${percent}% Founder Discount (e.g. ${price}/mo flat for Team) when we officially launch.`,
+      footnote: "Prices plus VAT. Nothing is charged automatically: after the beta you choose a plan yourself.",
+      faqAfter: {
+        q: "What happens after the beta?",
+        a: "We tell you by email in good time. Nothing is deleted, and you choose a plan yourself, or the workspace continues on Free for up to 5 people. Teams that joined during the beta keep a permanent 50% founder discount on the regular price.",
+      },
+    },
     cta: {
       title: "Plan the next holiday season together",
       body: "Create a workspace, invite your team and book the first days off today.",
@@ -533,6 +562,35 @@ export const landing = defineMessages({
           a: "Du wählst einen Tarif, oder der Workspace läuft mit Free für bis zu 5 Personen weiter. Nichts wird gelöscht, und einen bezahlten Tarif kannst du jederzeit kündigen.",
         },
       ],
+    },
+    beta: {
+      heroCta: "Kostenlos testen (Beta)",
+      heroNote: "100 % kostenlos in der Beta · Keine Kreditkarte nötig",
+      badge: "🎁 Exklusive Beta-Phase",
+      title: "Heute kostenlos, später garantiert zum Gründerpreis",
+      subtitle: "Wir testen mit ausgewählten Teams in Deutschland und Europa. Nutze in der Beta-Phase alle Funktionen komplett kostenlos.",
+      now: {
+        title: "Beta-Zugang",
+        perMonth: " / Monat",
+        features: [
+          "Unbegrenzt viele Mitglieder",
+          "Alle Funktionen inklusive: Slack und Microsoft Teams, Kalender-Feeds, Feiertage",
+          "Direkter Support",
+        ],
+        cta: "Kostenlos in die Beta",
+      },
+      later: {
+        title: "Preise nach der Beta (regulär)",
+        team: (people: number, price: string) => `Team-Tarif (bis ${people} Personen): ${price} / Monat pauschal`,
+        business: (people: number, price: string) => `Business-Tarif (bis ${people} Personen): ${price} / Monat pauschal`,
+      },
+      founder: (percent: number, price: string) =>
+        `⭐ Garantie für frühe Tester: Teams, die in der Beta dabei sind und testen, sichern sich beim offiziellen Start dauerhaft ${percent} % Gründerrabatt (z. B. ${price}/Monat pauschal für Team).`,
+      footnote: "Preise zzgl. MwSt. Es wird nichts automatisch abgebucht: Nach der Beta wählst du selbst einen Tarif.",
+      faqAfter: {
+        q: "Was passiert nach der Beta?",
+        a: "Wir sagen dir rechtzeitig per E-Mail Bescheid. Nichts wird gelöscht, und du wählst selbst einen Tarif, oder der Workspace läuft im Free-Tarif für bis zu 5 Personen weiter. Teams, die in der Beta dabei waren, behalten dauerhaft 50 % Gründerrabatt auf den regulären Preis.",
+      },
     },
     cta: {
       title: "Plant die nächste Urlaubssaison gemeinsam",

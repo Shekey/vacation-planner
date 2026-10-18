@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getMessages } from "@/lib/i18n/server";
+import { isBetaMode } from "@/lib/beta";
 import { TRIAL_DAYS } from "@/lib/plans";
 import { requireUser } from "@/lib/session";
 import { isSuperAdminEmail } from "@/lib/superadmin";
@@ -37,7 +38,7 @@ export default async function HomePage() {
                 <span aria-hidden>🚀 </span>
                 {t.startTitle}
               </h2>
-              <p className="text-sm text-muted">{t.startBody(TRIAL_DAYS)}</p>
+              <p className="text-sm text-muted">{isBetaMode() ? t.startBodyBeta : t.startBody(TRIAL_DAYS)}</p>
               <Link href="/workspaces/new" className="btn">
                 {t.startButton}
               </Link>

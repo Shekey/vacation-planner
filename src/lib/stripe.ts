@@ -40,7 +40,7 @@ export function planOfPrice(id: string | undefined): PaidPlan | null {
 }
 
 export async function createCheckout(opts: {
-  workspace: { id: string; name: string; stripeCustomerId: string | null };
+  workspace: { id: string; name: string; stripeCustomerId: string | null; founderRate?: boolean };
   email: string;
   plan: PaidPlan;
   interval: Interval;
@@ -63,7 +63,11 @@ export async function createCheckout(opts: {
     tax_id_collection: { enabled: true },
     // Needs Stripe Tax turned on in the dashboard; prices are then net and VAT is added per country.
     ...(process.env.STRIPE_AUTOMATIC_TAX === "1" ? { automatic_tax: { enabled: true } } : {}),
-    allow_promotion_codes: true,
+    // Beta workspaces get the founder discount automatically (a 50% "forever" coupon made in Stripe). Checkout
+    // doesn't allow a discount and promotion codes together, so they only get a code field when there is none.
+    ...(opts.workspace.founderRate && process.env.STRIPE_FOUNDER_COUPON_ID
+      ? { discounts: [{ coupon: process.env.STRIPE_FOUNDER_COUPON_ID }] }
+      : { allow_promotion_codes: true }),
     // Stripe's pages in the app's language.
     locale: await getLocale(),
     success_url: `${opts.returnUrl}?checkout=success`,

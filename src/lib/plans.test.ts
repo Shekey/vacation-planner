@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { messagesFor } from "./i18n";
 import { accessOf, isOverLimit, planFor, shouldSyncSubscription, trialReminderDue } from "./plans";
+
+// The plan rules below are for the paid phase; the beta has its own tests at the end.
+beforeEach(() => vi.stubEnv("NEXT_PUBLIC_ENABLE_BETA_MODE", "false"));
+afterEach(() => vi.unstubAllEnvs());
 
 const now = new Date("2026-10-03T12:00:00Z");
 const days = (n: number) => new Date(now.getTime() + n * 86_400_000);
@@ -91,5 +95,28 @@ describe("trial reminder email", () => {
     const t = messagesFor("de").email.trialEnding;
     expect(t.text({ ...base, people: 8 })).toContain("Einladungen sind pausiert");
     expect(t.text({ ...base, people: 3 })).toContain("kostenlos weitermachen");
+  });
+});
+
+describe("beta mode", () => {
+  beforeEach(() => vi.stubEnv("NEXT_PUBLIC_ENABLE_BETA_MODE", "true"));
+
+  it("gives every workspace everything, with no real member limit, whatever its trial says", () => {
+    for (const trialEndsAt of [null, days(-60), days(10)]) {
+      const a = accessOf({ plan: "FREE", billingStatus: null, trialEndsAt }, now);
+      expect(a).toMatchObject({ kind: "beta", chat: true });
+      expect(a.maxMembers).toBeGreaterThanOrEqual(500);
+      expect(isOverLimit(a, 300)).toBe(false);
+    }
+  });
+  it("still honours a live paid subscription", () =>
+    expect(accessOf({ plan: "TEAM", billingStatus: "active", trialEndsAt: null }, now)).toMatchObject({ kind: "paid", maxMembers: 25 }));
+  it("sends no trial reminders", () =>
+    expect(
+      trialReminderDue({ plan: "FREE", billingStatus: null, trialEndsAt: days(5), trialReminder7SentAt: null, trialReminder1SentAt: null }, now),
+    ).toBeNull());
+  it("goes back to the trial and Free rules when switched off", () => {
+    vi.stubEnv("NEXT_PUBLIC_ENABLE_BETA_MODE", "false");
+    expect(accessOf({ plan: "FREE", billingStatus: null, trialEndsAt: days(-1) }, now)).toMatchObject({ kind: "free", maxMembers: 5 });
   });
 });

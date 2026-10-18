@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { HeroDemo } from "@/components/landing/hero-demo";
 import { icons } from "@/components/landing/icons";
+import { BetaPricing } from "@/components/landing/beta-pricing";
 import { PricePicker } from "@/components/landing/price-picker";
 import { Reveal } from "@/components/landing/reveal";
 import { TeamSwitcher } from "@/components/landing/team-switcher";
 import { intlLocale, type Locale, type Messages } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { OPERATOR } from "@/lib/legal";
+import { isBetaMode } from "@/lib/beta";
 import { PLANS, TRIAL_DAYS } from "@/lib/plans";
 
 /** The public home page, shown at / to anyone who isn't signed in. */
@@ -149,6 +151,9 @@ function Heading({ id, title, subtitle }: { id: string; title: string; subtitle?
 export async function Landing() {
   const [locale, m] = await Promise.all([getLocale(), getMessages()]);
   const t = m.landing;
+  const beta = isBetaMode();
+  // The last question is about the trial; during the beta it is about what happens when the beta ends.
+  const faqItems = beta ? [...t.faq.items.slice(0, -1), t.beta.faqAfter] : t.faq.items;
   return (
     <div className="space-y-24 pb-8 sm:space-y-32">
       {/* ---------- Hero ---------- */}
@@ -165,12 +170,13 @@ export async function Landing() {
           <p className="max-w-xl text-lg text-muted">{t.hero.body}</p>
           <div className="flex flex-wrap gap-3">
             <Link href="/sign-in" className="btn px-5 py-3 text-base">
-              {t.hero.cta(TRIAL_DAYS)}
+              {beta ? t.beta.heroCta : t.hero.cta(TRIAL_DAYS)}
             </Link>
             <a href="#pricing" className="btn-secondary px-5 py-3 text-base">
               {t.hero.pricing}
             </a>
           </div>
+          {beta && <p className="-mt-3 text-sm font-medium">{t.beta.heroNote}</p>}
           <ul className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-muted">
             {t.hero.ticks.map((tick) => (
               <li key={tick} className="flex items-center gap-1.5">
@@ -289,9 +295,15 @@ export async function Landing() {
       {/* ---------- Pricing ---------- */}
       <Reveal>
         <section id="pricing" className="scroll-mt-20 space-y-10" aria-labelledby="pricing-title">
-          <Heading id="pricing-title" title={t.pricing.title} subtitle={t.pricing.subtitle(TRIAL_DAYS)} />
-          <PricePicker contactEmail={OPERATOR.email} />
-          <p className="text-sm text-muted">{t.pricing.footnote(PLANS.BUSINESS.maxMembers)}</p>
+          {beta ? (
+            <BetaPricing locale={locale} />
+          ) : (
+            <>
+              <Heading id="pricing-title" title={t.pricing.title} subtitle={t.pricing.subtitle(TRIAL_DAYS)} />
+              <PricePicker contactEmail={OPERATOR.email} />
+              <p className="text-sm text-muted">{t.pricing.footnote(PLANS.BUSINESS.maxMembers)}</p>
+            </>
+          )}
         </section>
       </Reveal>
 
@@ -300,7 +312,7 @@ export async function Landing() {
         <section id="faq" className="scroll-mt-20 grid gap-8 lg:grid-cols-[1fr_2fr]" aria-labelledby="faq-title">
           <Heading id="faq-title" title={t.faq.title} />
           <div className="divide-y divide-border border-y border-border">
-            {t.faq.items.map((f) => (
+            {faqItems.map((f) => (
               <details key={f.q} className="group py-4">
                 <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 font-medium">
                   {f.q}

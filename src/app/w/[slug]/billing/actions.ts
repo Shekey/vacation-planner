@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import type { ActionResult } from "@/components/action-form";
+import { isBetaMode } from "@/lib/beta";
 import { accessOf, type PaidPlan } from "@/lib/plans";
 import { getMessages } from "@/lib/i18n/server";
 import { requireAdmin } from "@/lib/session";
@@ -10,6 +11,8 @@ import { appOrigin } from "@/lib/url";
 
 export async function checkoutAction(slug: string, plan: PaidPlan, interval: Interval): Promise<ActionResult> {
   const { workspace, user } = await requireAdmin(slug);
+  // Nobody pays during the free beta; the buttons are hidden, and this stops a hand-made request.
+  if (isBetaMode() && accessOf(workspace).kind !== "paid") return { error: (await getMessages()).billing.betaNoPayments };
   const returnUrl = `${await appOrigin()}/w/${slug}/billing`;
   let url: string;
   try {

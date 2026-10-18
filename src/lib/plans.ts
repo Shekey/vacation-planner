@@ -1,4 +1,5 @@
 import type { Plan } from "@/generated/prisma/enums";
+import { BETA_MAX_MEMBERS, isBetaMode } from "@/lib/beta";
 
 export const TRIAL_DAYS = 30;
 
@@ -19,7 +20,7 @@ const LIVE_STATUSES = new Set(["active", "trialing", "past_due"]);
 
 export type Access = {
   /** What the workspace gets right now. */
-  kind: "trial" | "paid" | "free";
+  kind: "beta" | "trial" | "paid" | "free";
   plan: Plan;
   name: string;
   maxMembers: number;
@@ -30,11 +31,17 @@ export type Access = {
 
 type BillingRow = { plan: Plan; billingStatus: string | null; trialEndsAt: Date | null };
 
-/** The plan a workspace is on now: a live subscription, else the trial (everything, up to the Business limit), else Free. */
+/**
+ * The plan a workspace is on now: a live subscription, else the free beta (everything, no real member limit) while
+ * beta mode is on, else the trial (everything, up to the Business limit), else Free.
+ */
 export function accessOf(ws: BillingRow, now = new Date()): Access {
   const trialDaysLeft = ws.trialEndsAt ? Math.max(0, Math.ceil((ws.trialEndsAt.getTime() - now.getTime()) / 86_400_000)) : 0;
   if (ws.plan !== "FREE" && ws.billingStatus && LIVE_STATUSES.has(ws.billingStatus)) {
     return { kind: "paid", plan: ws.plan, ...pick(ws.plan), trialDaysLeft };
+  }
+  if (isBetaMode()) {
+    return { kind: "beta", plan: "BUSINESS", name: "Beta", maxMembers: BETA_MAX_MEMBERS, chat: true, trialDaysLeft: 0 };
   }
   if (trialDaysLeft > 0) {
     return { kind: "trial", plan: "BUSINESS", name: "Trial", maxMembers: PLANS.BUSINESS.maxMembers, chat: true, trialDaysLeft };
