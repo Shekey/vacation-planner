@@ -15,7 +15,7 @@ The app starts in **beta mode**: `NEXT_PUBLIC_ENABLE_BETA_MODE` is unset or anyt
 
 What you must do:
 1. **Check the numbers on the page.** They come from `PLANS` (Team €39, Business €89), so the founder price shows €19.50 for Team. If you had meant €29 and €69, change them in `src/lib/plans.ts`.
-2. **The 50% promise needs a Stripe coupon.** In Stripe create a coupon: 50% off, duration *forever*, and put its id in Vercel as `STRIPE_FOUNDER_COUPON_ID`. Checkout then applies it automatically to founder workspaces (Stripe doesn't allow it together with a promotion-code field, so those workspaces don't get that field).
+2. **Stripe coupon: not needed while the beta runs.** Nobody pays during the beta, so Stripe isn't used at all. The coupon is only for the day the beta ends, and keeps the 50% promise: in Stripe create a coupon (50% off, duration *forever*) and put its id in Vercel as `STRIPE_FOUNDER_COUPON_ID`. Checkout then applies it automatically to founder workspaces (Stripe doesn't allow it together with a promotion-code field, so those workspaces don't get that field). If you leave it unset, checkout still works, but the discount would have to be given by hand.
 3. Show your lawyer the new beta section in `/agb` (free of charge, no availability promise, founder discount, no automatic fees). It is a promise to customers, so it must be right.
 4. **Changing the flag needs a redeploy**, because Next.js bakes `NEXT_PUBLIC_` variables into the build.
 
