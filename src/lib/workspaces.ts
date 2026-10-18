@@ -1,3 +1,4 @@
+import { isBetaMode } from "@/lib/beta";
 import { db } from "@/lib/db";
 import { TRIAL_DAYS } from "@/lib/plans";
 import { uniqueSlug } from "@/lib/slug";
@@ -25,6 +26,8 @@ export async function createWorkspace(input: {
       slug,
       timezone: input.timezone,
       createdById: input.userId,
+      // Joined during the free beta: keeps the founder discount when it subscribes later.
+      founderRate: isBetaMode(),
       trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 86_400_000),
       settings: {
         create: {

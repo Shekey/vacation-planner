@@ -6,6 +6,24 @@ Book and plan vacations inside invite-only workspaces. See the v1 plan for scope
 
 The code is ready for a first paying customer once these are done. They are things only you can do (accounts, contracts, money). Work through them top to bottom; the first three block selling. The bigger plan, with pricing reasoning and next features, is in [`docs/sales-plan.md`](docs/sales-plan.md).
 
+### Beta mode (free beta) and how to end it
+
+The app starts in **beta mode**: `NEXT_PUBLIC_ENABLE_BETA_MODE` is unset or anything except `false`. In beta mode:
+- Every workspace gets everything for free (all features, Teams and Slack included, no real limit on people), and there is no trial countdown, no trial emails and no checkout.
+- The landing page says "Join the Free Beta", shows "100% Free during Beta · No credit card needed" under the button and replaces the price picker with the beta card and the regular prices (Team and Business, from `src/lib/plans.ts`) plus the founder discount. The FAQ answer about the trial becomes "What happens after the beta?". The footer says the app is in public beta. The terms (`/agb`) get a "Free beta phase" section instead of the 30-day trial.
+- Every workspace created during the beta is marked as a **founder workspace** (`Workspace.founderRate`). The promise on the page is a permanent 50% discount on the list price, e.g. €19.50 a month for Team at the current €39.
+
+What you must do:
+1. **Check the numbers on the page.** They come from `PLANS` (Team €39, Business €89), so the founder price shows €19.50 for Team. If you had meant €29 and €69, change them in `src/lib/plans.ts`.
+2. **The 50% promise needs a Stripe coupon.** In Stripe create a coupon: 50% off, duration *forever*, and put its id in Vercel as `STRIPE_FOUNDER_COUPON_ID`. Checkout then applies it automatically to founder workspaces (Stripe doesn't allow it together with a promotion-code field, so those workspaces don't get that field).
+3. Show your lawyer the new beta section in `/agb` (free of charge, no availability promise, founder discount, no automatic fees). It is a promise to customers, so it must be right.
+4. **Changing the flag needs a redeploy**, because Next.js bakes `NEXT_PUBLIC_` variables into the build.
+
+**Ending the beta:**
+1. Create the Stripe prices and the founder coupon, set the `STRIPE_*` variables (see Payments below) and tell the beta teams by email.
+2. In Vercel set `NEXT_PUBLIC_ENABLE_BETA_MODE=false` and redeploy. New workspaces now get the normal 30-day trial; the landing page and prices switch back by themselves.
+3. Open `/admin` and press **"Start the 30-day trial for beta workspaces"** once. Without it, beta workspaces would drop to Free (5 people, no Teams or Slack) the moment you switch beta mode off. It only touches workspaces that don't pay yet, keeps their founder discount, and the usual reminder emails then go out before their trial ends.
+
 ### After the pricing and import update
 
 Prices are now Free ≤5, **Team €39 ≤25, Business €89 ≤75** (yearly = 10× monthly). Admins can import a whole team from Excel (*Members → Import many people from Excel*): paste cells or open a CSV, see every row checked, then add the people and, as a second step, their booked time off. People are added right away (no invitation to wait for) and optionally get an email saying where to sign in. What you must do:

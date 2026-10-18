@@ -106,6 +106,8 @@ model Workspace {
   deletedAt          DateTime?
   // While in the future, the operator's team may look at this workspace's members for support. Set by a workspace admin, 24 hours at a time.
   supportAccessUntil DateTime?
+  // Created during the free beta: keeps the founder discount (FOUNDER_DISCOUNT_PERCENT) when it subscribes, see createCheckout.
+  founderRate        Boolean   @default(false)
 
   // Billing. Everything is unlocked until trialEndsAt; after that the paid plan applies while Stripe says it's active.
   plan                 Plan      @default(FREE)

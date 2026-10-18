@@ -3,11 +3,13 @@
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/components/action-form";
 import { recordAudit } from "@/lib/audit";
+import { isBetaMode } from "@/lib/beta";
 import { db } from "@/lib/db";
 import { formatDateTime } from "@/lib/dates";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { requireSuperAdmin } from "@/lib/superadmin-session";
 import { extendedTrialEnd, parseExtendDays } from "@/lib/superadmin";
+import { TRIAL_DAYS } from "@/lib/plans";
 import { canRestore } from "@/lib/undo";
 
 /** Gives a trial more days. The reminder emails are reset so the customer is warned again before the new end. */
@@ -39,4 +41,24 @@ export async function restoreWorkspaceAsOperatorAction(workspaceId: string): Pro
   revalidatePath(`/admin/workspaces/${ws.id}`);
   revalidatePath("/admin");
   return { ok: t.restored };
+}
+
+/**
+ * Run once when the beta ends: workspaces created during the beta that don't pay yet get a fresh trial from today,
+ * so they don't drop to Free the moment beta mode is switched off. Their founder rate stays.
+ */
+export async function startPostBetaTrialAction(): Promise<ActionResult> {
+  await requireSuperAdmin();
+  const t = (await getMessages()).superadmin.beta;
+  if (isBetaMode()) return { error: t.stillBeta };
+  const { count } = await db.workspace.updateMany({
+    where: { founderRate: true, deletedAt: null, stripeSubscriptionId: null },
+    data: {
+      trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 86_400_000),
+      trialReminder7SentAt: null,
+      trialReminder1SentAt: null,
+    },
+  });
+  revalidatePath("/admin");
+  return { ok: t.done(count) };
 }

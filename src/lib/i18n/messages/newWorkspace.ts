@@ -34,6 +34,7 @@ export const newWorkspace = defineMessages({
     creating: "Creating…",
     create: "Create workspace",
     trialNote: (days: number) => `${days} days with everything, no card needed.`,
+    betaNote: "Free during the beta, no card needed.",
     errors: {
       nameLength: "Name must be at least 2 characters",
       timezone: "Unknown timezone",
@@ -73,6 +74,7 @@ export const newWorkspace = defineMessages({
     creating: "Wird erstellt…",
     create: "Workspace erstellen",
     trialNote: (days: number) => `${days} Tage alles nutzen, ohne Kreditkarte.`,
+    betaNote: "In der Beta kostenlos, ohne Kreditkarte.",
     errors: {
       nameLength: "Der Name muss mindestens 2 Zeichen lang sein",
       timezone: "Unbekannte Zeitzone",

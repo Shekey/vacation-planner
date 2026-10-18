@@ -8,6 +8,7 @@ export const home = defineMessages({
     startTitle: "Running a team?",
     startBody: (days: number) =>
       `Create a workspace for your team. It takes about three minutes and the first ${days} days include everything.`,
+    startBodyBeta: "Create a workspace for your team. It takes about three minutes, and during the beta everything is free.",
     startButton: "Set up my team",
     invitedTitle: "Waiting for an invite?",
     invitedBody: (email: string) =>
@@ -26,6 +27,7 @@ export const home = defineMessages({
     startTitle: "Du leitest ein Team?",
     startBody: (days: number) =>
       `Leg einen Workspace für dein Team an. Das dauert etwa drei Minuten, und die ersten ${days} Tage ist alles inklusive.`,
+    startBodyBeta: "Leg einen Workspace für dein Team an. Das dauert etwa drei Minuten, und in der Beta ist alles kostenlos.",
     startButton: "Mein Team einrichten",
     invitedTitle: "Du wartest auf eine Einladung?",
     invitedBody: (email: string) =>
