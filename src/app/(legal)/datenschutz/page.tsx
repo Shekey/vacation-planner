@@ -13,7 +13,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
   const avv = legalHref("/avv", locale, forced);
   if (locale === "en") {
     return (
-      <LegalPage locale="en" path="/datenschutz" title="Privacy policy" updated="2026-10-18">
+      <LegalPage locale="en" path="/datenschutz" title="Privacy policy" updated="2026-10-21">
         <h2>1. Controller</h2>
         <p>The controller responsible for data processing on this website and for the accounts of workspace administrators is:</p>
         <Operator locale="en" />
@@ -56,6 +56,18 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
             debit) are processed exclusively by Stripe. We only store the Stripe customer number and the status of the subscription.
           </li>
           <li>Server logs: IP address, time and page requested, for security and troubleshooting, stored for no longer than 30 days.</li>
+          <li>
+            Usage statistics (PostHog, EU cloud): on the public pages (home page, sign-in, legal texts) we count visits and clicks and
+            record anonymous session replays in which every input field is masked; inside the app we only count that a page was opened,
+            with names, workspace addresses and identifiers removed from the address, and no replay. Nothing is stored in your browser
+            (no cookies, no local storage), nobody is identified, no email address or user ID is sent, and the IP address is discarded.
+            Visitors who send the browser signal “Do Not Track” are not counted. In the operator area nothing is measured.
+          </li>
+          <li>
+            Error monitoring (Sentry, EU region): when an error occurs, a technical report (error message, place in the code, browser and
+            device type, page without query parameters) is sent. Before sending, email addresses, tokens, cookies, IP address and
+            request contents are removed.
+          </li>
         </ul>
 
         <h2>3. Purposes and legal bases</h2>
@@ -63,8 +75,15 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
           <li>Providing the service and sign-in via email link: Art. 6(1)(b) GDPR (contract).</li>
           <li>Billing and retention of invoices: Art. 6(1)(c) GDPR (legal obligations under the HGB and AO).</li>
           <li>Security, abuse prevention and troubleshooting: Art. 6(1)(f) GDPR (legitimate interest).</li>
+          <li>
+            Usage statistics and error monitoring: Art. 6(1)(f) GDPR (legitimate interest in improving the service and fixing errors
+            quickly). You can object at any time with the “Do Not Track” setting of your browser or by writing to us.
+          </li>
         </ul>
-        <p>We do not use advertising or tracking cookies, nor any analytics tools that build profiles.</p>
+        <p>
+          We use no advertising or tracking cookies, and none of our tools stores anything on your device. Statistics are anonymous and
+          never combined into profiles of individual people.
+        </p>
 
         <h2>4. Hosting and recipients</h2>
         <p>The application and the database run in data centres in Frankfurt am Main (EU). We use the following processors:</p>
@@ -95,7 +114,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
     );
   }
   return (
-    <LegalPage locale="de" path="/datenschutz" title="Datenschutzerklärung" updated="2026-10-18">
+    <LegalPage locale="de" path="/datenschutz" title="Datenschutzerklärung" updated="2026-10-21">
       <h2>1. Verantwortlicher</h2>
       <p>Verantwortlich für die Datenverarbeitung auf dieser Website und für Konten von Workspace-Administratoren ist:</p>
       <Operator locale="de" />
@@ -142,6 +161,19 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
         <li>
           Server-Protokolle: IP-Adresse, Zeitpunkt und aufgerufene Seite, zur Sicherheit und Fehlersuche, höchstens 30 Tage gespeichert.
         </li>
+        <li>
+          Nutzungsstatistik (PostHog, EU-Cloud): Auf den öffentlichen Seiten (Startseite, Anmeldung, Rechtstexte) zählen wir Besuche und
+          Klicks und zeichnen anonyme Sitzungswiedergaben auf, in denen jedes Eingabefeld unkenntlich gemacht ist; in der App zählen wir
+          nur, dass eine Seite geöffnet wurde, wobei Namen, Workspace-Adressen und Kennungen aus der Adresse entfernt sind, und zeichnen
+          nichts auf. Es wird nichts in Ihrem Browser gespeichert (keine Cookies, kein Local Storage), niemand wird identifiziert, es
+          werden weder E-Mail-Adresse noch Nutzer-ID gesendet, und die IP-Adresse wird verworfen. Besucher, die das Browser-Signal „Do
+          Not Track“ senden, werden nicht gezählt. Im Betreiberbereich wird nichts gemessen.
+        </li>
+        <li>
+          Fehlerüberwachung (Sentry, EU-Region): Tritt ein Fehler auf, wird ein technischer Bericht gesendet (Fehlermeldung, Stelle im
+          Code, Browser- und Gerätetyp, Seite ohne Query-Parameter). Vor dem Senden werden E-Mail-Adressen, Tokens, Cookies,
+          IP-Adresse und Anfrageinhalte entfernt.
+        </li>
       </ul>
 
       <h2>3. Zwecke und Rechtsgrundlagen</h2>
@@ -149,8 +181,16 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
         <li>Bereitstellung des Dienstes und Anmeldung per E-Mail-Link: Art. 6 Abs. 1 lit. b DSGVO (Vertrag).</li>
         <li>Abrechnung und Aufbewahrung von Rechnungen: Art. 6 Abs. 1 lit. c DSGVO (gesetzliche Pflichten nach HGB und AO).</li>
         <li>Sicherheit, Missbrauchsschutz und Fehlersuche: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse).</li>
+        <li>
+          Nutzungsstatistik und Fehlerüberwachung: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der Verbesserung des Dienstes und
+          der schnellen Behebung von Fehlern). Sie können jederzeit widersprechen, mit der Einstellung „Do Not Track“ Ihres Browsers oder
+          per E-Mail an uns.
+        </li>
       </ul>
-      <p>Wir verwenden keine Werbe- oder Tracking-Cookies und keine Analyse-Tools, die Profile bilden.</p>
+      <p>
+        Wir verwenden keine Werbe- oder Tracking-Cookies, und keines unserer Werkzeuge speichert etwas auf Ihrem Gerät. Statistiken sind
+        anonym und werden nie zu Profilen einzelner Personen zusammengeführt.
+      </p>
 
       <h2>4. Hosting und Empfänger</h2>
       <p>Die Anwendung und die Datenbank laufen in Rechenzentren in Frankfurt am Main (EU). Wir setzen folgende Auftragsverarbeiter ein:</p>

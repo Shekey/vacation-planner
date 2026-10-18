@@ -12,7 +12,7 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
   const agb = legalHref("/agb", locale, forced);
   if (locale === "en") {
     return (
-      <LegalPage locale="en" path="/avv" title="Data Processing Agreement (DPA) pursuant to Art. 28 GDPR" updated="2026-10-20">
+      <LegalPage locale="en" path="/avv" title="Data Processing Agreement (DPA) pursuant to Art. 28 GDPR" updated="2026-10-21">
         <p>
           This agreement applies between the customer that uses a workspace in Vacation Planner (“Controller”) and the following provider
           (“Processor”). It is concluded through use of the service in accordance with the <a href={agb}>terms and conditions</a>.
@@ -70,7 +70,7 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
 
         <h2>5. Subprocessors</h2>
         <p>The Controller approves the following subprocessors:</p>
-        <SubprocessorList locale="en" />
+        <SubprocessorList locale="en" dpaOnly />
         <p>
           The Processor imposes the same data protection obligations on subprocessors by contract. It informs the Controller of new
           subprocessors by email at least 30 days in advance; the Controller may object for good cause and in that case terminate the
@@ -100,7 +100,7 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
     );
   }
   return (
-    <LegalPage locale="de" path="/avv" title="Auftragsverarbeitungsvertrag (AVV) nach Art. 28 DSGVO" updated="2026-10-20">
+    <LegalPage locale="de" path="/avv" title="Auftragsverarbeitungsvertrag (AVV) nach Art. 28 DSGVO" updated="2026-10-21">
       <p>
         Dieser Vertrag gilt zwischen dem Kunden, der einen Workspace im Vacation Planner nutzt („Verantwortlicher“), und dem folgenden
         Anbieter („Auftragsverarbeiter“). Er wird mit der Nutzung des Dienstes gemäß den <a href={agb}>AGB</a> geschlossen.
@@ -163,7 +163,7 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
 
       <h2>5. Unterauftragsverarbeiter</h2>
       <p>Der Verantwortliche genehmigt die folgenden Unterauftragsverarbeiter:</p>
-      <SubprocessorList locale="de" />
+      <SubprocessorList locale="de" dpaOnly />
       <p>
         Der Auftragsverarbeiter verpflichtet Unterauftragsverarbeiter vertraglich auf dieselben Datenschutzpflichten. Über neue
         Unterauftragsverarbeiter informiert er mindestens 30 Tage vorher per E-Mail; der Verantwortliche kann aus wichtigem Grund

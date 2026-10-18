@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Caveat } from "next/font/google";
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
+import { Analytics } from "@/components/analytics";
 import { I18nProvider } from "@/components/i18n-provider";
 import { LanguageSwitch } from "@/components/language-switch";
 import { Avatar, LogoMark } from "@/components/ui";
@@ -37,6 +38,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html lang={locale} className={`h-full antialiased ${display.variable} ${hand.variable}`}>
       <body className="min-h-full flex flex-col">
         <I18nProvider locale={locale}>
+          <Analytics />
           <a
             href="#main"
             className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-foreground focus:px-3 focus:py-2 focus:text-background"

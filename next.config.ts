@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
 /**
@@ -30,4 +31,17 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * Sentry's build step uploads source maps (so an error points at the real line) when SENTRY_AUTH_TOKEN, SENTRY_ORG and
+ * SENTRY_PROJECT are set in Vercel; without them it uploads nothing and the build is the same as before. The maps are
+ * deleted from the deployed files after the upload, and Sentry's own build telemetry is off.
+ */
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: !process.env.CI,
+  telemetry: false,
+  widenClientFileUpload: true,
+  sourcemaps: { deleteSourcemapsAfterUpload: true },
+});
