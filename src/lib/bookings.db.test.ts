@@ -184,6 +184,14 @@ describe("allowanceSummary", () => {
     expect(await summary(team, "2030-04-01")).toMatchObject({ carriedOver: 3, carryOverLeft: 0, carryOverExpired: 1, allowance: 22, remaining: 20 });
   });
 
+  it("keeps carried-over days past the deadline for a person exempted after a long illness", async () => {
+    const team = await makeWorkspace({ maxCarryOverDays: 5, carryOverExpiry: "03-31" });
+    await db.keepCarriedOver.create({ data: { membershipId: team.member.id, year: 2030 } });
+    expect(await summary(team, "2030-06-01")).toMatchObject({ carriedOver: 5, carryOverExpiresOn: null, carryOverExpired: 0, allowance: 25 });
+    // Only this person: the admin's days still expire.
+    expect(await summary(team, "2030-06-01", team.admin)).toMatchObject({ carryOverExpired: 5, allowance: 20 });
+  });
+
   it("caps carry-over at the workspace maximum", async () => {
     const team = await makeWorkspace({ maxCarryOverDays: 5 });
     expect(await summary(team, "2030-01-15")).toMatchObject({ carriedOver: 5, allowance: 25 });

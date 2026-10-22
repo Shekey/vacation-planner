@@ -99,3 +99,22 @@ describe("days left over from last year", () => {
     expect(await stored()).toBeNull();
   });
 });
+
+describe("left-over days that don't expire", () => {
+  it("are switched on and off per person for this year, and left alone when the box isn't shown", async () => {
+    const team = await makeWorkspace({ carryOverExpiry: "03-31" });
+    await signedInAsAdmin(team);
+    const year = Number(todayIn(team.workspace.timezone).slice(0, 4));
+    const save = (fields: Record<string, string>) =>
+      updateMemberAction(team.workspace.slug, team.member.id, {}, form({ role: "MEMBER", allowance: "20", ...fields }));
+    const kept = () => db.keepCarriedOver.findUnique({ where: { membershipId_year: { membershipId: team.member.id, year } } });
+
+    expect(await save({ carriedOver: "", keepCarriedShown: "1", keepCarried: "on" })).toEqual({ ok: t.saved });
+    expect(await kept()).not.toBeNull();
+    // The short form next to the name doesn't send the box, so it doesn't clear it.
+    await save({});
+    expect(await kept()).not.toBeNull();
+    await save({ carriedOver: "", keepCarriedShown: "1" });
+    expect(await kept()).toBeNull();
+  });
+});

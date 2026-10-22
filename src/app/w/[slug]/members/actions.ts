@@ -153,6 +153,13 @@ export async function updateMemberAction(
   }
 
   const year = Number(todayIn(ctx.workspace.timezone).slice(0, 4));
+  // Sent next to "carriedOver" when the workspace has a deadline; an unticked box isn't sent at all.
+  if (typeof rawCarried === "string" && formData.has("keepCarriedShown")) {
+    const where = { membershipId_year: { membershipId: member.id, year } };
+    if (formData.get("keepCarried") === "on") {
+      await db.keepCarriedOver.upsert({ where, create: { membershipId: member.id, year }, update: {} });
+    } else await db.keepCarriedOver.deleteMany({ where: { membershipId: member.id, year } });
+  }
   await keepLastYearsAllowance([member], allowance, year);
   if (carried === null) await db.carriedOver.deleteMany({ where: { membershipId: member.id, year } });
   else if (carried !== undefined) {
