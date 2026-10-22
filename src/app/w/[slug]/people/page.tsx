@@ -8,6 +8,7 @@ import { getLocale, getMessages } from "@/lib/i18n/server";
 import { requireMembership, settingsOf } from "@/lib/session";
 import { AloneHint } from "@/components/alone-hint";
 import { PeopleSearch, type PersonRow } from "./people-search";
+import { hasNoEmail } from "@/lib/no-email";
 
 export async function generateMetadata() {
   return { title: (await getMessages()).people.title };
@@ -53,6 +54,7 @@ export default async function PeoplePage({ params }: PageProps<"/w/[slug]/people
         name: m.user.name ?? m.user.email,
         email: m.user.email,
         sample: m.isSample,
+        noEmail: hasNoEmail(m.user.email),
         todayStatus,
         upcoming: own.slice(0, 5).map((b) => {
           const span = spanOf(b);

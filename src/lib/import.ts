@@ -206,6 +206,7 @@ export type ImportError = { code: ImportErrorCode; value?: string };
 export type PersonRow = {
   /** 1-based line in the pasted text, for messages. */
   line: number;
+  /** "" for someone without an email address, who is then added by name. */
   email: string;
   name: string | null;
   allowance: number | null;
@@ -278,11 +279,13 @@ export function parsePeople(
       return row;
     };
 
-    if (!email) return fail("noEmail");
-    if (!isEmail(email)) return fail("badEmail", email);
-    if (email.endsWith("@sample.invalid")) return fail("sampleEmail", email);
-    if (seen.has(email)) return fail("duplicate", email);
-    seen.add(email);
+    // A row with a name but no email adds someone without email; admins book their time off.
+    if (!email && !row.name) return fail("noEmail");
+    if (email && !isEmail(email)) return fail("badEmail", email);
+    if (email.endsWith(".invalid")) return fail("sampleEmail", email);
+    const key = email || `name:${norm(row.name ?? "")}`;
+    if (seen.has(key)) return fail("duplicate", email || (row.name ?? ""));
+    seen.add(key);
 
     const allowance = parseAllowance(allowanceCell);
     if (allowance === "bad") return fail("allowance", allowanceCell);
@@ -320,7 +323,9 @@ export function parsePeople(
 
 export type TimeOffRow = {
   line: number;
+  /** "" when the row names someone who was added without email. */
   email: string;
+  name: string;
   start: ISODate;
   end: ISODate;
   startPart: "FULL" | "PM";
@@ -340,20 +345,21 @@ const FULL = ["full", "fullday", "ganztag", "ganztags", "ganz", ""].map(norm);
 export function parseTimeOff(text: string): TimeOffRow[] {
   const table = parseTable(text);
   if (table.length === 0) return [];
-  const fields = ["email", "from", "to", "type", "half"] as const;
+  const fields = ["email", "name", "from", "to", "type", "half"] as const;
   const header = mapHeader(table[0], fields);
   const body = header ? table.slice(1) : table;
   const firstLine = header ? 2 : 1;
 
   return body.map((cells, i): TimeOffRow => {
     let emailCell: string;
+    let nameCell = "";
     let fromCell: string;
     let toCell: string;
     let typeCell = "";
     let halfCell = "";
     if (header) {
       const get = (f: Field) => (header[f] !== undefined ? (cells[header[f]!] ?? "").trim() : "");
-      [emailCell, fromCell, toCell, typeCell, halfCell] = [get("email"), get("from"), get("to"), get("type"), get("half")];
+      [emailCell, nameCell, fromCell, toCell, typeCell, halfCell] = [get("email"), get("name"), get("from"), get("to"), get("type"), get("half")];
     } else {
       emailCell = cells.find((c) => c.includes("@")) ?? "";
       const dates = cells.filter((c) => c && !c.includes("@") && parseDateCell(c) !== null && parseDateCell(c) !== "bad");
@@ -363,13 +369,13 @@ export function parseTimeOff(text: string): TimeOffRow[] {
       halfCell = words.find((c) => AFTERNOON.includes(norm(c)) || MORNING.includes(norm(c))) ?? "";
     }
     const email = splitAddress(emailCell).email;
-    const row: TimeOffRow = { line: firstLine + i, email, start: "", end: "", startPart: "FULL", endPart: "FULL", type: "VACATION" };
+    const row: TimeOffRow = { line: firstLine + i, email, name: nameCell, start: "", end: "", startPart: "FULL", endPart: "FULL", type: "VACATION" };
     const fail = (code: ImportErrorCode, value?: string) => {
       row.error = { code, value };
       return row;
     };
-    if (!email) return fail("noEmail");
-    if (!isEmail(email)) return fail("badEmail", email);
+    if (!email && !nameCell) return fail("noEmail");
+    if (email && !isEmail(email)) return fail("badEmail", email);
 
     const start = parseDateCell(fromCell);
     if (start === null) return fail("noStart");
