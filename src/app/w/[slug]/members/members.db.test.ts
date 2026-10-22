@@ -3,6 +3,7 @@ import { createBooking } from "@/lib/bookings";
 import { todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
+import { acceptInvitation } from "@/lib/invitations";
 import { hasNoEmail } from "@/lib/no-email";
 import { messagesFor } from "@/lib/i18n";
 import { requireAdmin } from "@/lib/session";
@@ -19,6 +20,14 @@ async function signedInAsAdmin(team: Team) {
   const workspace = await db.workspace.findUniqueOrThrow({ where: { id: team.workspace.id }, include: { settings: true } });
   const membership = await db.membership.findUniqueOrThrow({ where: { id: team.admin.id } });
   vi.mocked(requireAdmin).mockResolvedValue({ user: { id: team.admin.user.id, email: team.admin.user.email, name: "Admin" }, membership: { ...membership, workspace }, workspace });
+}
+
+/** The invitation link's token from the last email sent to this address. */
+function inviteToken(email: string) {
+  const mail = vi.mocked(sendEmail).mock.calls.findLast(([m]) => m.to === email);
+  const token = mail?.[0].text.match(/\/invite\/([\w-]+)/)?.[1];
+  if (!token) throw new Error(`no invitation sent to ${email}`);
+  return token;
 }
 
 function form(fields: Record<string, string>) {
@@ -130,7 +139,35 @@ describe("people without an email address", () => {
     expect(sendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: email }));
   });
 
-  it("move onto an account that already exists elsewhere, keeping their bookings", async () => {
+  it("only join an account that already exists elsewhere once it accepts, keeping their bookings", async () => {
+    const team = await makeWorkspace();
+    await signedInAsAdmin(team);
+    const maria = await addMaria(team);
+    await db.booking.create({
+      data: { workspaceId: team.workspace.id, membershipId: maria.id, createdById: team.admin.user.id, type: "VACATION", status: "APPROVED", startDate: new Date("2030-03-04"), endDate: new Date("2030-03-04"), daysCount: 1 },
+    });
+    const elsewhere = await makeUser("");
+    vi.mocked(sendEmail).mockClear();
+
+    expect(await updateMemberAction(team.workspace.slug, maria.id, {}, form({ role: "MEMBER", allowance: "20", email: elsewhere.email }))).toEqual({
+      ok: t.noEmail.invitedExisting(elsewhere.email),
+    });
+    // Nothing moved yet: no membership for the account, the placeholder is untouched.
+    expect(await db.membership.findFirst({ where: { workspaceId: team.workspace.id, userId: elsewhere.id } })).toBeNull();
+    expect((await db.membership.findUniqueOrThrow({ where: { id: maria.id } })).userId).toBe(maria.userId);
+    const invitation = await db.invitation.findFirstOrThrow({ where: { workspaceId: team.workspace.id, email: elsewhere.email } });
+    expect(invitation.membershipId).toBe(maria.id);
+
+    const token = inviteToken(elsewhere.email);
+    expect(await acceptInvitation(token, { id: elsewhere.id, email: elsewhere.email })).toBe(team.workspace.slug);
+    const moved = await db.membership.findUniqueOrThrow({ where: { id: maria.id }, include: { bookings: true } });
+    expect(moved.userId).toBe(elsewhere.id);
+    expect(moved.bookings).toHaveLength(1);
+    expect(await db.user.findUnique({ where: { id: maria.userId } })).toBeNull();
+    expect((await db.user.findUniqueOrThrow({ where: { id: elsewhere.id } })).name).toBe("Maria Schulz");
+  });
+
+  it("bring their bookings along when the account joined meanwhile through another invitation", async () => {
     const team = await makeWorkspace();
     await signedInAsAdmin(team);
     const maria = await addMaria(team);
@@ -138,12 +175,25 @@ describe("people without an email address", () => {
       data: { workspaceId: team.workspace.id, membershipId: maria.id, createdById: team.admin.user.id, type: "VACATION", status: "APPROVED", startDate: new Date("2030-03-04"), endDate: new Date("2030-03-04"), daysCount: 1 },
     });
     const elsewhere = await makeUser("Maria");
-
+    vi.mocked(sendEmail).mockClear();
     await updateMemberAction(team.workspace.slug, maria.id, {}, form({ role: "MEMBER", allowance: "20", email: elsewhere.email }));
-    const moved = await db.membership.findUniqueOrThrow({ where: { id: maria.id }, include: { bookings: true } });
-    expect(moved.userId).toBe(elsewhere.id);
-    expect(moved.bookings).toHaveLength(1);
-    expect(await db.user.findUnique({ where: { id: maria.userId } })).toBeNull();
+    const token = inviteToken(elsewhere.email);
+    const joined = await db.membership.create({ data: { workspaceId: team.workspace.id, userId: elsewhere.id } });
+
+    await acceptInvitation(token, { id: elsewhere.id, email: elsewhere.email });
+    expect(await db.booking.count({ where: { membershipId: joined.id } })).toBe(1);
+    expect(await db.membership.findUnique({ where: { id: maria.id } })).toBeNull();
+    expect((await db.invitation.findFirstOrThrow({ where: { email: elsewhere.email } })).acceptedAt).not.toBeNull();
+  });
+
+  it("can't be taken over through an invitation once removed", async () => {
+    const team = await makeWorkspace();
+    await signedInAsAdmin(team);
+    const maria = await addMaria(team);
+    const elsewhere = await makeUser("Maria");
+    await updateMemberAction(team.workspace.slug, maria.id, {}, form({ role: "MEMBER", allowance: "20", email: elsewhere.email }));
+    await removeMemberAction(team.workspace.slug, maria.id);
+    expect((await db.invitation.findFirstOrThrow({ where: { email: elsewhere.email } })).revokedAt).not.toBeNull();
   });
 
   it("can't take the address of someone already in the team", async () => {

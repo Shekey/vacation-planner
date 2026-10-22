@@ -7,6 +7,8 @@ type Email = { to: string | string[]; subject: string; text: string };
 
 export type SendResult = { ok: true } | { ok: false; error: string };
 
+const SEND_TIMEOUT_MS = 8000;
+
 const TEST_SENDER = "Vacation Planner <onboarding@resend.dev>";
 
 /** The From address for every email, including Auth.js magic links. */
@@ -39,6 +41,8 @@ export async function sendEmail({ to, subject, text }: Email): Promise<SendResul
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ from: emailFrom(), to: recipients, subject, text }),
+      // A stalled Resend must not hang the request until the platform kills it.
+      signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
     });
     if (res.ok) return { ok: true };
     const body = await res.text();

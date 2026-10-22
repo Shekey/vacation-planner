@@ -33,6 +33,10 @@ The app reports errors to **Sentry**, counts visits with **PostHog**, and has a 
 
 **Legal:** the privacy policy (`/datenschutz`) now describes both tools, and Sentry and PostHog are in the subprocessor list (PostHog only in the privacy policy, not the customer DPA, because it never sees employee data). "Cookieless" means no consent banner is needed under § 25 TDDDG, but GDPR still applies: the legal basis is legitimate interest (Art. 6(1)(f)). **Show your lawyer the new paragraphs, especially the session replay on public pages and whether the Sentry and PostHog entries and the regions are right**; I couldn't verify the providers' current data-centre locations and contract terms from here.
 
+### Backups (about 30 minutes, then a restore drill)
+
+A GitHub Action makes a nightly encrypted copy of the database in an EU storage bucket, outside Neon, and checks every day that the newest copy is less than 26 hours old. It needs you for things only an owner can do: a Neon plan with 7 or more days of history, the bucket and its keys as GitHub secrets, and an `age` key pair whose private half stays offline with you. Step by step, plus the restore drill and what to do when something goes wrong: [`docs/backups.md`](docs/backups.md). Once the bucket is chosen, add its provider to the subprocessor list (`src/lib/legal.ts`) and the backup to the DPA's security measures, and show both to your lawyer.
+
 ### Beta mode (free beta) and how to end it
 
 The app starts in **beta mode**: `NEXT_PUBLIC_ENABLE_BETA_MODE` is unset or anything except `false`. In beta mode:
@@ -83,7 +87,7 @@ There is now an operator area at `/admin` for you and your team. It lists all wo
 Customers can now undo their own mistakes: bring back a removed person (with their cancelled time off), undo a cancelled booking, and restore a deleted workspace, each for 30 days. Admins also have an *Activity* page (who removed, cancelled, approved or deleted what, kept 12 months). The database change runs by itself on the next deploy. What you must do:
 
 1. **Check the backup window of your Neon plan** (Neon → *Settings* → *Storage* / *Restore window*). The free plan keeps only a very short history. Pick a plan with at least 7 days, and make the privacy text and DPA ("backups … 30 days") match what you really have.
-2. **Keep your own copy of the database** in separate storage, e.g. a weekly `pg_dump "$DATABASE_URL" > backup.sql` saved to a cloud drive. Neon's restore brings back the whole database at once, so it can't restore a single customer's workspace; it is your safety net for a disaster, not for customers' mistakes.
+2. **Keep your own copy of the database**: set up the nightly encrypted backup in [`docs/backups.md`](docs/backups.md). Neon's restore brings back the whole database at once, so it can't restore a single customer's workspace; it is your safety net for a disaster, not for customers' mistakes.
 3. Show your lawyer the new *Activity log* paragraph in `/datenschutz` (legal basis, 12 months, names of the people involved) and the 30-day restore wording in the privacy text and `/avv`.
 4. Try it in a test workspace: remove a person and restore them, cancel a booking and undo it, delete the workspace and restore it from the workspace list.
 
@@ -177,7 +181,7 @@ Without `AUTH_RESEND_KEY`, sign-in links are printed to the dev server console i
 
 ## Deploy on Vercel
 
-1. **Import the repo** at vercel.com/new and pick `Shekey/vacation-planner`. The framework is detected; leave build settings as they are. The `vercel-build` script runs database migrations before every build. The first deploy fails with "No database URL is set" because there is no database yet; that is expected. Preview deploys never migrate, because they normally share the production database: a migration in an unmerged pull request must not change it. A preview of a pull request with a new migration runs against the old schema, so pages that need the new columns fail there until it is merged; to try migrations on previews, give Preview its own database (a Neon branch) and set `MIGRATE_ON_PREVIEW=1` for Preview only.
+1. **Import the repo** at vercel.com/new and pick `Shekey/vacation-planner`. The framework is detected; leave build settings as they are. The `vercel-build` script builds the app and then runs database migrations, so a failed build never touches the database. The first deploy fails with "No database URL is set" because there is no database yet; that is expected. Preview deploys never migrate, because they normally share the production database: a migration in an unmerged pull request must not change it. A preview of a pull request with a new migration runs against the old schema, so pages that need the new columns fail there until it is merged; to try migrations on previews, give Preview its own database (a Neon branch) and set `MIGRATE_ON_PREVIEW=1` for Preview only.
 2. **Add a database**: in the Vercel project, open *Storage* → *Create Database* → *Neon* (Postgres) and connect it to the project. Tick all environments (Development, Preview, Production). This sets `DATABASE_URL` and `DATABASE_URL_UNPOOLED` (or `POSTGRES_URL` and `POSTGRES_URL_NON_POOLING`, both work) for you. Leave the custom prefix empty.
 3. **Set environment variables** (*Settings* → *Environment Variables*):
    | Name | Value |
@@ -222,6 +226,19 @@ Without a verified domain, Resend only delivers to the email address of your Res
 | `npm run test:db` | Tests against a real Postgres (`*.db.test.ts`: bookings, approvals, allowance and carry-over, members, invitations, Stripe sync). Needs `DATABASE_URL` pointing at a throwaway database with migrations applied; CI runs them on every PR |
 | `npm run db:migrate` | Create/apply migrations in development |
 | `npm run db:deploy` | Apply migrations in CI/production |
+
+## Database changes
+
+The old deploy keeps serving requests while a new one builds and migrates, and a deploy can be rolled back in Vercel without rolling back the database. So every migration must work with the code before it and after it (expand, then contract):
+
+1. **Expand** (one PR): add the new column or table, nullable or with a default; the code writes both and reads the new one. Copy old data over in the migration if needed.
+2. **Contract** (a later PR, after the first is live): drop or rename the old column or table.
+
+Never rename or drop in the same PR that stops using the column. A rename is an add, a copy and a later drop. Migrations that are already merged are never edited; add a new one.
+
+The *Migrations* check (`scripts/check-migrations.mjs`) fails a PR whose new migrations contain `DROP COLUMN`, `DROP TABLE` or `RENAME`, or that changes or removes an existing migration. For the contract PR, add the label `breaking-migration`.
+
+To try a migration on real-shaped data before it reaches production, give Vercel's Preview environment its own Neon branch and set `MIGRATE_ON_PREVIEW=1` for Preview only (see Deploy above). Backups and restore: [`docs/backups.md`](docs/backups.md).
 
 ## What's in it
 
