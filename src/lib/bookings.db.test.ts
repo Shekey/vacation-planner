@@ -162,7 +162,7 @@ describe("cancel and restore", () => {
 });
 
 describe("allowanceSummary", () => {
-  const summary = (team: Team, today: string, membership = team.member) =>
+  const summary = (team: Team, today: string, membership: Team["admin"] | Team["member"] = team.member) =>
     allowanceSummary(membership, team.settings, 2030, new Set(), today);
 
   it("counts approved and pending vacation, not other leave", async () => {
