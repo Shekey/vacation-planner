@@ -9,6 +9,7 @@ import { approveAllPending, keepLastYearsAllowance } from "@/lib/bookings";
 import { todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { recordAudit } from "@/lib/audit";
+import { isPlainName } from "@/lib/mail-limits";
 import { postToChannels, type ChatChannel } from "@/lib/notify";
 import { requireAdmin, settingsOf } from "@/lib/session";
 import { isSlackWebhookUrl } from "@/lib/slack";
@@ -19,7 +20,7 @@ import { getMessages } from "@/lib/i18n/server";
 
 function settingsSchema(t: Messages["settings"]) {
   return z.object({
-    name: z.string().trim().min(2, t.errors.nameLength).max(60),
+    name: z.string().trim().min(2, t.errors.nameLength).max(60).refine(isPlainName, t.errors.nameLink),
     timezone: z.string().refine((tz) => tz === "UTC" || Intl.supportedValuesOf("timeZone").includes(tz), t.errors.timezone),
     defaultAllowance: z
       .string()

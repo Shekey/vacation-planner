@@ -52,6 +52,7 @@ export const members = defineMessages({
       emailFor: (who: string) => `Email address for ${who}`,
       emailHint: "Once you add it, they get an email telling them where to sign in. Everything booked so far stays.",
       emailAdded: (email: string) => `Saved. ${email} got an email telling them where to sign in.`,
+      emailAddedNoMail: (email: string) => `Saved. Today's limit for emails to new people is used up, so ${email} didn't get an email. Tell them to sign in with this address.`,
       errors: {
         name: "Enter the person's name.",
         nameLong: "That name is too long.",
@@ -89,6 +90,8 @@ export const members = defineMessages({
       invalidEmail: (emails: string) => `Not a valid email: ${emails}`,
       noEmail: "Enter at least one email.",
       tooMany: "Invite at most 50 people at a time.",
+      mailLimit: (left: number, limit: number) =>
+        `To protect everyone's sign-in emails, a workspace can email at most ${limit} new people per day. ${left === 0 ? "Today's emails are used up" : `${left} more can go out today`}. Try again tomorrow, or write to us if you need more.`,
       planLimit: (plan: string, max: number, room: number, open: number) =>
         `${plan} covers up to ${max} people. You have room for ${room} more${open ? ` (counting ${open} open invitation${open === 1 ? "" : "s"})` : ""}. Upgrade under Billing to invite more.`,
       emailFailedTo: (emails: string, error: string) => `The email didn't go out to ${emails}: ${error}`,
@@ -168,6 +171,7 @@ export const members = defineMessages({
       emailFor: (who: string) => `E-Mail-Adresse für ${who}`,
       emailHint: "Sobald du sie einträgst, bekommt die Person eine E-Mail, wo sie sich anmelden kann. Alles bisher Gebuchte bleibt.",
       emailAdded: (email: string) => `Gespeichert. ${email} hat eine E-Mail bekommen, wo die Anmeldung geht.`,
+      emailAddedNoMail: (email: string) => `Gespeichert. Das Tageslimit für E-Mails an neue Leute ist erreicht, deshalb hat ${email} keine E-Mail bekommen. Sag bitte Bescheid, dass die Anmeldung mit dieser Adresse geht.`,
       errors: {
         name: "Gib den Namen der Person ein.",
         nameLong: "Der Name ist zu lang.",
@@ -205,6 +209,8 @@ export const members = defineMessages({
       invalidEmail: (emails: string) => `Keine gültige E-Mail-Adresse: ${emails}`,
       noEmail: "Gib mindestens eine E-Mail-Adresse ein.",
       tooMany: "Lade höchstens 50 Leute auf einmal ein.",
+      mailLimit: (left: number, limit: number) =>
+        `Damit die Anmelde-E-Mails bei allen ankommen, kann ein Workspace pro Tag höchstens ${limit} neue Leute anschreiben. ${left === 0 ? "Für heute ist das Limit erreicht" : `Heute gehen noch ${left} E-Mails raus`}. Versuche es morgen noch einmal oder schreib uns, wenn du mehr brauchst.`,
       planLimit: (plan: string, max: number, room: number, open: number) =>
         `${plan === "Trial" ? "Die Testphase" : `Der Plan ${plan}`} umfasst bis zu ${max} Personen. Du hast noch Platz für ${room}${open ? ` (inklusive ${open} offener Einladung${open === 1 ? "" : "en"})` : ""}. Wechsle unter Abrechnung auf einen größeren Plan, um mehr Leute einzuladen.`,
       emailFailedTo: (emails: string, error: string) => `Die E-Mail an ${emails} wurde nicht verschickt: ${error}`,

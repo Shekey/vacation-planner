@@ -3,6 +3,7 @@ import { countDays, validateSpan } from "@/lib/booking-days";
 import { ACTIVE_STATUSES, isOverlapError, loadHolidays, regionOf, rulesFor, type Settings } from "@/lib/bookings";
 import { fromISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
+import { assertColdMailRoom, MailLimitError, recordColdMail } from "@/lib/mail-limits";
 import { sendEmail } from "@/lib/email";
 import { regionsOf } from "@/lib/holiday-regions";
 import { isLocale, messagesFor, type Locale } from "@/lib/i18n";
@@ -97,12 +98,20 @@ export async function applyPeople(
   actor: Actor,
   text: string,
   opts: { sendWelcome: boolean; origin: string },
-): Promise<PeopleResult | { error: "limit" | "tooMany" | "nothing" }> {
+): Promise<PeopleResult | { error: "limit" | "tooMany" | "nothing" } | { error: "mailLimit"; left: number }> {
   const plan = await planPeople(workspace, settings, text);
   if (plan.tooMany) return { error: "tooMany" };
   if (!plan.room.fits) return { error: "limit" };
   const fresh = plan.rows.filter((r) => r.status === "new");
   if (fresh.length === 0) return { error: "nothing" };
+  if (opts.sendWelcome) {
+    try {
+      await assertColdMailRoom(workspace.id, fresh.filter((r) => r.email).length);
+    } catch (e) {
+      if (e instanceof MailLimitError) return { error: "mailLimit", left: e.left };
+      throw e;
+    }
+  }
 
   const defaultAllowance = workspace.settings?.defaultAllowanceDays == null ? null : Number(workspace.settings.defaultAllowanceDays);
   const year = Number(todayIn(workspace.timezone).slice(0, 4));
@@ -157,6 +166,7 @@ export async function applyPeople(
       if (sent.ok) emailed++;
       else emailFailed++;
     }
+    await recordColdMail(workspace.id, users.length);
   }
   return { created: fresh.length, emailed, emailFailed };
 }

@@ -130,6 +130,7 @@ model Workspace {
   bookings    Booking[]
   holidays    Holiday[]
   auditEvents AuditEvent[]
+  coldMails   ColdMail[]
 }
 
 // Days off for everyone; they don't count against allowances.
@@ -362,6 +363,18 @@ model AuditEvent {
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   actor     User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+}
+
+// One row per email sent to someone who hasn't asked for it: an invitation or a "here is where to sign in" mail from an
+// admin. Counted per workspace per day (src/lib/mail-limits.ts) so a new account can't use us to mail strangers. No addresses stored.
+model ColdMail {
+  id          String   @id @default(cuid())
+  workspaceId String
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, createdAt])
 }

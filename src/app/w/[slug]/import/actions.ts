@@ -35,6 +35,7 @@ export async function applyImportAction(slug: string, kind: ImportKind, text: st
     if ("error" in result) {
       if (result.error === "tooMany") return { error: t.errors.tooMany(MAX_IMPORT_ROWS) };
       if (result.error === "nothing") return { error: t.doneNothing };
+      if (result.error === "mailLimit") return { error: t.errors.mailLimit(result.left) };
       const plan = await planPeople(workspace, settings, text);
       const access = accessOf(workspace);
       const name = access.kind === "trial" ? (await getMessages()).errors.trial : access.name;

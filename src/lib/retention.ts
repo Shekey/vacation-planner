@@ -22,7 +22,7 @@ export async function purgeOldData(now = new Date()) {
   const expired = await db.workspace.findMany({ where: { deletedAt: { lt: restoreCutoff(now) } }, select: { id: true } });
   await removeSampleTeam(expired.map((w) => w.id));
 
-  const [workspaces, audit, bookings, members, invitations, sessions, tokens, sampleUsers] = await db.$transaction([
+  const [workspaces, audit, bookings, members, invitations, sessions, tokens, sampleUsers, coldMails] = await db.$transaction([
     db.workspace.deleteMany({ where: { id: { in: expired.map((w) => w.id) } } }),
     db.auditEvent.deleteMany({ where: { createdAt: { lt: auditCutoff(now) } } }),
     db.booking.deleteMany({ where: { OR: [{ endDate: { lt: cutoff } }, { type: "SICK", endDate: { lt: sickCutoff } }] } }),
@@ -36,6 +36,8 @@ export async function purgeOldData(now = new Date()) {
     db.verificationToken.deleteMany({ where: { expires: { lt: now } } }),
     // Sample people left without a workspace, e.g. after a purge of removed members.
     db.user.deleteMany({ where: { email: { endsWith: `@${SAMPLE_EMAIL_DOMAIN}` }, memberships: { none: {} } } }),
+    // Only the last day's count matters for the daily email limit (src/lib/mail-limits.ts).
+    db.coldMail.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 7 * 86_400_000) } } }),
   ]);
   return {
     workspaces: workspaces.count,
@@ -46,5 +48,6 @@ export async function purgeOldData(now = new Date()) {
     sessions: sessions.count,
     tokens: tokens.count,
     sampleUsers: sampleUsers.count,
+    coldMails: coldMails.count,
   };
 }

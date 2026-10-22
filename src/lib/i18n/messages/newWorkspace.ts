@@ -37,6 +37,9 @@ export const newWorkspace = defineMessages({
     betaNote: "Free during the beta, no card needed.",
     errors: {
       nameLength: "Name must be at least 2 characters",
+      nameLink: "The name can't contain a link or an email address",
+      tooManyToday: "You created several workspaces today already. Try again tomorrow, or use one of the ones you have.",
+      tooMany: (max: number) => `You can have up to ${max} workspaces. Delete one you don't use first.`,
       timezone: "Unknown timezone",
       allowance: "Enter a number of days between 0 and 365, in half days",
     },
@@ -77,6 +80,9 @@ export const newWorkspace = defineMessages({
     betaNote: "In der Beta kostenlos, ohne Kreditkarte.",
     errors: {
       nameLength: "Der Name muss mindestens 2 Zeichen lang sein",
+      nameLink: "Der Name darf keinen Link und keine E-Mail-Adresse enthalten",
+      tooManyToday: "Du hast heute schon mehrere Workspaces angelegt. Versuche es morgen noch einmal oder nutze einen vorhandenen.",
+      tooMany: (max: number) => `Du kannst bis zu ${max} Workspaces haben. Lösche zuerst einen, den du nicht brauchst.`,
       timezone: "Unbekannte Zeitzone",
       allowance: "Gib eine Zahl von 0 bis 365 Tagen ein, in halben Tagen",
     },
