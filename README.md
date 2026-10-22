@@ -33,6 +33,10 @@ The app reports errors to **Sentry**, counts visits with **PostHog**, and has a 
 
 **Legal:** the privacy policy (`/datenschutz`) now describes both tools, and Sentry and PostHog are in the subprocessor list (PostHog only in the privacy policy, not the customer DPA, because it never sees employee data). "Cookieless" means no consent banner is needed under § 25 TDDDG, but GDPR still applies: the legal basis is legitimate interest (Art. 6(1)(f)). **Show your lawyer the new paragraphs, especially the session replay on public pages and whether the Sentry and PostHog entries and the regions are right**; I couldn't verify the providers' current data-centre locations and contract terms from here.
 
+### Backups (about 30 minutes, then a restore drill)
+
+A GitHub Action makes a nightly encrypted copy of the database in an EU storage bucket, outside Neon, and checks every day that the newest copy is less than 26 hours old. It needs you for things only an owner can do: a Neon plan with 7 or more days of history, the bucket and its keys as GitHub secrets, and an `age` key pair whose private half stays offline with you. Step by step, plus the restore drill and what to do when something goes wrong: [`docs/backups.md`](docs/backups.md). Once the bucket is chosen, add its provider to the subprocessor list (`src/lib/legal.ts`) and the backup to the DPA's security measures, and show both to your lawyer.
+
 ### Beta mode (free beta) and how to end it
 
 The app starts in **beta mode**: `NEXT_PUBLIC_ENABLE_BETA_MODE` is unset or anything except `false`. In beta mode:
@@ -83,7 +87,7 @@ There is now an operator area at `/admin` for you and your team. It lists all wo
 Customers can now undo their own mistakes: bring back a removed person (with their cancelled time off), undo a cancelled booking, and restore a deleted workspace, each for 30 days. Admins also have an *Activity* page (who removed, cancelled, approved or deleted what, kept 12 months). The database change runs by itself on the next deploy. What you must do:
 
 1. **Check the backup window of your Neon plan** (Neon → *Settings* → *Storage* / *Restore window*). The free plan keeps only a very short history. Pick a plan with at least 7 days, and make the privacy text and DPA ("backups … 30 days") match what you really have.
-2. **Keep your own copy of the database** in separate storage, e.g. a weekly `pg_dump "$DATABASE_URL" > backup.sql` saved to a cloud drive. Neon's restore brings back the whole database at once, so it can't restore a single customer's workspace; it is your safety net for a disaster, not for customers' mistakes.
+2. **Keep your own copy of the database**: set up the nightly encrypted backup in [`docs/backups.md`](docs/backups.md). Neon's restore brings back the whole database at once, so it can't restore a single customer's workspace; it is your safety net for a disaster, not for customers' mistakes.
 3. Show your lawyer the new *Activity log* paragraph in `/datenschutz` (legal basis, 12 months, names of the people involved) and the 30-day restore wording in the privacy text and `/avv`.
 4. Try it in a test workspace: remove a person and restore them, cancel a booking and undo it, delete the workspace and restore it from the workspace list.
 
