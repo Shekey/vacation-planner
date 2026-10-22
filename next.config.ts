@@ -1,5 +1,6 @@
 import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
+import { domainRedirects } from "./src/lib/domain";
 import { isIndexingAllowed } from "./src/lib/indexing";
 
 /**
@@ -22,6 +23,10 @@ const noIndex = [{ key: "X-Robots-Tag", value: "noindex, nofollow" }];
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The old Vercel address and www go to the site origin once NEXT_PUBLIC_SITE_URL is set (src/lib/domain.ts).
+  redirects() {
+    return domainRedirects();
+  },
   headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

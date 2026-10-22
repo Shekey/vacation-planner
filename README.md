@@ -155,7 +155,7 @@ The privacy policy, the DPA (`/avv`) and the landing page already say data is st
 
 ### 4. Get a custom domain
 
-1. Buy a `.de` domain (e.g. at INWX, Hetzner or Strato), add it in Vercel → *Settings* → *Domains*, and set `AUTH_URL` to exactly that address.
+1. The domain is `urlaubflow.de`: add it and `www.urlaubflow.de` in Vercel → *Settings* → *Domains* (www redirects to the apex). When both show "Valid", set `NEXT_PUBLIC_SITE_URL=https://urlaubflow.de` for Production and redeploy: emails link to it and the old `vacation-planner-lyart.vercel.app` redirects there (calendar feeds, the Stripe webhook and crons keep working on the old address; `src/lib/domain.ts`). Leave `AUTH_URL` unset.
 2. Use the same domain for Resend (step 3) and for `LEGAL_EMAIL`.
 
 ### 5. Prepare for the first customers
@@ -196,7 +196,7 @@ Without `AUTH_RESEND_KEY`, sign-in links are printed to the dev server console i
    | `AUTH_RESEND_KEY` | API key from resend.com |
    | `EMAIL_FROM` | e.g. `Urlaubflow <hallo@urlaubflow.de>` (a domain verified in Resend) |
    | `CRON_SECRET` | any long random string (enables the weekday Teams/Slack digest and the emails to admins before their trial ends) |
-   Don't set `AUTH_URL` on Vercel unless you add a custom domain; then set it to exactly that address (e.g. `https://vacations.yourcompany.com`). A wrong `AUTH_URL` sends sign-in links and redirects to another site.
+   Don't set `AUTH_URL` on Vercel: sign-in works on whatever domain the request came in on. For the public domain set `NEXT_PUBLIC_SITE_URL` (e.g. `https://urlaubflow.de`) once the domain is live; it switches email links and turns on the redirect from the old Vercel address. A wrong value sends links to another site.
 4. **Redeploy** so the variables apply. Open the site, sign in with your email and create your workspace.
 
 ### Payments (Stripe)
