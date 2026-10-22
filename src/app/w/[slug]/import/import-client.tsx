@@ -8,15 +8,21 @@ import { formatNumber } from "@/lib/i18n";
 import { formatDate, formatRange } from "@/lib/dates";
 import type { ImportError } from "@/lib/import";
 import type { PeoplePlan, TimeOffPlan } from "@/lib/import-db";
+import { bestSheet, looksLikeOldExcel, looksLikeZip, readWorkbook, toTabText, type Sheet } from "@/lib/xlsx";
 import {
   applyImportAction,
   previewImportAction,
   type ImportKind,
 } from "./actions";
 
+/** Sheet names that fit each tab, so "Urlaub 2026" opens on the time-off tab and "Mitarbeiter" on the people tab. */
+const SHEET_FITS: Record<ImportKind, RegExp> = {
+  people: /mitarbeit|personal|team|people|staff|employee|person|namen|users|benutzer/i,
+  timeoff: /urlaub|abwesen|absence|leave|time ?off|vacation|ferien|holiday/i,
+};
+
 /** Excel's German CSV is Windows-1252 text, not UTF-8; try UTF-8 first and fall back so umlauts survive. */
-async function readFile(file: File): Promise<string> {
-  const bytes = await file.arrayBuffer();
+function decodeText(bytes: Uint8Array): string {
   try {
     return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
   } catch {
@@ -35,6 +41,8 @@ export function ImportClient({ slug }: { slug: string }) {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
   const [sendWelcome, setSendWelcome] = useState(true);
+  const [sheets, setSheets] = useState<Sheet[] | null>(null);
+  const [sheetIndex, setSheetIndex] = useState(0);
   const [pending, startTransition] = useTransition();
 
   const reset = () => {
@@ -43,6 +51,44 @@ export function ImportClient({ slug }: { slug: string }) {
     setError(null);
     setDone(null);
   };
+  const showSheet = (book: Sheet[], index: number) => {
+    setSheetIndex(index);
+    setText(toTabText(book[index].rows));
+  };
+
+  /** Switching tabs with a workbook open picks the sheet that fits, so people and then time off come from one file. */
+  const switchKind = (k: ImportKind) => {
+    setKind(k);
+    reset();
+    const fitting = sheets ? sheets.findIndex((s) => SHEET_FITS[k].test(s.name)) : -1;
+    if (sheets && fitting >= 0) showSheet(sheets, fitting);
+    else setText("");
+  };
+
+  const openFile = async (file: File) => {
+    reset();
+    setSheets(null);
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (looksLikeOldExcel(bytes)) {
+      setText("");
+      setError(t.oldExcel);
+      return;
+    }
+    if (!looksLikeZip(bytes)) {
+      setText(decodeText(bytes));
+      return;
+    }
+    try {
+      const book = (await readWorkbook(bytes)).filter((s) => s.rows.length > 0);
+      if (book.length === 0) throw new Error("empty workbook");
+      setSheets(book);
+      showSheet(book, bestSheet(book, SHEET_FITS[kind]));
+    } catch {
+      setText("");
+      setError(t.fileUnreadable);
+    }
+  };
+
   const rowError = (e: ImportError) =>
     (t.rowErrors[e.code] as (v?: string) => string)(e.value);
 
@@ -82,11 +128,7 @@ export function ImportClient({ slug }: { slug: string }) {
             key={k}
             role="tab"
             aria-selected={kind === k}
-            onClick={() => {
-              setKind(k);
-              reset();
-              setText("");
-            }}
+            onClick={() => switchKind(k)}
             className={`-mb-px rounded-t-lg border-b-2 px-3 py-2 text-sm font-medium ${
               kind === k
                 ? "border-primary text-primary"
@@ -126,19 +168,35 @@ export function ImportClient({ slug }: { slug: string }) {
         <label className="text-sm text-primary hover:underline">
           <input
             type="file"
-            accept=".csv,.txt,text/csv,text/plain"
+            accept=".xlsx,.csv,.txt,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             className="sr-only"
             onChange={async (e) => {
               const file = e.target.files?.[0];
-              if (file) {
-                setText(await readFile(file));
-                reset();
-              }
+              if (file) await openFile(file);
               e.target.value = "";
             }}
           />
           <span className="cursor-pointer">{t.chooseFile}</span>
         </label>
+        {sheets && sheets.length > 1 && (
+          <label className="flex items-center gap-2 text-sm">
+            <span>{t.sheet}</span>
+            <select
+              className="input w-auto py-1"
+              value={sheetIndex}
+              onChange={(e) => {
+                reset();
+                showSheet(sheets, Number(e.target.value));
+              }}
+            >
+              {sheets.map((s, i) => (
+                <option key={i} value={i}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <button
           className="btn-secondary"
           onClick={check}
@@ -159,10 +217,7 @@ export function ImportClient({ slug }: { slug: string }) {
               {kind === "people" ? (
                 <button
                   className="text-primary hover:underline"
-                  onClick={() => {
-                    setKind("timeoff");
-                    reset();
-                  }}
+                  onClick={() => switchKind("timeoff")}
                 >
                   {t.nextTimeOff}
                 </button>
@@ -216,7 +271,7 @@ export function ImportClient({ slug }: { slug: string }) {
                     {r.name ?? r.email}
                     {r.name && (
                       <span className="block text-xs text-muted">
-                        {r.email}
+                        {r.email || t.withoutEmail}
                       </span>
                     )}
                   </span>,
@@ -298,7 +353,7 @@ export function ImportClient({ slug }: { slug: string }) {
                 error: r.status === "error",
                 cells: [
                   String(r.line),
-                  r.who ?? r.email,
+                  r.who ?? (r.email || r.name),
                   r.start
                     ? `${formatRange(r.start, r.end, locale)}${r.type === "OTHER" ? ` · ${messages.common.type.OTHER}` : ""}${
                         r.startPart === "PM"

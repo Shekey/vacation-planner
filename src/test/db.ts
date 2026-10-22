@@ -9,6 +9,8 @@ const created: { workspaces: string[]; users: string[] } = { workspaces: [], use
 afterAll(async () => {
   await db.workspace.deleteMany({ where: { id: { in: created.workspaces } } });
   await db.user.deleteMany({ where: { id: { in: created.users } } });
+  // People added without email in these tests, now left without a workspace.
+  await db.user.deleteMany({ where: { email: { endsWith: "@no-email.invalid" }, memberships: { none: {} } } });
 });
 
 export async function makeUser(name: string) {

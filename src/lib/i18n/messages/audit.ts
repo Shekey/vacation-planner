@@ -16,6 +16,10 @@ export const audit = defineMessages({
           return `${actor} restored ${target}`;
         case "member.role_changed":
           return `${actor} made ${target} ${detail === "ADMIN" ? "an admin" : "a member"}`;
+        case "member.added_without_email":
+          return `${actor} added ${target} without an email address`;
+        case "member.email_added":
+          return `${actor} added an email address for ${target}`;
         case "booking.cancelled":
           return `${actor} cancelled the booking of ${target}${on}`;
         case "booking.restored":
@@ -66,6 +70,10 @@ export const audit = defineMessages({
           return `${actor} hat ${target} wiederhergestellt`;
         case "member.role_changed":
           return `${actor} hat ${target} zum ${detail === "ADMIN" ? "Admin" : "Mitglied"} gemacht`;
+        case "member.added_without_email":
+          return `${actor} hat ${target} ohne E-Mail-Adresse hinzugefügt`;
+        case "member.email_added":
+          return `${actor} hat eine E-Mail-Adresse für ${target} eingetragen`;
         case "booking.cancelled":
           return `${actor} hat die Buchung von ${target} storniert${on}`;
         case "booking.restored":

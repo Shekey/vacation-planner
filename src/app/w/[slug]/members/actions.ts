@@ -7,7 +7,12 @@ import { keepLastYearsAllowance } from "@/lib/bookings";
 import { fromISO, isISODate, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { isHolidayRegion } from "@/lib/holiday-regions";
+import { isLocale, messagesFor } from "@/lib/i18n";
 import { getMessages } from "@/lib/i18n/server";
+import { isEmail } from "@/lib/import";
+import { sendEmail } from "@/lib/email";
+import { isPlaceholderEmail } from "@/lib/no-email";
+import { addWithoutEmail, attachEmail } from "@/lib/no-email-members";
 import { inviteMembers, parseEmailList, resendInvitation } from "@/lib/invitations";
 import { recordAudit } from "@/lib/audit";
 import { accessOf } from "@/lib/plans";
@@ -63,6 +68,24 @@ export async function inviteAction(slug: string, _prev: ActionResult, formData: 
   return { ok: parts.join(" ") };
 }
 
+/** Adds someone who has no email address, by name; admins book their time off. */
+export async function addWithoutEmailAction(slug: string, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  const { ctx } = await inviteContext(slug);
+  const t = (await getMessages()).members;
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) return { error: t.noEmail.errors.name };
+  if (name.length > 100) return { error: t.noEmail.errors.nameLong };
+
+  const access = accessOf(ctx.workspace);
+  const members = await db.membership.count({ where: { workspaceId: ctx.workspace.id, removedAt: null, isSample: false } });
+  if (members + 1 > access.maxMembers) return { error: t.errors.planLimit(access.name, access.maxMembers, 0, 0) };
+
+  const allowance = ctx.workspace.settings?.defaultAllowanceDays;
+  await addWithoutEmail(ctx.workspace, ctx.user.id, { name, annualAllowanceDays: allowance == null ? null : Number(allowance) });
+  revalidatePath(`/w/${slug}`, "layout");
+  return { ok: t.noEmail.added(name) };
+}
+
 export async function resendInviteAction(slug: string, invitationId: string): Promise<ActionResult> {
   const { invite } = await inviteContext(slug);
   const t = (await getMessages()).members;
@@ -101,11 +124,12 @@ export async function updateMemberAction(
   const t = (await getMessages()).members;
   const member = await db.membership.findFirst({
     where: { id: membershipId, workspaceId: ctx.workspace.id, removedAt: null },
+    include: { user: { select: { email: true } } },
   });
   if (!member) return { error: t.errors.memberNotFound };
 
-  // Sample people can't sign in, so they never become admins.
-  const role = formData.get("role") === "ADMIN" && !member.isSample ? "ADMIN" : "MEMBER";
+  // Sample people and people without email can't sign in, so they never become admins.
+  const role = formData.get("role") === "ADMIN" && !isPlaceholderEmail(member.user.email) ? "ADMIN" : "MEMBER";
   if (role === "MEMBER" && member.role === "ADMIN" && (await wouldRemoveLastAdmin(ctx.workspace.id, member.id))) {
     return { error: t.errors.lastAdmin };
   }
@@ -141,6 +165,10 @@ export async function updateMemberAction(
     if (rawStart && !isISODate(rawStart)) return { error: t.errors.startDate };
     employmentStart = rawStart ? fromISO(rawStart) : null;
   }
+
+  // Only sent for someone added without email: their real address, once they have one.
+  const rawEmail = String(formData.get("email") ?? "").trim().toLowerCase();
+  if (rawEmail && (!isEmail(rawEmail) || isPlaceholderEmail(rawEmail))) return { error: t.errors.invalidEmail(rawEmail) };
 
   // Only sent from the "Work days · start date" section; empty means "calculate from bookings".
   const rawCarried = formData.get("carriedOver");
@@ -182,6 +210,21 @@ export async function updateMemberAction(
       targetLabel: who.name ?? who.email,
       detail: role,
     });
+  }
+  if (rawEmail) {
+    const attached = await attachEmail(member, rawEmail, ctx.user.id);
+    if ("error" in attached) return { error: t.noEmail.errors.inUse(rawEmail) };
+    // Tell them where to sign in, in their language if they already use the app, else the workspace's.
+    const user = await db.user.findUniqueOrThrow({ where: { email: rawEmail }, select: { locale: true } });
+    const locale = isLocale(user.locale) ? user.locale : isLocale(ctx.workspace.settings?.locale) ? ctx.workspace.settings.locale : "en";
+    const welcome = messagesFor(locale).email.welcome;
+    const sent = await sendEmail({
+      to: rawEmail,
+      subject: welcome.subject(ctx.workspace.name),
+      text: welcome.text(ctx.workspace.name, `${await appOrigin()}/sign-in`),
+    });
+    revalidatePath(`/w/${slug}`, "layout");
+    return sent.ok ? { ok: t.noEmail.emailAdded(rawEmail) } : { error: t.errors.emailFailedTo(rawEmail, sent.error) };
   }
   revalidatePath(`/w/${slug}`, "layout");
   return { ok: t.saved };
