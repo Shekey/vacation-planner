@@ -7,6 +7,7 @@ import { I18nProvider } from "@/components/i18n-provider";
 import { LanguageSwitch } from "@/components/language-switch";
 import { Avatar, LogoMark } from "@/components/ui";
 import { isBetaMode } from "@/lib/beta";
+import { isIndexingAllowed } from "@/lib/indexing";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import "./globals.css";
 
@@ -27,6 +28,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: { default: t.appName, template: `%s · ${t.appName}` },
     description: t.appDescription,
+    // Pages that set their own robots (operator pages) keep theirs; everything else follows the switch.
+    ...(isIndexingAllowed() ? {} : { robots: { index: false, follow: false } }),
   };
 }
 

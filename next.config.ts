@@ -1,5 +1,6 @@
 import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
+import { isIndexingAllowed } from "./src/lib/indexing";
 
 /**
  * Baseline browser protections for every response. There's deliberately no script CSP:
@@ -24,6 +25,8 @@ const nextConfig: NextConfig = {
   headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
+      // Until launch nothing is indexed (ALLOW_INDEXING, src/lib/indexing.ts).
+      ...(isIndexingAllowed() ? [] : [{ source: "/:path*", headers: noIndex }]),
       { source: "/invite/:path*", headers: noIndex },
       { source: "/sign-in/confirm", headers: noIndex },
       { source: "/api/:path*", headers: noIndex },
