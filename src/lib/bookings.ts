@@ -255,10 +255,12 @@ export async function cancelBooking(opts: { workspaceId: string; actor: Actor; b
     throw new BookingError(t.onlyOwnCancel);
   }
   // Remember what it was, so "Restore" puts it back as it was (approved stays approved).
-  await db.booking.update({
-    where: { id: booking.id },
+  // Only while it is still as read, so a second tap or an approval at the same moment can't apply on top.
+  const { count } = await db.booking.updateMany({
+    where: { id: booking.id, status: booking.status },
     data: { status: "CANCELLED", cancelledAt: new Date(), cancelledFrom: booking.status, cancelReason: null },
   });
+  if (count === 0) throw new BookingError(t.bookingNotFound);
   await recordAudit({
     workspaceId: opts.workspaceId,
     actorId: opts.actor.userId,
@@ -289,12 +291,13 @@ export async function restoreBooking(opts: {
   }
   if (!canRestore(booking.cancelledAt)) throw new BookingError(t.restoreExpired);
   await assertWithinPlan(opts.workspace.id);
-  await write(() =>
-    db.booking.update({
-      where: { id: booking.id },
+  const { count } = await write(() =>
+    db.booking.updateMany({
+      where: { id: booking.id, status: "CANCELLED" },
       data: { status: booking.cancelledFrom ?? initialStatus(opts.actor, opts.settings), cancelledAt: null, cancelledFrom: null },
     }),
   );
+  if (count === 0) throw new BookingError(t.bookingNotFound);
   await recordAudit({
     workspaceId: opts.workspace.id,
     actorId: opts.actor.userId,
@@ -321,8 +324,10 @@ export async function decideBooking(opts: {
   });
   if (!booking) throw new BookingError(t.alreadyHandled);
 
-  await db.booking.update({
-    where: { id: booking.id },
+  // Only a booking that is still pending: when two admins (or a double tap) decide at once, one wins and the
+  // other gets "already handled", so the person gets one email and the channel one post.
+  const { count } = await db.booking.updateMany({
+    where: { id: booking.id, status: "PENDING" },
     data: {
       status: opts.approve ? "APPROVED" : "REJECTED",
       decidedById: opts.actor.userId,
@@ -331,6 +336,7 @@ export async function decideBooking(opts: {
       decisionNote: null,
     },
   });
+  if (count === 0) throw new BookingError(t.alreadyHandled);
 
   const span = spanOf(booking);
   await recordAudit({

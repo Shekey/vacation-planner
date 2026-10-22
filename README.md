@@ -218,6 +218,7 @@ Without a verified domain, Resend only delivers to the email address of your Res
 |---|---|
 | `npm run dev` | Dev server |
 | `npm run lint` / `npm run typecheck` / `npm test` | Checks run in CI |
+| `npm run test:db` | Tests against a real Postgres (`*.db.test.ts`: bookings, approvals, allowance and carry-over, members, invitations, Stripe sync). Needs `DATABASE_URL` pointing at a throwaway database with migrations applied; CI runs them on every PR |
 | `npm run db:migrate` | Create/apply migrations in development |
 | `npm run db:deploy` | Apply migrations in CI/production |
 
