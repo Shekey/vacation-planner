@@ -1,0 +1,78 @@
+name: Database backup
+
+# Nightly encrypted copy of the production database in an EU storage bucket, outside Neon.
+# Setup and restore: docs/backups.md.
+
+on:
+  schedule:
+    - cron: "30 2 * * *" # backup
+    - cron: "0 12 * * *" # freshness check only
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: database-backup
+  cancel-in-progress: false
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: ${{ secrets.BACKUP_S3_REGION }}
+  # Empty for AWS S3; the provider's endpoint for any other S3-compatible storage.
+  S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+  BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+
+jobs:
+  backup:
+    if: github.event.schedule != '0 12 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check secrets
+        run: |
+          for name in DATABASE_URL BUCKET AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_DEFAULT_REGION; do
+            [ -n "${!name}" ] || { echo "::error::Secret for $name is missing (docs/backups.md, step 3)"; exit 1; }
+          done
+      # pg_dump must be at least the server's version, so install the client that matches Neon.
+      - name: Install pg_dump and age
+        run: |
+          major="$(psql "$DATABASE_URL" -Atc 'show server_version_num' | cut -c1-2)"
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common age
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq "postgresql-client-$major"
+          echo "/usr/lib/postgresql/$major/bin" >> "$GITHUB_PATH"
+      - name: Dump and encrypt
+        run: |
+          key="db/$(date -u +%Y-%m-%dT%H%MZ).dump.age"
+          echo "KEY=$key" >> "$GITHUB_ENV"
+          scripts/backup/dump.sh "$DATABASE_URL" .github/backup-recipients.txt "$RUNNER_TEMP/backup.dump.age"
+      # Old copies are removed by the bucket's 30-day lifecycle rule, so this key needs no delete right.
+      - name: Upload
+        run: aws s3 cp ${S3_ENDPOINT:+--endpoint-url "$S3_ENDPOINT"} --only-show-errors "$RUNNER_TEMP/backup.dump.age" "s3://$BUCKET/$KEY"
+
+  check:
+    needs: backup
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Newest backup is less than 26 hours old
+        run: |
+          newest="$(aws s3api list-objects-v2 ${S3_ENDPOINT:+--endpoint-url "$S3_ENDPOINT"} --bucket "$BUCKET" --prefix db/ --query 'max_by(Contents, &LastModified).[Key,LastModified,Size]' --output text || true)"
+          read -r key modified size <<< "$newest"
+          [ "$key" != "None" ] && [ -n "$key" ] || { echo "::error::No backup in the bucket"; exit 1; }
+          age_hours=$(( ( $(date -u +%s) - $(date -u -d "$modified" +%s) ) / 3600 ))
+          echo "Newest: $key, $size bytes, $age_hours hours old"
+          [ "$size" -gt 0 ] || { echo "::error::Newest backup is empty"; exit 1; }
+          [ "$age_hours" -lt 26 ] || { echo "::error::Newest backup is $age_hours hours old"; exit 1; }
+      # Optional heartbeat (Healthchecks.io or Better Stack): alerts when this stops arriving, e.g. if GitHub pauses the schedule.
+      - name: Heartbeat
+        env:
+          HEARTBEAT_URL: ${{ secrets.BACKUP_HEARTBEAT_URL }}
+        run: '[ -z "$HEARTBEAT_URL" ] || curl -fsS -m 10 --retry 3 "$HEARTBEAT_URL" > /dev/null'
