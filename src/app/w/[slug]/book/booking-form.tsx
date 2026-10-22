@@ -1,9 +1,17 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { submitKeepingInput, type ActionResult } from "@/components/action-form";
+import {
+  submitKeepingInput,
+  type ActionResult,
+} from "@/components/action-form";
 import { useI18n } from "@/components/i18n-provider";
-import { countDays, portionOn, validateSpan, type BookingSpan } from "@/lib/booking-days";
+import {
+  countDays,
+  portionOn,
+  validateSpan,
+  type BookingSpan,
+} from "@/lib/booking-days";
 import { eachDay, formatDate, formatRange, type ISODate } from "@/lib/dates";
 import { formatNumber } from "@/lib/i18n";
 import { understaffedDays } from "@/lib/staffing";
@@ -17,13 +25,22 @@ type Member = {
   /** Part-time work days (ISO weekdays); empty means the workspace default. */
   workDays: number[];
 };
-type TeamBooking = BookingSpan & { id: string; membershipId: string; name: string };
+type TeamBooking = BookingSpan & {
+  id: string;
+  membershipId: string;
+  name: string;
+};
 
 export type BookingFormProps = {
   action: (prev: ActionResult, formData: FormData) => Promise<ActionResult>;
   members: Member[];
   canChooseMember: boolean;
-  settings: { countWeekends: boolean; allowHalfDays: boolean; approvalsEnabled: boolean; minPeoplePresent: number | null };
+  settings: {
+    countWeekends: boolean;
+    allowHalfDays: boolean;
+    approvalsEnabled: boolean;
+    minPeoplePresent: number | null;
+  };
   /** Every region's holidays; only the booked person's apply. */
   holidays: { date: ISODate; name: string; region: string }[];
   memberCount: number;
@@ -53,13 +70,19 @@ export function BookingForm(props: BookingFormProps) {
   const fmt = (n: number) => formatNumber(n, locale);
   const [state, formAction, pending] = useActionState(props.action, {});
   const [membershipId, setMembershipId] = useState(initial.membershipId);
-  const [type, setType] = useState(initial.type === "SICK" ? "OTHER" : initial.type);
+  const [type, setType] = useState(
+    initial.type === "SICK" ? "OTHER" : initial.type,
+  );
   const [start, setStart] = useState(initial.start);
   const [end, setEnd] = useState(initial.end);
   const [startsPm, setStartsPm] = useState(initial.startPart === "PM");
   const [endsAm, setEndsAm] = useState(initial.endPart === "AM");
   const [singlePart, setSinglePart] = useState<SingleDayPart>(
-    initial.endPart === "AM" ? "MORNING" : initial.startPart === "PM" ? "AFTERNOON" : "FULL",
+    initial.endPart === "AM"
+      ? "MORNING"
+      : initial.startPart === "PM"
+        ? "AFTERNOON"
+        : "FULL",
   );
 
   const singleDay = start === end;
@@ -70,30 +93,51 @@ export function BookingForm(props: BookingFormProps) {
         startPart: singlePart === "AFTERNOON" ? "PM" : "FULL",
         endPart: singlePart === "MORNING" ? "AM" : "FULL",
       }
-    : { start, end, startPart: startsPm ? "PM" : "FULL", endPart: endsAm ? "AM" : "FULL" };
+    : {
+        start,
+        end,
+        startPart: startsPm ? "PM" : "FULL",
+        endPart: endsAm ? "AM" : "FULL",
+      };
 
   const member = props.members.find((m) => m.id === membershipId);
   const region = member?.region ?? "";
   const workDays = member?.workDays;
-  const holidays = useMemo(() => props.holidays.filter((h) => h.region === "" || h.region === region), [props.holidays, region]);
+  const holidays = useMemo(
+    () => props.holidays.filter((h) => h.region === "" || h.region === region),
+    [props.holidays, region],
+  );
   const rules = useMemo(
-    () => ({ countWeekends: settings.countWeekends, workDays, holidays: new Set(holidays.map((h) => h.date)) }),
+    () => ({
+      countWeekends: settings.countWeekends,
+      workDays,
+      holidays: new Set(holidays.map((h) => h.date)),
+    }),
     [settings.countWeekends, workDays, holidays],
   );
   const problemKey = start && end ? validateSpan(span, settings) : null;
   const problem = problemKey ? messages.errors[problemKey] : null;
   const days = start && end && !problem ? countDays(span, rules) : 0;
-  const holidaysInRange = start && end ? holidays.filter((h) => h.date >= start && h.date <= end) : [];
+  const holidaysInRange =
+    start && end
+      ? holidays.filter((h) => h.date >= start && h.date <= end)
+      : [];
   const year = props.currentYear;
-  const daysThisYear = start && end && !problem ? countDays(span, rules, { from: `${year}-01-01`, to: `${year}-12-31` }) : 0;
+  const daysThisYear =
+    start && end && !problem
+      ? countDays(span, rules, { from: `${year}-01-01`, to: `${year}-12-31` })
+      : 0;
   const remainingAfter =
     member?.allowance != null && type === "VACATION"
-      ? member.allowance - (member.takenThisYear - (initial.ownDaysThisYear ?? 0)) - daysThisYear
+      ? member.allowance -
+        (member.takenThisYear - (initial.ownDaysThisYear ?? 0)) -
+        daysThisYear
       : null;
 
   // Teammates who are off on any of the chosen days.
   const overlapping = useMemo(() => {
-    if (!start || !end || end < start || eachDay(start, end).length > 366) return [];
+    if (!start || !end || end < start || eachDay(start, end).length > 366)
+      return [];
     const days = eachDay(start, end);
     const names = new Map<string, string>();
     for (const b of props.team) {
@@ -110,7 +154,10 @@ export function BookingForm(props: BookingFormProps) {
     start && end && !problem && eachDay(start, end).length <= 366
       ? understaffedDays({
           candidate: { ...span, membershipId },
-          team: props.team.filter((b) => b.id !== initial.bookingId && b.membershipId !== membershipId),
+          team: props.team.filter(
+            (b) =>
+              b.id !== initial.bookingId && b.membershipId !== membershipId,
+          ),
           memberCount: props.memberCount,
           minPresent: settings.minPeoplePresent,
           rules,
@@ -118,14 +165,22 @@ export function BookingForm(props: BookingFormProps) {
       : [];
 
   return (
-    <form onSubmit={(e) => submitKeepingInput(e, formAction)} className="card max-w-xl space-y-5">
+    <form
+      onSubmit={(e) => submitKeepingInput(e, formAction)}
+      className="card max-w-xl space-y-5"
+    >
       <input type="hidden" name="startPart" value={span.startPart} />
       <input type="hidden" name="endPart" value={span.endPart} />
 
       {props.canChooseMember ? (
         <label className="block space-y-1">
           <span className="text-sm font-medium">{t.who}</span>
-          <select className="input" name="membershipId" value={membershipId} onChange={(e) => setMembershipId(e.target.value)}>
+          <select
+            className="input"
+            name="membershipId"
+            value={membershipId}
+            onChange={(e) => setMembershipId(e.target.value)}
+          >
             {props.members.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}
@@ -181,7 +236,15 @@ export function BookingForm(props: BookingFormProps) {
         </label>
         <label className="block space-y-1">
           <span className="text-sm font-medium">{t.to}</span>
-          <input className="input" type="date" name="end" required min={start} value={end} onChange={(e) => setEnd(e.target.value)} />
+          <input
+            className="input"
+            type="date"
+            name="end"
+            required
+            min={start}
+            value={end}
+            onChange={(e) => setEnd(e.target.value)}
+          />
         </label>
       </div>
 
@@ -199,48 +262,92 @@ export function BookingForm(props: BookingFormProps) {
                     : "border-border bg-surface hover:border-primary/50"
                 }`}
               >
-                <input type="radio" className="sr-only" checked={singlePart === p} onChange={() => setSinglePart(p)} />
-                {messages.common.dayPart[({ FULL: "FULL", MORNING: "AM", AFTERNOON: "PM" } as const)[p]]}
+                <input
+                  type="radio"
+                  className="sr-only"
+                  checked={singlePart === p}
+                  onChange={() => setSinglePart(p)}
+                />
+                {
+                  messages.common.dayPart[
+                    ({ FULL: "FULL", MORNING: "AM", AFTERNOON: "PM" } as const)[
+                      p
+                    ]
+                  ]
+                }
               </label>
             ))}
           </fieldset>
         ) : (
           <div className="flex flex-wrap gap-4 text-sm">
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={startsPm} onChange={(e) => setStartsPm(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={startsPm}
+                onChange={(e) => setStartsPm(e.target.checked)}
+              />
               {t.startsAfterLunch}
             </label>
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={endsAm} onChange={(e) => setEndsAm(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={endsAm}
+                onChange={(e) => setEndsAm(e.target.checked)}
+              />
               {t.endsAtLunch}
             </label>
           </div>
         ))}
 
-      <div className="space-y-1 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm" aria-live="polite">
+      <div
+        className="space-y-1 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm"
+        aria-live="polite"
+      >
         {problem ? (
-          <p className="text-red-600">{problem}</p>
+          <p className="text-red-600 dark:text-red-400">{problem}</p>
         ) : start && end ? (
           <>
             <p>
-              <span className="font-medium">{fmt(days)}</span> {t.dayUnit(days)}, {formatRange(start, end, locale)}
+              <span className="font-medium">{fmt(days)}</span> {t.dayUnit(days)}
+              , {formatRange(start, end, locale)}
               {workDays?.length
                 ? t.onlyWorkDays
-                : !settings.countWeekends && (holidaysInRange.length ? t.weekendsAndHolidaysNotCounted : t.weekendsNotCounted)}
-              {(settings.countWeekends || workDays?.length) && holidaysInRange.length > 0 ? t.holidaysNotCounted : null}
+                : !settings.countWeekends &&
+                  (holidaysInRange.length
+                    ? t.weekendsAndHolidaysNotCounted
+                    : t.weekendsNotCounted)}
+              {(settings.countWeekends || workDays?.length) &&
+              holidaysInRange.length > 0
+                ? t.holidaysNotCounted
+                : null}
             </p>
             {remainingAfter !== null && (
-              <p className={remainingAfter < 0 ? "text-red-600" : "opacity-70"}>
-                {remainingAfter < 0 ? t.overAllowance(fmt(-remainingAfter), year) : t.daysLeftAfter(fmt(remainingAfter), year)}
+              <p
+                className={
+                  remainingAfter < 0
+                    ? "text-red-600 dark:text-red-400"
+                    : "opacity-70"
+                }
+              >
+                {remainingAfter < 0
+                  ? t.overAllowance(fmt(-remainingAfter), year)
+                  : t.daysLeftAfter(fmt(remainingAfter), year)}
               </p>
             )}
             {holidaysInRange.length > 0 && (
               <p className="opacity-70">
-                {t.holidaysList(holidaysInRange.map((h) => `${h.name} (${formatDate(h.date, undefined, locale)})`).join(", "))}
+                {t.holidaysList(
+                  holidaysInRange
+                    .map(
+                      (h) =>
+                        `${h.name} (${formatDate(h.date, undefined, locale)})`,
+                    )
+                    .join(", "),
+                )}
               </p>
             )}
             {shortDays.length > 0 && (
-              <p className="text-red-600">
+              <p className="text-red-600 dark:text-red-400">
                 {t.understaffed(
                   shortDays[0].present,
                   props.memberCount,
@@ -253,7 +360,11 @@ export function BookingForm(props: BookingFormProps) {
                 )}
               </p>
             )}
-            {overlapping.length > 0 && <p className="text-amber-700 dark:text-amber-400">{t.alsoOff(overlapping.join(", "))}</p>}
+            {overlapping.length > 0 && (
+              <p className="text-amber-700 dark:text-amber-400">
+                {t.alsoOff(overlapping.join(", "))}
+              </p>
+            )}
             {willBePending && <p className="opacity-70">{t.needsApproval}</p>}
           </>
         ) : (
@@ -261,9 +372,20 @@ export function BookingForm(props: BookingFormProps) {
         )}
       </div>
 
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
-      <button className="btn" disabled={pending || Boolean(problem) || days === 0}>
-        {pending ? t.saving : initial.bookingId ? t.saveChanges : willBePending ? t.requestTimeOff : t.bookTimeOff}
+      {state.error && (
+        <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>
+      )}
+      <button
+        className="btn"
+        disabled={pending || Boolean(problem) || days === 0}
+      >
+        {pending
+          ? t.saving
+          : initial.bookingId
+            ? t.saveChanges
+            : willBePending
+              ? t.requestTimeOff
+              : t.bookTimeOff}
       </button>
     </form>
   );

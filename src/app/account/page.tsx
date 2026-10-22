@@ -11,7 +11,9 @@ export async function generateMetadata() {
   return { title: (await getMessages()).account.title };
 }
 
-export default async function AccountPage({ searchParams }: PageProps<"/account">) {
+export default async function AccountPage({
+  searchParams,
+}: PageProps<"/account">) {
   const { id } = await requireUser();
   const { next } = await searchParams;
   const [user, plan] = await Promise.all([
@@ -28,9 +30,15 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
 
   return (
     <div className="mx-auto max-w-md space-y-4">
-      <h1 className="text-xl font-semibold">{user.name ? t.heading : t.headingNoName}</h1>
+      <h1 className="text-xl font-semibold">
+        {user.name ? t.heading : t.headingNoName}
+      </h1>
       <ActionForm action={saveNameAction} className="space-y-3">
-        <input type="hidden" name="next" value={typeof next === "string" ? next : ""} />
+        <input
+          type="hidden"
+          name="next"
+          value={typeof next === "string" ? next : ""}
+        />
         <label className="block space-y-1">
           <span className="text-sm font-medium">{t.name}</span>
           <input
@@ -50,13 +58,27 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
 
       <section className="card space-y-2">
         <h2 className="font-medium">{t.language}</h2>
-        <form action={setLanguage} className="flex flex-wrap items-center gap-2">
+        <form
+          action={setLanguage}
+          className="flex flex-wrap items-center gap-2"
+        >
           {LOCALES.map((l) => (
-            <button key={l} name="locale" value={l} aria-pressed={l === saved} className={l === saved ? "btn" : "btn-secondary"}>
+            <button
+              key={l}
+              name="locale"
+              value={l}
+              aria-pressed={l === saved}
+              className={l === saved ? "btn" : "btn-secondary"}
+            >
               {LOCALE_NAMES[l]}
             </button>
           ))}
-          <button name="locale" value="system" aria-pressed={saved === null} className={saved === null ? "btn" : "btn-secondary"}>
+          <button
+            name="locale"
+            value="system"
+            aria-pressed={saved === null}
+            className={saved === null ? "btn" : "btn-secondary"}
+          >
             {t.languageSystem(LOCALE_NAMES[locale])}
           </button>
         </form>
@@ -68,16 +90,26 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           <section className="card space-y-2">
             <h2 className="font-medium">{t.yourData}</h2>
             <p className="text-sm opacity-70">{t.yourDataBody}</p>
-            <a href="/api/account/export" className="btn-secondary inline-block" download>
+            <a
+              href="/api/account/export"
+              className="btn-secondary inline-block"
+              download
+            >
               {t.download}
             </a>
           </section>
 
           <section className="card space-y-3 border-red-500/40">
-            <h2 className="font-medium text-red-600">{t.deleteHeading}</h2>
+            <h2 className="font-medium text-red-600 dark:text-red-400">
+              {t.deleteHeading}
+            </h2>
             <p className="text-sm opacity-70">
               {t.deleteBody}
-              {plan.alone.length > 0 && t.aloneIn(plan.alone.map((w) => w.name).join(", "), plan.alone.length)}
+              {plan.alone.length > 0 &&
+                t.aloneIn(
+                  plan.alone.map((w) => w.name).join(", "),
+                  plan.alone.length,
+                )}
             </p>
             {plan.blocked.length > 0 ? (
               <p className="text-sm">
@@ -85,7 +117,10 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
                 {plan.blocked.map((w, i) => (
                   <span key={w.slug}>
                     {i > 0 && ", "}
-                    <a className="text-primary hover:underline" href={`/w/${w.slug}/members`}>
+                    <a
+                      className="text-primary hover:underline"
+                      href={`/w/${w.slug}/members`}
+                    >
                       {w.name}
                     </a>
                   </span>
@@ -95,8 +130,16 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
             ) : (
               <ActionForm action={deleteAccountAction} className="space-y-3">
                 <label className="block space-y-1">
-                  <span className="text-sm font-medium">{t.typeToConfirm(user.email)}</span>
-                  <input name="confirmEmail" type="email" className="input" required autoComplete="off" />
+                  <span className="text-sm font-medium">
+                    {t.typeToConfirm(user.email)}
+                  </span>
+                  <input
+                    name="confirmEmail"
+                    type="email"
+                    className="input"
+                    required
+                    autoComplete="off"
+                  />
                 </label>
                 <button className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
                   {t.deleteButton}

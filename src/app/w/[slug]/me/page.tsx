@@ -20,7 +20,9 @@ export async function generateMetadata() {
   return { title: (await getMessages()).me.title };
 }
 
-export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me">) {
+export default async function MyTimeOffPage({
+  params,
+}: PageProps<"/w/[slug]/me">) {
   const { slug } = await params;
   const { workspace, membership } = await requireMembership(slug);
   const locale = await getLocale();
@@ -40,8 +42,12 @@ export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me"
       take: 100,
     }),
   ]);
-  const feedUrl = membership.calendarToken ? `${await appOrigin()}/api/calendar/${membership.calendarToken}.ics` : null;
-  const upcoming = bookings.filter((b) => b.endDate >= fromISO(today)).reverse();
+  const feedUrl = membership.calendarToken
+    ? `${await appOrigin()}/api/calendar/${membership.calendarToken}.ics`
+    : null;
+  const upcoming = bookings
+    .filter((b) => b.endDate >= fromISO(today))
+    .reverse();
   const past = bookings.filter((b) => b.endDate < fromISO(today));
 
   const row = (b: (typeof bookings)[number], editable: boolean) => {
@@ -49,32 +55,51 @@ export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me"
     const half = halfDayLabel(span, locale);
     const active = b.status === "PENDING" || b.status === "APPROVED";
     return (
-      <li key={b.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+      <li
+        key={b.id}
+        className="flex flex-wrap items-center justify-between gap-2 py-2"
+      >
         <div className="space-y-0.5">
           <div className="flex items-center gap-2">
             <TypeDot type={b.type} locale={locale} />
-            <span className="font-medium">{formatRange(span.start, span.end, locale)}</span>
+            <span className="font-medium">
+              {formatRange(span.start, span.end, locale)}
+            </span>
             <StatusBadge status={b.status} locale={locale} />
           </div>
           <div className="text-sm opacity-70">
-            {typeLabel(b.type, locale)} · {common.days(formatNumber(Number(b.daysCount), locale))}
+            {typeLabel(b.type, locale)} ·{" "}
+            {common.days(formatNumber(Number(b.daysCount), locale))}
             {half && ` · ${half}`}
             {b.note && ` · ${b.note}`}
             {b.decisionNote && ` · ${t.adminNote(b.decisionNote)}`}
           </div>
         </div>
-        {editable && b.status === "CANCELLED" && !b.cancelReason && canRestore(b.cancelledAt) && (
-          <ActionForm action={restoreBookingAction.bind(null, slug, b.id)}>
-            <button className="btn-secondary px-3 py-1 text-sm">{t.restore}</button>
-          </ActionForm>
-        )}
+        {editable &&
+          b.status === "CANCELLED" &&
+          !b.cancelReason &&
+          canRestore(b.cancelledAt) && (
+            <ActionForm action={restoreBookingAction.bind(null, slug, b.id)}>
+              <button className="btn-secondary px-3 py-1 text-sm">
+                {t.restore}
+              </button>
+            </ActionForm>
+          )}
         {editable && active && (
           <div className="flex items-center gap-3 text-sm">
-            <Link href={`/w/${slug}/book/${b.id}`} className="btn-secondary px-3 py-1">
+            <Link
+              href={`/w/${slug}/book/${b.id}`}
+              className="btn-secondary px-3 py-1"
+            >
               {t.change}
             </Link>
-            <ActionForm action={cancelBookingAction.bind(null, slug, b.id)} confirm={t.cancelConfirm}>
-              <button className="rounded-lg px-2 py-1 text-red-600 hover:bg-red-500/10">{t.cancel}</button>
+            <ActionForm
+              action={cancelBookingAction.bind(null, slug, b.id)}
+              confirm={t.cancelConfirm}
+            >
+              <button className="rounded-lg px-2 py-1 text-red-600 dark:text-red-400 hover:bg-red-500/10">
+                {t.cancel}
+              </button>
             </ActionForm>
           </div>
         )}
@@ -88,9 +113,15 @@ export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me"
         <AllowanceCard
           summary={summary}
           locale={locale}
-          editHref={membership.role === "ADMIN" ? `/w/${slug}/members#member-${membership.id}` : undefined}
+          editHref={
+            membership.role === "ADMIN"
+              ? `/w/${slug}/members#member-${membership.id}`
+              : undefined
+          }
         />
-        {(nextYear.used > 0 || nextYear.pending > 0) && <AllowanceCard summary={nextYear} locale={locale} />}
+        {(nextYear.used > 0 || nextYear.pending > 0) && (
+          <AllowanceCard summary={nextYear} locale={locale} />
+        )}
       </div>
 
       <section className="card space-y-2">
@@ -98,12 +129,17 @@ export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me"
         {upcoming.length === 0 ? (
           <EmptyState icon="🏝️">
             {t.nothingPlanned}{" "}
-            <Link href={`/w/${slug}/book`} className="font-medium text-primary hover:underline">
+            <Link
+              href={`/w/${slug}/book`}
+              className="font-medium text-primary hover:underline"
+            >
               {t.bookTimeOff}
             </Link>
           </EmptyState>
         ) : (
-          <ul className="divide-y divide-border">{upcoming.map((b) => row(b, true))}</ul>
+          <ul className="divide-y divide-border">
+            {upcoming.map((b) => row(b, true))}
+          </ul>
         )}
       </section>
 
@@ -114,16 +150,24 @@ export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me"
             <p className="text-sm opacity-70">{t.feedBody}</p>
             <CopyField value={feedUrl} />
             <div className="flex gap-4 text-sm">
-              <ActionForm action={resetCalendarFeedAction.bind(null, slug)} confirm={t.newLinkConfirm}>
+              <ActionForm
+                action={resetCalendarFeedAction.bind(null, slug)}
+                confirm={t.newLinkConfirm}
+              >
                 <button className="underline">{t.newLink}</button>
               </ActionForm>
               <ActionForm action={disableCalendarFeedAction.bind(null, slug)}>
-                <button className="text-red-600 underline">{t.turnOff}</button>
+                <button className="text-red-600 dark:text-red-400 underline">
+                  {t.turnOff}
+                </button>
               </ActionForm>
             </div>
           </>
         ) : (
-          <ActionForm action={resetCalendarFeedAction.bind(null, slug)} className="flex flex-wrap items-center gap-3">
+          <ActionForm
+            action={resetCalendarFeedAction.bind(null, slug)}
+            className="flex flex-wrap items-center gap-3"
+          >
             <p className="text-sm opacity-70">{t.feedPitch}</p>
             <button className="btn">{t.getLink}</button>
           </ActionForm>
@@ -133,7 +177,9 @@ export default async function MyTimeOffPage({ params }: PageProps<"/w/[slug]/me"
       {past.length > 0 && (
         <section className="card space-y-2">
           <h2 className="font-medium">{t.past}</h2>
-          <ul className="divide-y divide-border opacity-80">{past.map((b) => row(b, false))}</ul>
+          <ul className="divide-y divide-border opacity-80">
+            {past.map((b) => row(b, false))}
+          </ul>
         </section>
       )}
     </div>

@@ -11,8 +11,16 @@ import { getLocale, getMessages } from "@/lib/i18n/server";
 import "./globals.css";
 
 // Self-hosted at build time by next/font: visitors' browsers never contact Google.
-const display = Bricolage_Grotesque({ subsets: ["latin", "latin-ext"], variable: "--font-bricolage", display: "swap" });
-const hand = Caveat({ subsets: ["latin", "latin-ext"], variable: "--font-caveat", display: "swap" });
+const display = Bricolage_Grotesque({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-bricolage",
+  display: "swap",
+});
+const hand = Caveat({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-caveat",
+  display: "swap",
+});
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = (await getMessages()).common;
@@ -35,7 +43,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
   const t = (await getMessages()).common;
   return (
-    <html lang={locale} className={`h-full antialiased ${display.variable} ${hand.variable}`}>
+    <html
+      lang={locale}
+      className={`h-full antialiased ${display.variable} ${hand.variable}`}
+    >
       <body className="min-h-full flex flex-col">
         <I18nProvider locale={locale}>
           <Analytics />
@@ -47,13 +58,22 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           </a>
           <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
             <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-2.5">
-              <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
+              <Link
+                href="/"
+                aria-label={t.appName}
+                className="flex min-h-11 items-center gap-2 font-semibold tracking-tight"
+              >
                 <LogoMark />
                 {/* Signed in on a phone, the logo alone leaves room for the account and sign-out. */}
-                <span className={session?.user ? "hidden sm:inline" : ""}>{t.appName}</span>
+                <span className={session?.user ? "hidden sm:inline" : ""}>
+                  {t.appName}
+                </span>
               </Link>
               {!session?.user && (
-                <nav aria-label={t.productNav.label} className="hidden items-center gap-5 text-sm text-muted md:flex [&_a:hover]:text-foreground">
+                <nav
+                  aria-label={t.productNav.label}
+                  className="hidden items-center gap-5 text-sm text-muted md:flex [&_a:hover]:text-foreground"
+                >
                   <Link href="/#for-whom">{t.productNav.forWhom}</Link>
                   <Link href="/#features">{t.productNav.features}</Link>
                   <Link href="/#pricing">{t.productNav.pricing}</Link>
@@ -80,28 +100,41 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                       className="flex items-center gap-2 rounded-full py-0.5 pr-2 pl-0.5 hover:bg-black/5 dark:hover:bg-white/10"
                       title={t.yourProfile}
                     >
-                      <Avatar label={label} seed={session.user.email ?? label} />
-                      <span className="hidden max-w-48 truncate sm:inline">{label}</span>
+                      <Avatar
+                        label={label}
+                        seed={session.user.email ?? label}
+                      />
+                      <span className="hidden max-w-48 truncate sm:inline">
+                        {label}
+                      </span>
                     </Link>
-                    <button className="text-muted hover:text-foreground">{t.signOut}</button>
+                    <button className="min-h-11 px-1 text-muted hover:text-foreground">
+                      {t.signOut}
+                    </button>
                   </form>
                 )}
               </div>
             </div>
           </header>
-          <main id="main" tabIndex={-1} className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 outline-none sm:py-8">
+          <main
+            id="main"
+            tabIndex={-1}
+            className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 outline-none sm:py-8"
+          >
             {children}
           </main>
           <footer className="border-t border-border">
             <nav
               aria-label={t.legalNav}
-              className="mx-auto flex max-w-5xl flex-wrap gap-x-5 gap-y-1 px-4 py-4 text-sm text-muted [&_a:hover]:text-foreground [&_a:hover]:underline"
+              className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-5 px-4 py-2 text-sm text-muted [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_a:hover]:text-foreground [&_a:hover]:underline"
             >
               <Link href="/impressum">{t.footer.impressum}</Link>
               <Link href="/datenschutz">{t.footer.privacy}</Link>
               <Link href="/agb">{t.footer.terms}</Link>
               <Link href="/avv">{t.footer.dpa}</Link>
-              {isBetaMode() && <span className="basis-full text-xs">{t.footer.beta}</span>}
+              {isBetaMode() && (
+                <span className="basis-full text-xs">{t.footer.beta}</span>
+              )}
             </nav>
           </footer>
         </I18nProvider>
