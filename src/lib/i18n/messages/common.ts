@@ -30,6 +30,11 @@ export const common = defineMessages({
     today: "today",
     tomorrow: "tomorrow",
     inDays: (n: number) => `in ${n} days`,
+    alone: {
+      admin: "It's just you so far. Once your team is in, everyone's time off shows up here.",
+      invite: "Invite your team →",
+      member: "It's just you so far. Your colleagues show up here once an admin invites them.",
+    },
     notFound: {
       title: "Not found",
       body: "This page doesn't exist, or you don't have access to it.",
@@ -74,6 +79,11 @@ export const common = defineMessages({
     today: "heute",
     tomorrow: "morgen",
     inDays: (n: number) => `in ${n} Tagen`,
+    alone: {
+      admin: "Bisher bist nur du hier. Sobald dein Team dabei ist, siehst du hier die Abwesenheiten aller.",
+      invite: "Team einladen →",
+      member: "Bisher bist nur du hier. Dein Team erscheint hier, sobald ein Admin es einlädt.",
+    },
     notFound: {
       title: "Nicht gefunden",
       body: "Diese Seite gibt es nicht, oder du hast keinen Zugriff darauf.",
