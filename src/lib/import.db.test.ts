@@ -109,14 +109,14 @@ describe("welcome emails when importing people", () => {
   });
 
   it("stop the whole import when it would pass the daily limit for emails to new people, and work without the emails", async () => {
-    // On trial: room for 75 people, but not paying, so the new-workspace email limit applies.
-    const team = await makeWorkspace({ plan: "FREE", billingStatus: null, trialEndsAt: new Date(Date.now() + 10 * 86_400_000) });
+    const team = await makeWorkspace();
+    await db.coldMail.createMany({ data: Array.from({ length: 199 }, () => ({ workspaceId: team.workspace.id })) });
     const actor = { id: team.admin.user.id };
     const opts = { sendWelcome: true, origin: "https://app.test" };
-    const sheet21 = withEmails(21);
-    expect(await applyPeople(team.workspace, team.settings, actor, sheet21, opts)).toEqual({ error: "mailLimit", left: 20 });
+    const sheet = withEmails(2);
+    expect(await applyPeople(team.workspace, team.settings, actor, sheet, opts)).toEqual({ error: "mailLimit", left: 1 });
     expect(await db.membership.count({ where: { workspaceId: team.workspace.id } })).toBe(2);
 
-    expect(await applyPeople(team.workspace, team.settings, actor, sheet21, { ...opts, sendWelcome: false })).toMatchObject({ created: 21, emailed: 0 });
+    expect(await applyPeople(team.workspace, team.settings, actor, sheet, { ...opts, sendWelcome: false })).toMatchObject({ created: 2, emailed: 0 });
   });
 });

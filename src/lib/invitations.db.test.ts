@@ -62,31 +62,24 @@ describe("daily limit for emails to new people", () => {
   });
   const addresses = (n: number) => Array.from({ length: n }, (_, i) => `new-${i}-${randomUUID()}@test.invalid`);
 
-  it("lets a new workspace invite its first 20 people today and refuses the 21st before sending anything", async () => {
-    const team = await makeWorkspace({ plan: "FREE", billingStatus: null });
+  it("refuses an invitation that would pass 200 a day, before sending anything, and counts resends", async () => {
+    const team = await makeWorkspace();
+    await db.coldMail.createMany({ data: Array.from({ length: 199 }, () => ({ workspaceId: team.workspace.id })) });
     vi.mocked(sendEmail).mockClear();
-    await inviteMembers(addresses(20), "MEMBER", ctxOf(team));
-    expect(vi.mocked(sendEmail)).toHaveBeenCalledTimes(20);
-
-    vi.mocked(sendEmail).mockClear();
-    await expect(inviteMembers(addresses(1), "MEMBER", ctxOf(team))).rejects.toBeInstanceOf(MailLimitError);
+    await expect(inviteMembers(addresses(2), "MEMBER", ctxOf(team))).rejects.toBeInstanceOf(MailLimitError);
     expect(vi.mocked(sendEmail)).not.toHaveBeenCalled();
-    // Sending again by resend counts too.
+
+    await inviteMembers(addresses(1), "MEMBER", ctxOf(team));
+    expect(vi.mocked(sendEmail)).toHaveBeenCalledTimes(1);
     const open = await db.invitation.findFirstOrThrow({ where: { workspaceId: team.workspace.id } });
     await expect(resendInvitation(open.id, ctxOf(team))).rejects.toBeInstanceOf(MailLimitError);
   });
 
-  it("counts only the last 24 hours and allows more for an established or paying workspace", async () => {
-    const team = await makeWorkspace({ plan: "FREE", billingStatus: null });
+  it("counts only the last 24 hours", async () => {
+    const team = await makeWorkspace();
     await db.coldMail.createMany({
-      data: Array.from({ length: 20 }, () => ({ workspaceId: team.workspace.id, createdAt: new Date(Date.now() - 25 * 3_600_000) })),
+      data: Array.from({ length: 200 }, () => ({ workspaceId: team.workspace.id, createdAt: new Date(Date.now() - 25 * 3_600_000) })),
     });
-    expect((await coldMailLeft(team.workspace.id)).left).toBe(20);
-
-    await db.workspace.update({ where: { id: team.workspace.id }, data: { createdAt: new Date(Date.now() - 8 * 86_400_000) } });
-    expect((await coldMailLeft(team.workspace.id)).limit).toBe(100);
-
-    const paying = await makeWorkspace({ plan: "TEAM", billingStatus: "active" });
-    expect((await coldMailLeft(paying.workspace.id)).limit).toBe(200);
+    expect(await coldMailLeft(team.workspace.id)).toEqual({ left: 200, limit: 200 });
   });
 });

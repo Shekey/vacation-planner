@@ -1,16 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dailyColdMailLimit, isPlainName } from "@/lib/mail-limits";
-
-const now = new Date("2026-10-22T12:00:00Z");
-const daysAgo = (n: number) => new Date(now.getTime() - n * 86_400_000);
-
-describe("dailyColdMailLimit", () => {
-  it("is small for a new unpaid workspace and grows with age and payment", () => {
-    expect(dailyColdMailLimit({ createdAt: daysAgo(1), paid: false }, now)).toBe(20);
-    expect(dailyColdMailLimit({ createdAt: daysAgo(8), paid: false }, now)).toBe(100);
-    expect(dailyColdMailLimit({ createdAt: daysAgo(1), paid: true }, now)).toBe(200);
-  });
-});
+import { isPlainName } from "@/lib/mail-limits";
 
 describe("isPlainName", () => {
   it("accepts team names", () => {
