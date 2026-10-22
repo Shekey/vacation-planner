@@ -1,8 +1,11 @@
 import { headers } from "next/headers";
+import { siteOrigin } from "@/lib/domain";
 
-/** Absolute origin for links in emails, e.g. "https://vacations.example.com". */
+/** Absolute origin for links in emails, e.g. "https://urlaubflow.de". */
 export async function appOrigin(): Promise<string> {
   if (process.env.AUTH_URL) return new URL(process.env.AUTH_URL).origin;
+  const site = siteOrigin();
+  if (site) return site;
   // Set by Vercel: the project's production domain, e.g. "my-app.vercel.app".
   if (process.env.VERCEL_ENV === "production" && process.env.VERCEL_PROJECT_PRODUCTION_URL) {
     return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;

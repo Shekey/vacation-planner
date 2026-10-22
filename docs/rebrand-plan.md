@@ -74,7 +74,7 @@ Both are small and touch mostly text, so they merge cleanly next to wave 1.
 
 ### R2. Domain urlaubflow.de and redirects
 
-- `src/lib/url.ts`: a canonical `SITE_URL` (`https://urlaubflow.de` in production via `NEXT_PUBLIC_SITE_URL`); emails, metadata, sitemap and OG use it. Previews keep their own host.
+- `siteOrigin()` in `src/lib/domain.ts`: `NEXT_PUBLIC_SITE_URL` in production (`https://urlaubflow.de`); `appOrigin()` for emails uses it, and metadata, sitemap and OG will. Previews keep their own host. Setting the variable is also the switch for the redirects below, so nothing points at the new domain before its DNS works.
 - Redirects in `next.config.ts` (`redirects()` with a `host` condition, 308): `vacation-planner-lyart.vercel.app/*` → `https://urlaubflow.de/*`, path and query kept, and `www.urlaubflow.de` → apex.
 - Not redirected on the old host, so nothing breaks for people already using it: `/api/calendar/*` (Outlook and Google calendar subscriptions don't always follow redirects; they keep working for 12 months, and Settings shows the new feed URL), `/api/stripe/webhook` and `/api/cron/*` until the new endpoints are live.
 - Sign-in links already emailed with the old host still work: the redirect keeps the path and token, and the database is the same. People sign in once more on the new domain because cookies are per domain.
@@ -175,7 +175,7 @@ Start the first block now; DNS and email verification can take a day.
 | When | Step |
 |---|---|
 | Now | **Vercel** → Project → Settings → Domains: add `urlaubflow.de` and `www.urlaubflow.de`, set `www` to redirect to `urlaubflow.de`, keep `vacation-planner-lyart.vercel.app` on the project (our redirects handle it). Put the DNS records Vercel shows at the domain registrar (usually an A record for `@` and a CNAME for `www`). |
-| Now | **Vercel env**: `NEXT_PUBLIC_SITE_URL=https://urlaubflow.de` (Production). Still leave `AUTH_URL` unset. |
+| When the domain shows "Valid" in Vercel | **Vercel env**: `NEXT_PUBLIC_SITE_URL=https://urlaubflow.de` (Production), then redeploy. This switches email links and turns on the redirect from the old address. Still leave `AUTH_URL` unset. |
 | Now | **Resend**: add domain `urlaubflow.de` (or `mail.urlaubflow.de`), add its SPF and DKIM records, add a DMARC record (`v=DMARC1; p=none; rua=mailto:dmarc@urlaubflow.de` to start). When verified, set `EMAIL_FROM="Urlaubflow <hallo@urlaubflow.de>"`. |
 | Now | **Mailboxes** for `hallo@` and `datenschutz@urlaubflow.de` (any provider), then update the `LEGAL_*` contact env vars so the Impressum shows them. |
 | Now | **Trademark check**: search "Urlaubflow" at DPMA and EUIPO before spending on marketing. Optionally register the word mark. |
