@@ -75,6 +75,7 @@ export const settings = defineMessages({
     errors: {
       expiryDay: "That expiry day doesn't exist in that month.",
       nameLength: "Name must be at least 2 characters",
+      nameLink: "The name can't contain a link or an email address",
       timezone: "Unknown timezone",
       language: "Pick a language from the list",
       defaultAllowance: "Default allowance must be 0–365 days",
@@ -164,6 +165,7 @@ export const settings = defineMessages({
     errors: {
       expiryDay: "Diesen Tag gibt es in dem Monat nicht.",
       nameLength: "Der Name muss mindestens 2 Zeichen lang sein",
+      nameLink: "Der Name darf keinen Link und keine E-Mail-Adresse enthalten",
       timezone: "Unbekannte Zeitzone",
       language: "Wähle eine Sprache aus der Liste",
       defaultAllowance: "Der Standard-Jahresurlaub muss zwischen 0 und 365 Tagen liegen",

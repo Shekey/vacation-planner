@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { sendEmail, type SendResult } from "@/lib/email";
 import { messagesFor } from "@/lib/i18n";
 import { getLocale, getMessages, localeOfEmail } from "@/lib/i18n/server";
+import { assertColdMailRoom, recordColdMail } from "@/lib/mail-limits";
 import { isSampleEmail } from "@/lib/sample-team";
 
 const INVITE_TTL_DAYS = 7;
@@ -73,11 +74,13 @@ export async function inviteMembers(emails: string[], role: Role, ctx: InviteCon
   });
   const members = new Set(existing.map((m) => m.user.email));
   const toInvite = emails.filter((e) => !members.has(e));
+  await assertColdMailRoom(ctx.workspace.id, toInvite.length);
   const failed: { email: string; error: string }[] = [];
   for (const email of toInvite) {
     const sent = await issueInvitation(email, role, ctx);
     if (!sent.ok) failed.push({ email, error: sent.error });
   }
+  await recordColdMail(ctx.workspace.id, toInvite.length);
   return { invited: toInvite, alreadyMembers: [...members], failed };
 }
 
@@ -86,7 +89,10 @@ export async function resendInvitation(invitationId: string, ctx: InviteContext)
     where: { id: invitationId, workspaceId: ctx.workspace.id, acceptedAt: null, revokedAt: null },
   });
   if (!invite) return null;
-  return issueInvitation(invite.email, invite.role, ctx);
+  await assertColdMailRoom(ctx.workspace.id, 1);
+  const sent = await issueInvitation(invite.email, invite.role, ctx);
+  await recordColdMail(ctx.workspace.id, 1);
+  return sent;
 }
 
 export type InvitationLookup =

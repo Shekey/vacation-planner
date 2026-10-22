@@ -81,6 +81,8 @@ export const importer = defineMessages({
       limit: (plan: string, max: number, current: number, adding: number) =>
         `${plan} covers up to ${max} people, and ${current} + ${adding} is too many. Upgrade under Billing first.`,
       tooMany: (max: number) => `At most ${max} rows at a time. Split the list.`,
+      mailLimit: (left: number) =>
+        `Today's limit for emails to new people allows ${left} more. Untick “Email the new people where to sign in” to import now, or import fewer people.`,
       overLimit: "This workspace has more people than its plan allows, so new bookings are paused. Upgrade under Billing first.",
       conflict: "Someone booked the same days while you were checking. Press Check again.",
     },
@@ -204,6 +206,8 @@ export const importer = defineMessages({
       limit: (plan: string, max: number, current: number, adding: number) =>
         `${plan} umfasst bis zu ${max} Personen, und ${current} + ${adding} sind zu viele. Wähle zuerst unter Abrechnung einen größeren Tarif.`,
       tooMany: (max: number) => `Höchstens ${max} Zeilen auf einmal. Teile die Liste auf.`,
+      mailLimit: (left: number) =>
+        `Das Tageslimit für E-Mails an neue Leute erlaubt heute noch ${left}. Nimm den Haken bei „Den neuen Personen per E-Mail schreiben, wo sie sich anmelden“ weg, um jetzt zu importieren, oder importiere weniger Leute.`,
       overLimit: "Dieser Workspace hat mehr Personen, als sein Tarif erlaubt, deshalb sind neue Buchungen pausiert. Wähle zuerst unter Abrechnung einen größeren Tarif.",
       conflict: "Jemand hat dieselben Tage gebucht, während du geprüft hast. Drück noch einmal auf Prüfen.",
     },

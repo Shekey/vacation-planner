@@ -1,8 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { randomUUID } from "node:crypto";
+import { afterAll, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
 import { applyPeople, applyTimeOff, planPeople, planTimeOff } from "@/lib/import-db";
 import { hasNoEmail } from "@/lib/no-email";
 import { makeWorkspace } from "@/test/db";
+
+const withEmails = (n: number) => "Name;E-Mail\n" + Array.from({ length: n }, (_, i) => `Person ${i};p${i}-${randomUUID()}@import-test.example`).join("\n");
 
 const sheet = "Name;E-Mail;Urlaubstage\nMaria Schulz;;26\n";
 
@@ -96,5 +99,24 @@ describe("people from a year planner", () => {
       ["Lena", 30, "exists"],
       ["Murat Yilmaz", 28, "new"],
     ]);
+  });
+});
+
+describe("welcome emails when importing people", () => {
+  // The import makes real user rows for these addresses; the shared cleanup only knows users made by makeUser.
+  afterAll(async () => {
+    await db.user.deleteMany({ where: { email: { endsWith: "@import-test.example" } } });
+  });
+
+  it("stop the whole import when it would pass the daily limit for emails to new people, and work without the emails", async () => {
+    // On trial: room for 75 people, but not paying, so the new-workspace email limit applies.
+    const team = await makeWorkspace({ plan: "FREE", billingStatus: null, trialEndsAt: new Date(Date.now() + 10 * 86_400_000) });
+    const actor = { id: team.admin.user.id };
+    const opts = { sendWelcome: true, origin: "https://app.test" };
+    const sheet21 = withEmails(21);
+    expect(await applyPeople(team.workspace, team.settings, actor, sheet21, opts)).toEqual({ error: "mailLimit", left: 20 });
+    expect(await db.membership.count({ where: { workspaceId: team.workspace.id } })).toBe(2);
+
+    expect(await applyPeople(team.workspace, team.settings, actor, sheet21, { ...opts, sendWelcome: false })).toMatchObject({ created: 21, emailed: 0 });
   });
 });

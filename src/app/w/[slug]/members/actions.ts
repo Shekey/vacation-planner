@@ -15,6 +15,7 @@ import { isPlaceholderEmail } from "@/lib/no-email";
 import { addWithoutEmail, attachEmail } from "@/lib/no-email-members";
 import { inviteMembers, parseEmailList, resendInvitation } from "@/lib/invitations";
 import { recordAudit } from "@/lib/audit";
+import { coldMailLeft, MailLimitError, recordColdMail } from "@/lib/mail-limits";
 import { accessOf } from "@/lib/plans";
 import { restoreMember } from "@/lib/restore";
 import { MEMBER_REMOVED } from "@/lib/undo";
@@ -55,7 +56,14 @@ export async function inviteAction(slug: string, _prev: ActionResult, formData: 
     return { error: t.errors.planLimit(access.name, access.maxMembers, room, open) };
   }
 
-  const { invited, alreadyMembers, failed } = await inviteMembers(valid, role, invite);
+  let result;
+  try {
+    result = await inviteMembers(valid, role, invite);
+  } catch (e) {
+    if (e instanceof MailLimitError) return { error: t.errors.mailLimit(e.left, e.limit) };
+    throw e;
+  }
+  const { invited, alreadyMembers, failed } = result;
   revalidatePath(`/w/${slug}/members`);
   const parts = [];
   const sent = invited.length - failed.length;
@@ -89,7 +97,13 @@ export async function addWithoutEmailAction(slug: string, _prev: ActionResult, f
 export async function resendInviteAction(slug: string, invitationId: string): Promise<ActionResult> {
   const { invite } = await inviteContext(slug);
   const t = (await getMessages()).members;
-  const sent = await resendInvitation(invitationId, invite);
+  let sent;
+  try {
+    sent = await resendInvitation(invitationId, invite);
+  } catch (e) {
+    if (e instanceof MailLimitError) return { error: t.errors.mailLimit(e.left, e.limit) };
+    throw e;
+  }
   revalidatePath(`/w/${slug}/members`);
   if (!sent) return { error: t.errors.notPending };
   return sent.ok ? { ok: t.sentAgain } : { error: t.errors.emailFailed(sent.error) };
@@ -217,7 +231,13 @@ export async function updateMemberAction(
     // Tell them where to sign in, in their language if they already use the app, else the workspace's.
     const user = await db.user.findUniqueOrThrow({ where: { email: rawEmail }, select: { locale: true } });
     const locale = isLocale(user.locale) ? user.locale : isLocale(ctx.workspace.settings?.locale) ? ctx.workspace.settings.locale : "en";
+    // Over the daily limit the address is still saved; the admin tells the person where to sign in.
+    if ((await coldMailLeft(ctx.workspace.id)).left < 1) {
+      revalidatePath(`/w/${slug}`, "layout");
+      return { ok: t.noEmail.emailAddedNoMail(rawEmail) };
+    }
     const welcome = messagesFor(locale).email.welcome;
+    await recordColdMail(ctx.workspace.id, 1);
     const sent = await sendEmail({
       to: rawEmail,
       subject: welcome.subject(ctx.workspace.name),
