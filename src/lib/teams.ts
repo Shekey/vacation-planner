@@ -1,3 +1,5 @@
+import type { Delivery } from "@/lib/notify";
+
 /**
  * Microsoft Teams notifications through an incoming webhook: a Teams Workflows
  * ("Post to a channel when a webhook request is received") URL, or a legacy
@@ -34,13 +36,13 @@ export function teamsMessage(text: string, link?: { title: string; url: string }
   };
 }
 
-/** Posts a message; failures are logged and never break the calling action. */
+/** Posts a message and says whether it arrived; null when no valid webhook is set. Never throws. */
 export async function postToTeams(
   webhookUrl: string | null | undefined,
   text: string,
   link?: { title: string; url: string },
-): Promise<void> {
-  if (!webhookUrl || !isTeamsWebhookUrl(webhookUrl)) return;
+): Promise<Delivery | null> {
+  if (!webhookUrl || !isTeamsWebhookUrl(webhookUrl)) return null;
   try {
     const res = await fetch(webhookUrl, {
       method: "POST",
@@ -50,8 +52,11 @@ export async function postToTeams(
       redirect: "error",
       signal: AbortSignal.timeout(5000),
     });
-    if (!res.ok) console.error("[teams] webhook error", res.status);
+    if (res.ok) return { ok: true };
+    console.error("[teams] webhook error", res.status);
+    return { ok: false, error: String(res.status) };
   } catch (e) {
     console.error("[teams] webhook failed", e);
+    return { ok: false, error: "network" };
   }
 }

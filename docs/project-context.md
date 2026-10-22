@@ -55,7 +55,7 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 - Schema: `prisma/schema.prisma`, migrations in `prisma/migrations/`.
 - Day counting and allowance: `src/lib/booking-days.ts` (`proratedAllowance`, `allowanceIn`, work days in `DayRules`), past years' allowances in `AllowanceYear` (written by `keepLastYearsAllowance` before an admin changes one), `src/lib/bookings.ts` (`regionOf`, `rulesFor`, `forViewer`, `loadHolidays`, `allowanceSummary`).
 - Plans and billing: `src/lib/plans.ts` (`accessOf`, limits), `src/lib/stripe.ts`, `/api/stripe/webhook`, `/w/[slug]/billing`. Chat is dropped in `settingsOf` when the plan has none.
-- Chat posts: `src/lib/notify.ts` sends to `src/lib/teams.ts` and `src/lib/slack.ts`.
+- Chat posts: `src/lib/notify.ts` sends to `src/lib/teams.ts` and `src/lib/slack.ts`, keeps the last failure per channel on the workspace (`WorkspaceSettings.teamsError`/`slackError` + `…At`, cleared by the next post that arrives or a new URL) and reports it to Sentry. Settings → *Chat connection* shows it with what to do and has a *Send test* button. Failed emails go to Sentry too (status only, no addresses).
 - Legal texts: `src/app/(legal)/`, operator details and subprocessors in `src/lib/legal.ts` (env `LEGAL_*`).
 - Account export and deletion: `src/lib/account.ts`, `/api/account/export`, `/account`.
 - Holidays: `src/lib/holidays.ts` (Nager parser), `src/lib/holiday-regions.ts` (country and region lists), `src/lib/holiday-import.ts`.

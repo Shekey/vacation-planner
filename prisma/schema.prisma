@@ -173,6 +173,11 @@ model WorkspaceSettings {
   hideSickType          Boolean   @default(true)
   // Slack incoming webhook, posted to alongside Teams.
   slackWebhookUrl       String?
+  /// Last failed post per channel ("404", "network"), cleared by the next post that arrives; shown in Settings.
+  teamsError            String?
+  teamsErrorAt          DateTime?
+  slackError            String?
+  slackErrorAt          DateTime?
   // Language of Teams/Slack posts and of emails to people who haven't picked one: "en" or "de".
   locale                String    @default("en")
   // Set when an admin hides the getting-started checklist.

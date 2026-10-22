@@ -169,12 +169,13 @@ export async function createBooking(opts: {
   );
 
   if (status === "PENDING") await notifyAdminsOfRequest(workspace, settings, target.user, booking, opts.origin);
-  await announce(settings, target.user, booking, status === "PENDING" ? "requested" : "off", `${opts.origin}/w/${workspace.slug}/calendar`);
+  await announce(workspace.id, settings, target.user, booking, status === "PENDING" ? "requested" : "off", `${opts.origin}/w/${workspace.slug}/calendar`);
   return booking;
 }
 
 /** Posts a one-line summary to the workspace's Teams and Slack channels, in the workspace's language. */
 async function announce(
+  workspaceId: string,
   settings: Settings,
   person: { name: string | null; email: string },
   booking: { startDate: Date; endDate: Date; daysCount: Prisma.Decimal | number; type: BookingType },
@@ -197,6 +198,7 @@ async function announce(
       chat.kind[type],
     ),
     { title: chat.openCalendar, url: `${calendarUrl}?month=${toISO(booking.startDate).slice(0, 7)}` },
+    workspaceId,
   );
 }
 
@@ -235,6 +237,7 @@ export async function updateBooking(opts: {
   );
   if (status === "PENDING") await notifyAdminsOfRequest(workspace, settings, existing.membership.user, booking, opts.origin);
   await announce(
+    workspace.id,
     settings,
     existing.membership.user,
     booking,
@@ -358,7 +361,7 @@ export async function decideBooking(opts: {
     ].join("\n\n"),
   });
   if (opts.approve) {
-    await announce(opts.settings, booking.membership.user, booking, "off", `${opts.origin}/w/${opts.workspace.slug}/calendar`);
+    await announce(opts.workspace.id, opts.settings, booking.membership.user, booking, "off", `${opts.origin}/w/${opts.workspace.slug}/calendar`);
   }
 }
 
