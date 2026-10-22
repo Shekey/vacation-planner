@@ -16,3 +16,7 @@ vi.mock("@/auth", () => ({ auth: async () => null }));
 // The normal plans and trial apply, not the free beta.
 process.env.NEXT_PUBLIC_ENABLE_BETA_MODE = "false";
 vi.mock("@/lib/url", () => ({ appOrigin: async () => "https://app.test" }));
+
+// Fixed "today", so tests can book in 2030 and stay inside the three-year booking window whenever they run.
+// Only Date is faked: timers and the database connection keep running normally.
+vi.useFakeTimers({ toFake: ["Date"], now: new Date("2027-06-01T10:00:00Z") });

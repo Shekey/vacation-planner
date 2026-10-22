@@ -21,12 +21,14 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/vacation_planner?schema=public
       AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Packages that run in production only: dev tools (lint, tests) have no fix for some advisories yet.
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
