@@ -1,6 +1,8 @@
+import * as Sentry from "@sentry/nextjs";
 import { db } from "@/lib/db";
 import { SAMPLE_EMAIL_DOMAIN } from "@/lib/sample-team";
 import { removeSampleTeam } from "@/lib/sample-team-db";
+import { cancelSubscriptionNow } from "@/lib/stripe";
 import { auditCutoff, restoreCutoff } from "@/lib/undo";
 
 /** Bookings and removed members are kept this long: the time employees can still claim leave in Germany. */
@@ -17,9 +19,16 @@ export async function purgeOldData(now = new Date()) {
   sickCutoff.setUTCMonth(sickCutoff.getUTCMonth() - SICK_RETENTION_MONTHS);
   const monthAgo = new Date(now.getTime() - 30 * 86_400_000);
 
-  // Workspaces deleted more than RESTORE_DAYS ago go for good. Their sample people's placeholder users
-  // are deleted first, because the workspace's cascade would leave those users behind.
-  const expired = await db.workspace.findMany({ where: { deletedAt: { lt: restoreCutoff(now) } }, select: { id: true } });
+  // Workspaces deleted more than RESTORE_DAYS ago go for good. Deleting one only stopped its plan's renewal, so the
+  // subscription is cancelled now; one Stripe couldn't cancel keeps its workspace until the next run.
+  // Their sample people's placeholder users are deleted first, because the workspace's cascade would leave those users behind.
+  const candidates = await db.workspace.findMany({
+    where: { deletedAt: { lt: restoreCutoff(now) } },
+    select: { id: true, stripeSubscriptionId: true },
+  });
+  const cancelled = await Promise.allSettled(candidates.map((w) => cancelSubscriptionNow(w.stripeSubscriptionId)));
+  const expired = candidates.filter((_, i) => cancelled[i].status === "fulfilled");
+  for (const r of cancelled) if (r.status === "rejected") Sentry.captureException(r.reason);
   await removeSampleTeam(expired.map((w) => w.id));
 
   const [workspaces, audit, bookings, members, invitations, sessions, tokens, sampleUsers, coldMails] = await db.$transaction([

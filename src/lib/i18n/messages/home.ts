@@ -17,7 +17,8 @@ export const home = defineMessages({
     deletedBody: (days: number) => `Deleted by mistake? You can bring a workspace back for ${days} days, with everything in it. After that it is gone for good.`,
     daysLeft: (n: number) => `${n} ${n === 1 ? "day" : "days"} left`,
     restore: "Restore",
-    restored: "Workspace restored. A paid plan was cancelled with it, so pick a plan again under Billing.",
+    restored: "Workspace restored, with its plan.",
+    restoredPlanEnded: "Workspace restored. Its paid plan ended while it was deleted, so pick a plan again under Billing.",
     restoreFailed: "This workspace can't be restored any more.",
   },
   de: {
@@ -37,7 +38,8 @@ export const home = defineMessages({
       `Aus Versehen gelöscht? Du kannst einen Workspace ${days} Tage lang mit allem, was drin war, zurückholen. Danach ist er endgültig weg.`,
     daysLeft: (n: number) => `noch ${n} ${n === 1 ? "Tag" : "Tage"}`,
     restore: "Wiederherstellen",
-    restored: "Workspace wiederhergestellt. Ein bezahlter Tarif wurde mit ihm gekündigt, wähle ihn unter Abrechnung neu.",
+    restored: "Workspace wiederhergestellt, mit seinem Tarif.",
+    restoredPlanEnded: "Workspace wiederhergestellt. Sein bezahlter Tarif ist abgelaufen, während er gelöscht war, wähle ihn unter Abrechnung neu.",
     restoreFailed: "Dieser Workspace lässt sich nicht mehr wiederherstellen.",
   },
 });
