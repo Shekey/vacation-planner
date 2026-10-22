@@ -8,11 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --project unit",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "postinstall": "prisma generate",
-    "vercel-build": "node scripts/vercel-build.mjs"
+    "vercel-build": "node scripts/vercel-build.mjs",
+    "test:db": "vitest run --project db"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
