@@ -8,6 +8,7 @@ import {
   allowanceSummaries,
   loadHolidays,
   spanOf,
+  withDays,
 } from "@/lib/bookings";
 import { eachDay, formatDate, formatRange, todayIn } from "@/lib/dates";
 import { understaffedDays } from "@/lib/staffing";
@@ -33,7 +34,7 @@ export default async function ApprovalsPage({
   const today = todayIn(workspace.timezone);
   const year = Number(today.slice(0, 4));
 
-  const pending = await db.booking.findMany({
+  const saved = await db.booking.findMany({
     where: {
       workspaceId: workspace.id,
       status: "PENDING",
@@ -46,6 +47,9 @@ export default async function ApprovalsPage({
     },
     orderBy: { startDate: "asc" },
   });
+
+  // Counted like the allowance shown next to it, not the count stored when the request was made.
+  const pending = await withDays(workspace.id, settings, saved);
 
   // Staffing counts use the team's main region; each person's own allowance uses theirs.
   const holidays = await loadHolidays(
@@ -161,10 +165,8 @@ export default async function ApprovalsPage({
                     </div>
                     <div className="text-sm">
                       {formatRange(span.start, span.end, locale)} ·{" "}
-                      {messages.common.days(
-                        formatNumber(Number(b.daysCount), locale),
-                      )}{" "}
-                      · {typeLabel(b.type, locale, b.specialReason)}
+                      {messages.common.days(formatNumber(b.days, locale))} ·{" "}
+                      {typeLabel(b.type, locale, b.specialReason)}
                       {half && ` · ${half}`}
                     </div>
                     {b.note && (

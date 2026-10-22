@@ -2,7 +2,7 @@ import pg from "pg";
 import { describe, expect, it, vi } from "vitest";
 import type { BookingType, SpecialReason } from "@/generated/prisma/enums";
 import type { BookingSpan } from "@/lib/booking-days";
-import { allowanceSummaries, allowanceSummary, cancelBooking, createBooking, decideBooking, restoreBooking, updateBooking } from "@/lib/bookings";
+import { allowanceSummaries, allowanceSummary, cancelBooking, withDays, createBooking, decideBooking, restoreBooking, updateBooking } from "@/lib/bookings";
 import { toISO } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
@@ -258,6 +258,28 @@ describe("allowanceSummaries", () => {
     for (const p of people) expect(all.get(p.id)).toEqual(await allowanceSummary(p, team.settings, 2030, undefined, "2030-04-01"));
     expect(all.get(team.member.id)).toMatchObject({ carriedOver: 3, carryOverExpired: 0, used: 5, remaining: 18 });
     expect(all.get(team.admin.id)).toMatchObject({ carriedOver: 8, carryOverExpired: 6, used: 2, allowance: 22 });
+  });
+});
+
+describe("day counts", () => {
+  it("lists a booking with the same days the allowance counts after a holiday or work days change", async () => {
+    const team = await makeWorkspace();
+    await book(team, team.member, team.member);
+    const listed = async () => {
+      const saved = await db.booking.findMany({ where: { membershipId: team.member.id }, include: { membership: true } });
+      const [b] = await withDays(team.workspace.id, team.settings, saved);
+      const member = await db.membership.findUniqueOrThrow({ where: { id: team.member.id } });
+      return { list: b.days, allowance: (await allowanceSummary(member, team.settings, 2030, undefined, "2030-01-15")).used };
+    };
+    expect(await listed()).toEqual({ list: 5, allowance: 5 });
+
+    // A holiday imported later, inside the booked week.
+    await db.holiday.create({ data: { workspaceId: team.workspace.id, date: new Date("2030-03-06"), name: "Feiertag", region: "" } });
+    expect(await listed()).toEqual({ list: 4, allowance: 4 });
+
+    // Moved to Monday to Thursday: Friday isn't a work day any more.
+    await db.membership.update({ where: { id: team.member.id }, data: { workDays: [1, 2, 3, 4] } });
+    expect(await listed()).toEqual({ list: 3, allowance: 3 });
   });
 });
 
