@@ -4,7 +4,8 @@ import { intlLocale, isLocale, LOCALE_NAMES, LOCALES } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { accessOf } from "@/lib/plans";
 import { requireAdmin, settingsOf } from "@/lib/session";
-import { deleteWorkspaceAction, saveSettingsAction } from "./actions";
+import { formatDateTime } from "@/lib/dates";
+import { deleteWorkspaceAction, saveSettingsAction, sendTestPostAction } from "./actions";
 import { SupportAccess } from "./support-access";
 
 function Toggle({ name, label, hint, defaultChecked }: { name: string; label: string; hint: string; defaultChecked: boolean }) {
@@ -190,6 +191,35 @@ export default async function SettingsPage({ params }: PageProps<"/w/[slug]/sett
 
         <button className="btn">{t.save}</button>
       </ActionForm>
+
+      {chat && (teamsWebhookUrl || slackWebhookUrl) && (
+        <section className="card space-y-3">
+          <h2 className="font-medium">{t.chatCheckHeading}</h2>
+          <p className="text-sm opacity-70">{t.chatCheckBody}</p>
+          {(
+            [
+              { channel: "teams", name: "Microsoft Teams", url: teamsWebhookUrl, error: workspace.settings?.teamsError, at: workspace.settings?.teamsErrorAt },
+              { channel: "slack", name: "Slack", url: slackWebhookUrl, error: workspace.settings?.slackError, at: workspace.settings?.slackErrorAt },
+            ] as const
+          )
+            .filter((c) => c.url)
+            .map((c) => (
+              <div key={c.channel} className="space-y-2 border-t border-border pt-3">
+                {c.error && c.at ? (
+                  <div role="alert" className="rounded-lg bg-amber-50 p-3 text-sm dark:bg-amber-900/20">
+                    <p className="font-medium">{t.chatFailed(c.name, formatDateTime(c.at, uiLocale, workspace.timezone))}</p>
+                    <p>{t.chatFix(c.name, c.error)}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm">{t.chatOk(c.name)}</p>
+                )}
+                <ActionForm action={sendTestPostAction.bind(null, slug, c.channel)}>
+                  <button className="btn-secondary">{t.sendTest(c.name)}</button>
+                </ActionForm>
+              </div>
+            ))}
+        </section>
+      )}
 
       <SupportAccess slug={slug} until={workspace.supportAccessUntil} timezone={workspace.timezone} />
 

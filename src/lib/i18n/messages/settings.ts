@@ -40,6 +40,24 @@ export const settings = defineMessages({
     slackHint:
       "The same posts in a Slack channel. In Slack, create an app at api.slack.com/apps, turn on Incoming Webhooks, add one for the channel, and paste its URL here. You can use Teams, Slack or both.",
     save: "Save settings",
+    chatCheckHeading: "Chat connection",
+    chatCheckBody: "Posts go out when people book and every weekday morning. Send a test to see that they arrive.",
+    chatOk: (channel: string) => `${channel}: no problems with the last post.`,
+    chatFailed: (channel: string, when: string) => `${channel}: the last post, on ${when}, didn't arrive.`,
+    chatFix: (channel: string, error: string) =>
+      error === "404" || error === "410"
+        ? `The webhook no longer exists, usually because the ${channel} workflow or app was deleted. Set it up again and paste the new URL above.`
+        : error === "401" || error === "403"
+          ? `${channel} refused the post. Check that the workflow or app is still allowed to post in that channel, or set it up again.`
+          : error === "429"
+            ? `${channel} asked us to slow down. Nothing to do; the next posts should arrive.`
+            : error === "network"
+              ? `${channel} didn't answer in time. Usually temporary; send a test to check.`
+              : `${channel} answered with error ${error}. Send a test; if it fails again, set the webhook up again.`,
+    sendTest: (channel: string) => `Send test to ${channel}`,
+    testText: (workspace: string) => `Test from Vacation Planner: time-off posts for ${workspace} will appear in this channel.`,
+    testSent: (channel: string) => `Test sent. Check the ${channel} channel.`,
+    testFailed: (channel: string) => `The test didn't reach ${channel}.`,
     supportHeading: "Support access",
     supportBody:
       "If you need help, you can let our support team look at your workspace's members, plan and settings (not at anyone's time off) for 24 hours. Every look shows up on your Activity page. It switches off by itself.",
@@ -110,6 +128,24 @@ export const settings = defineMessages({
     slackHint:
       "Dieselben Posts in einem Slack-Kanal. Erstelle in Slack unter api.slack.com/apps eine App, schalte Incoming Webhooks ein, füge einen für den Kanal hinzu und füge die URL hier ein. Du kannst Teams, Slack oder beides nutzen.",
     save: "Einstellungen speichern",
+    chatCheckHeading: "Chat-Verbindung",
+    chatCheckBody: "Posts gehen raus, wenn jemand bucht, und jeden Werktagmorgen. Schick einen Test, um zu sehen, ob sie ankommen.",
+    chatOk: (channel: string) => `${channel}: Der letzte Post ist angekommen.`,
+    chatFailed: (channel: string, when: string) => `${channel}: Der letzte Post am ${when} ist nicht angekommen.`,
+    chatFix: (channel: string, error: string) =>
+      error === "404" || error === "410"
+        ? `Den Webhook gibt es nicht mehr, meist weil der ${channel}-Workflow oder die App gelöscht wurde. Richte ihn neu ein und füge oben die neue URL ein.`
+        : error === "401" || error === "403"
+          ? `${channel} hat den Post abgelehnt. Prüf, ob der Workflow oder die App noch in den Kanal posten darf, oder richte ihn neu ein.`
+          : error === "429"
+            ? `${channel} hat uns gebeten, langsamer zu posten. Du musst nichts tun; die nächsten Posts sollten ankommen.`
+            : error === "network"
+              ? `${channel} hat nicht rechtzeitig geantwortet. Meist nur vorübergehend; schick einen Test, um es zu prüfen.`
+              : `${channel} hat mit Fehler ${error} geantwortet. Schick einen Test; wenn er wieder fehlschlägt, richte den Webhook neu ein.`,
+    sendTest: (channel: string) => `Test an ${channel} senden`,
+    testText: (workspace: string) => `Test von Vacation Planner: Abwesenheiten von ${workspace} erscheinen in diesem Kanal.`,
+    testSent: (channel: string) => `Test gesendet. Schau in den ${channel}-Kanal.`,
+    testFailed: (channel: string) => `Der Test ist nicht bei ${channel} angekommen.`,
     supportHeading: "Support-Zugriff",
     supportBody:
       "Wenn du Hilfe brauchst, kannst du unserem Support 24 Stunden lang erlauben, Mitglieder, Tarif und Einstellungen deines Workspaces anzusehen (nicht den Urlaub von irgendwem). Jeder Blick erscheint in deinem Verlauf. Er schaltet sich von selbst ab.",

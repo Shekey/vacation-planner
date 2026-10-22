@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { messagesFor } from "@/lib/i18n";
 import { requestLocaleOr } from "@/lib/i18n/server";
 import { isSampleEmail } from "@/lib/sample-team";
@@ -43,9 +44,12 @@ export async function sendEmail({ to, subject, text }: Email): Promise<SendResul
     const body = await res.text();
     // Notifications must never break the action that triggered them, so callers decide what to show.
     console.error("[email] Resend error", res.status, body, usingTestSender() ? "(EMAIL_FROM is Resend's test sender)" : "");
+    // Only the status: the operator learns mail stopped arriving, without anyone's address in Sentry.
+    Sentry.captureMessage("email not sent", { level: "warning", tags: { delivery: "email", status: String(res.status) } });
     return { ok: false, error: resendMessage(body) ?? messagesFor(await requestLocaleOr()).errors.resendStatus(res.status) };
   } catch (err) {
     console.error("[email] Resend request failed", err);
+    Sentry.captureMessage("email not sent", { level: "warning", tags: { delivery: "email", status: "network" } });
     return { ok: false, error: messagesFor(await requestLocaleOr()).errors.resendUnreachable };
   }
 }

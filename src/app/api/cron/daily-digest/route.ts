@@ -53,10 +53,12 @@ export async function GET(req: Request) {
       });
     if (out.length === 0) continue;
 
-    await postToChannels(channels, `${t.digest.title(ws.name)}\n\n${out.join("\n\n")}`, {
-      title: t.openCalendar,
-      url: `${origin}/w/${ws.slug}/calendar`,
-    });
+    await postToChannels(
+      channels,
+      `${t.digest.title(ws.name)}\n\n${out.join("\n\n")}`,
+      { title: t.openCalendar, url: `${origin}/w/${ws.slug}/calendar` },
+      ws.id,
+    );
     posted++;
   }
   const trialReminders = await sendTrialReminders(origin);

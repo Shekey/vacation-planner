@@ -9,11 +9,12 @@ import { approveAllPending, keepLastYearsAllowance } from "@/lib/bookings";
 import { todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { recordAudit } from "@/lib/audit";
+import { postToChannels, type ChatChannel } from "@/lib/notify";
 import { requireAdmin, settingsOf } from "@/lib/session";
 import { isSlackWebhookUrl } from "@/lib/slack";
 import { cancelSubscriptionNow } from "@/lib/stripe";
 import { isTeamsWebhookUrl } from "@/lib/teams";
-import { isLocale, type Messages } from "@/lib/i18n";
+import { isLocale, messagesFor, type Messages } from "@/lib/i18n";
 import { getMessages } from "@/lib/i18n/server";
 
 function settingsSchema(t: Messages["settings"]) {
@@ -70,6 +71,9 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
     teamsWebhookUrl: parsed.data.teamsWebhookUrl,
     slackWebhookUrl: parsed.data.slackWebhookUrl,
     locale: parsed.data.locale,
+    // A new webhook starts without the old one's delivery problem.
+    ...(parsed.data.teamsWebhookUrl !== (ctx.workspace.settings?.teamsWebhookUrl ?? null) && { teamsError: null, teamsErrorAt: null }),
+    ...(parsed.data.slackWebhookUrl !== (ctx.workspace.settings?.slackWebhookUrl ?? null) && { slackError: null, slackErrorAt: null }),
   };
   const wasApprovals = settingsOf(ctx.workspace).approvalsEnabled;
   // The default is copied when someone joins, so people who joined earlier need an explicit update.
@@ -121,4 +125,28 @@ export async function deleteWorkspaceAction(slug: string, _prev: ActionResult, f
   await db.workspace.update({ where: { id: ctx.workspace.id }, data: { deletedAt: new Date() } });
   await recordAudit({ workspaceId: ctx.workspace.id, actorId: ctx.user.id, action: "workspace.deleted" });
   redirect("/");
+}
+
+const CHANNEL_NAMES: Record<ChatChannel, string> = { teams: "Microsoft Teams", slack: "Slack" };
+
+/** Posts a test message to one saved chat channel, so an admin can see the connection works. */
+export async function sendTestPostAction(slug: string, channel: ChatChannel): Promise<ActionResult> {
+  const ctx = await requireAdmin(slug);
+  const t = (await getMessages()).settings;
+  const settings = settingsOf(ctx.workspace);
+  const name = CHANNEL_NAMES[channel];
+  const results = await postToChannels(
+    {
+      teamsWebhookUrl: channel === "teams" ? settings.teamsWebhookUrl : null,
+      slackWebhookUrl: channel === "slack" ? settings.slackWebhookUrl : null,
+    },
+    messagesFor(settings.locale ?? "en").settings.testText(ctx.workspace.name),
+    undefined,
+    ctx.workspace.id,
+  );
+  revalidatePath(`/w/${slug}/settings`);
+  const result = results[channel];
+  if (!result) return { error: t.testFailed(name) };
+  // On failure the card above now shows what went wrong and what to do.
+  return result.ok ? { ok: t.testSent(name) } : { error: t.testFailed(name) };
 }

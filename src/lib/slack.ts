@@ -1,3 +1,5 @@
+import type { Delivery } from "@/lib/notify";
+
 /** Slack notifications through an incoming webhook (Slack app → Incoming Webhooks → Add New Webhook). */
 
 /** Accepts only Slack webhook URLs so the server can't be pointed at arbitrary hosts. */
@@ -19,13 +21,13 @@ export function slackMessage(text: string, link?: { title: string; url: string }
   return { text: link ? `${escape(text)}\n<${link.url}|${escape(link.title)}>` : escape(text) };
 }
 
-/** Posts a message; failures are logged and never break the calling action. */
+/** Posts a message and says whether it arrived; null when no valid webhook is set. Never throws. */
 export async function postToSlack(
   webhookUrl: string | null | undefined,
   text: string,
   link?: { title: string; url: string },
-): Promise<void> {
-  if (!webhookUrl || !isSlackWebhookUrl(webhookUrl)) return;
+): Promise<Delivery | null> {
+  if (!webhookUrl || !isSlackWebhookUrl(webhookUrl)) return null;
   try {
     const res = await fetch(webhookUrl, {
       method: "POST",
@@ -34,8 +36,11 @@ export async function postToSlack(
       redirect: "error",
       signal: AbortSignal.timeout(5000),
     });
-    if (!res.ok) console.error("[slack] webhook error", res.status);
+    if (res.ok) return { ok: true };
+    console.error("[slack] webhook error", res.status);
+    return { ok: false, error: String(res.status) };
   } catch (e) {
     console.error("[slack] webhook failed", e);
+    return { ok: false, error: "network" };
   }
 }
