@@ -2,7 +2,7 @@
 
 Written 2026-10-22. The app "Vacation Planner" becomes **Urlaubflow**, served at **https://urlaubflow.de**, with the new Figma design and SEO built in from the start. Nothing here is built yet; Ajdin approves the plan first.
 
-**Indexing is off until launch** (Ajdin, 2026-10-22): every page sends `noindex, nofollow` and `robots.txt` disallows everything until Ajdin turns on the indexing switch (an env var, default off, added in a separate thread). All SEO work below is built and tested now but stays behind that switch.
+**Indexing is off until launch** (Ajdin, 2026-10-22): every page sends `noindex, nofollow` and `robots.txt` disallows everything until Ajdin turns on the indexing switch: env `ALLOW_INDEXING` (default off, read at build time) via `isIndexingAllowed()` in `src/lib/indexing.ts`, added in a separate thread; it also sends `X-Robots-Tag: noindex, nofollow` and serves no sitemap while off. All SEO work below is built and tested now but stays behind that switch.
 
 Issues: #104 (R1), #105 (R2), #106 (Ajdin's steps), #107 (D1), #108 (D2), #109 (S1), #110 (S2), #111 (S3), #112–#120 (P1–P9), #121–#128 (C1–C8).
 
@@ -106,7 +106,7 @@ Today the language is chosen by cookie on the same URL and the root layout calls
 - **Static public pages.** A `(site)` route group with its own layout that doesn't call `auth()` or read cookies, so landing, pricing, legal and content pages are prerendered and served from the CDN. Signed-in visitors on `/` are sent to their workspace by a session-cookie check in `proxy.ts` (Next 16's middleware); the page itself stays static.
 - **Metadata per page and language** via `generateMetadata`: title (≤ 60 chars, keyword first), description (≤ 155), `alternates.canonical`, `alternates.languages` (`de`, `en`, `x-default` → German), Open Graph and Twitter card with `locale` `de_DE` / `en_US`, `metadataBase` = `SITE_URL`.
 - **OG images** generated per page and language with `next/og` (`opengraph-image.tsx`), in the brand colours, no external fonts at runtime.
-- **Indexing switch.** `robots.ts` and the page `robots` metadata read the indexing switch. Off (today): `Disallow: /` and `noindex, nofollow` everywhere, sitemap still generated for checking. On: the rules below.
+- **Indexing switch.** `robots.ts`, `sitemap.ts`, page `robots` metadata, canonical/OG/hreflang and JSON-LD are all gated on `isIndexingAllowed()`. Off (today): `Disallow: /`, `noindex, nofollow`, no sitemap. On: the rules below. Unit tests cover both states.
 - **`sitemap.ts`** listing every public URL with its language alternates and `lastModified`; **`robots.ts`** allowing the public site and disallowing `/w/`, `/api/`, `/admin`, `/account`, `/invite`, `/two-factor`, `/sign-in`, with the sitemap URL. App pages also get `robots: noindex` in their layout.
 - **Structured data** (JSON-LD, one helper `src/lib/seo/jsonld.ts`): `Organization` (name, url, logo, contact, `sameAs` when there are profiles), `WebSite`, `SoftwareApplication` (`BusinessApplication`, web, offers that match the visible prices, `inLanguage`), `FAQPage` on landing and pricing (Google shows FAQ results rarely now, but Bing and AI answers read it), `BreadcrumbList` on content pages, `Article` on guides. Validated in a unit test against the schema shape.
 - **Other:** `<html lang>` from the path, one `h1` per page, semantic headings, descriptive link text, `alt` on every image, `/.well-known/security.txt`, `llms.txt` with a plain summary of the product and prices for AI assistants.
