@@ -3,13 +3,33 @@ import { defineMessages } from "../define";
 /** Importing a team and its time off from Excel or CSV. */
 export const importer = defineMessages({
   en: {
-    title: "Import from Excel",
+    title: "Bring your team over",
     intro:
-      "Move your team over in a few minutes. Open your Excel file, or copy the cells and paste them here. You see what will happen for every row before anything is saved.",
+      "People and their booked vacation in a few minutes, from wherever you keep them today. You see what happens to every row before anything is saved.",
     tabs: { people: "1. People", timeOff: "2. Time off" },
     backToMembers: "← Back to Members",
+    start: {
+      question: "Where do you keep vacation today?",
+      options: {
+        excel: { title: "Excel list", how: "One row per person, and maybe a sheet with one row per absence. Open the file below." },
+        planner: { title: "Excel year planner", how: "Names down, days across, U where someone is off. Open it below: first the people, then on the next tab their days off." },
+        calendar: {
+          title: "Outlook or Google calendar",
+          how: "Outlook: File → Save calendar (.ics). Google Calendar: Settings → Import & export → Export (a .zip). Add the people first, then open the file under Time off.",
+        },
+        tool: {
+          title: "Another tool",
+          how: "Personio, absence.io, Timetastic, Vacation Tracker and others: export the employee list and the absences as Excel or CSV and open them here, one after the other.",
+        },
+        directory: {
+          title: "Microsoft 365 or Google users",
+          how: "Microsoft 365 admin center: Users → Active users → Export users. Google Admin: Directory → Users → Download users. Everyone comes in with their email.",
+        },
+        paper: { title: "Paper, or nowhere yet", how: "Type or paste names below, one per line. People without an email are fine: you book their time off." },
+      },
+    },
     peopleHelp:
-      "One row per person, with a header row. Columns can be in any order: Name (or First name and Last name), Email, Vacation days, Left over (days still open from last year), Work days, Start date, State, Role. Each row needs an email or a name; someone with only a name is added without email and you book their time off. Work days like Mo-Fr or Mo, We, Fr; dates like 01.03.2024 or 2024-03-01; role Admin or Member. Without a header row, the email, name and days are recognised by their content.",
+      "One row per person, with a header row. Columns can be in any order: Name (or First name and Last name), Email, Vacation days, Left over (days still open from last year), Work days, Start date, State, Role. Each row needs an email or a name; someone with only a name is added without email and you book their time off. Work days like Mo-Fr or Mo, We, Fr; dates like 01.03.2024 or 2024-03-01; role Admin or Member. Without a header row, the email, name and days are recognised by their content. A year planner works too: its names and allowance column are taken.",
     timeOffHelp:
       "One row per absence, with a header row: Email or Name, From, To, Type, Half day. “To” can stay empty for a single day. Type is Vacation (the default) or Other. Half day is morning or afternoon and works for a single day. The people must already be in the workspace, so import them first. Sick days aren't imported: old ones aren't needed, and new ones are entered in the app. You can also open an Excel year planner (names down, days across, U for vacation), a calendar exported from Outlook or Google (.ics), or the absence export of Personio, absence.io, Timetastic or Vacation Tracker.",
     templateLink: "Download a template",
@@ -100,19 +120,39 @@ export const importer = defineMessages({
         "Read as a year planner: one booking for each run of marked days. U = vacation, ½ = half day (morning), VM/NM = morning/afternoon, FB, SU, ÜA = other, K = sick (left out).",
       calendar: "Read as a calendar: each all-day event becomes a booking, for the person named in its title or invited to it.",
     },
-    link: "Import many people from Excel",
-    linkHint: "For teams of 20 or more: paste a list with names, vacation days and work days, and later their time off.",
+    link: "Bring your team over",
+    linkHint: "From Excel, a year planner, Outlook or Google, or your old tool: people and their booked time off in a few minutes.",
     assisted: (price: string, email: string) =>
       `Rather not do it yourself? We import your Excel or your old tool's export for you: ${price} once, included with a yearly Business plan. Write to ${email}.`,
   },
   de: {
-    title: "Import aus Excel",
+    title: "Team übernehmen",
     intro:
-      "Hol dein Team in wenigen Minuten rüber. Öffne deine Excel-Datei, oder kopiere die Zellen und füge sie hier ein. Du siehst für jede Zeile, was passiert, bevor etwas gespeichert wird.",
+      "Personen und ihr gebuchter Urlaub in wenigen Minuten, von da, wo ihr sie heute habt. Du siehst für jede Zeile, was passiert, bevor etwas gespeichert wird.",
     tabs: { people: "1. Personen", timeOff: "2. Urlaub" },
     backToMembers: "← Zurück zu Mitglieder",
+    start: {
+      question: "Wo plant ihr den Urlaub heute?",
+      options: {
+        excel: { title: "Excel-Liste", how: "Eine Zeile pro Person, vielleicht noch ein Blatt mit einer Zeile pro Abwesenheit. Öffne die Datei unten." },
+        planner: { title: "Excel-Urlaubsplaner", how: "Namen untereinander, Tage nebeneinander, U bei Urlaub. Öffne ihn unten: erst die Personen, dann im nächsten Reiter ihre freien Tage." },
+        calendar: {
+          title: "Outlook- oder Google-Kalender",
+          how: "Outlook: Datei → Kalender speichern (.ics). Google Kalender: Einstellungen → Importieren & exportieren → Exportieren (eine .zip). Leg zuerst die Personen an, dann öffne die Datei unter Urlaub.",
+        },
+        tool: {
+          title: "Ein anderes Tool",
+          how: "Personio, absence.io, Timetastic, Vacation Tracker und andere: exportiere die Mitarbeiterliste und die Abwesenheiten als Excel oder CSV und öffne sie hier nacheinander.",
+        },
+        directory: {
+          title: "Benutzer aus Microsoft 365 oder Google",
+          how: "Microsoft 365 Admin Center: Benutzer → Aktive Benutzer → Benutzer exportieren. Google Admin: Verzeichnis → Nutzer → Nutzer herunterladen. Alle kommen mit ihrer E-Mail rein.",
+        },
+        paper: { title: "Papier, oder noch gar nicht", how: "Tipp oder füge unten Namen ein, einen pro Zeile. Personen ohne E-Mail gehen auch: Du buchst ihren Urlaub." },
+      },
+    },
     peopleHelp:
-      "Eine Zeile pro Person, mit Kopfzeile. Die Spalten können in beliebiger Reihenfolge stehen: Name (oder Vorname und Nachname), E-Mail, Urlaubstage, Resturlaub (noch offene Tage aus dem Vorjahr), Arbeitstage, Eintritt, Bundesland, Rolle. Jede Zeile braucht eine E-Mail oder einen Namen; wer nur einen Namen hat, wird ohne E-Mail angelegt und du buchst den Urlaub für die Person. Arbeitstage wie Mo-Fr oder Mo, Mi, Fr; Datum wie 01.03.2024 oder 2024-03-01; Rolle Admin oder Mitglied. Ohne Kopfzeile werden E-Mail, Name und Tage am Inhalt erkannt.",
+      "Eine Zeile pro Person, mit Kopfzeile. Die Spalten können in beliebiger Reihenfolge stehen: Name (oder Vorname und Nachname), E-Mail, Urlaubstage, Resturlaub (noch offene Tage aus dem Vorjahr), Arbeitstage, Eintritt, Bundesland, Rolle. Jede Zeile braucht eine E-Mail oder einen Namen; wer nur einen Namen hat, wird ohne E-Mail angelegt und du buchst den Urlaub für die Person. Arbeitstage wie Mo-Fr oder Mo, Mi, Fr; Datum wie 01.03.2024 oder 2024-03-01; Rolle Admin oder Mitglied. Ohne Kopfzeile werden E-Mail, Name und Tage am Inhalt erkannt. Ein Urlaubsplaner geht auch: Namen und Anspruchsspalte werden übernommen.",
     timeOffHelp:
       "Eine Zeile pro Abwesenheit, mit Kopfzeile: E-Mail oder Name, Von, Bis, Art, Halbtag. „Bis“ kann bei einem einzelnen Tag leer bleiben. Art ist Urlaub (Standard) oder Sonstiges. Halbtag ist vormittags oder nachmittags und geht bei einem einzelnen Tag. Die Personen müssen schon im Workspace sein, importiere sie also zuerst. Krankheitstage werden nicht importiert: Alte braucht es nicht, neue trägst du in der App ein. Du kannst auch einen Excel-Urlaubsplaner öffnen (Namen untereinander, Tage nebeneinander, U für Urlaub), einen aus Outlook oder Google exportierten Kalender (.ics) oder den Abwesenheits-Export von Personio, absence.io, Timetastic oder Vacation Tracker.",
     templateLink: "Vorlage herunterladen",
@@ -203,8 +243,8 @@ export const importer = defineMessages({
         "Als Urlaubsplaner gelesen: eine Buchung je zusammenhängende markierte Tage. U = Urlaub, ½ = halber Tag (vormittags), VM/NM = vormittags/nachmittags, FB, SU, ÜA = Sonstiges, K = krank (wird weggelassen).",
       calendar: "Als Kalender gelesen: jeder ganztägige Termin wird eine Buchung, für die Person aus dem Titel oder der Einladung.",
     },
-    link: "Viele Personen aus Excel importieren",
-    linkHint: "Für Teams ab etwa 20: füge eine Liste mit Namen, Urlaubstagen und Arbeitstagen ein, später auch den Urlaub.",
+    link: "Team übernehmen",
+    linkHint: "Aus Excel, einem Urlaubsplaner, Outlook oder Google oder deinem alten Tool: Personen und ihr gebuchter Urlaub in wenigen Minuten.",
     assisted: (price: string, email: string) =>
       `Lieber nicht selbst machen? Wir importieren deine Excel-Datei oder den Export deines alten Tools für dich: einmalig ${price}, im Jahres-Tarif Business enthalten. Schreib an ${email}.`,
   },

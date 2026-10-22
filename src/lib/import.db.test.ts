@@ -84,3 +84,17 @@ describe("time off from other tools, planners and calendars", () => {
     expect(plan.rows[0]).toMatchObject({ status: "ok", membershipId: t.member.id, start: from, end: to, daysCount: 5 });
   });
 });
+
+describe("people from a year planner", () => {
+  it("adds the names not in yet and recognises the ones who are, even by first name", async () => {
+    const t = await makeWorkspace();
+    await db.user.update({ where: { id: t.member.user.id }, data: { name: "Lena Wagner" } });
+    const header = ["Mitarbeiter", "Anspruch", ...Array.from({ length: 10 }, (_, i) => `2027-03-${String(i + 1).padStart(2, "0")}`)];
+    const text = [header, ["Lena", "30", "U"], ["Murat Yilmaz", "28"], ["Summe", "58"]].map((r) => r.join("\t")).join("\n");
+    const plan = await planPeople(t.workspace, t.settings, text);
+    expect(plan.rows.map((r) => [r.name, r.allowance, r.status])).toEqual([
+      ["Lena", 30, "exists"],
+      ["Murat Yilmaz", 28, "new"],
+    ]);
+  });
+});

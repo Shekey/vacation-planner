@@ -8,12 +8,24 @@ import { formatNumber } from "@/lib/i18n";
 import { formatDate, formatRange } from "@/lib/dates";
 import type { ImportError } from "@/lib/import";
 import type { PeoplePlan, TimeOffPlan } from "@/lib/import-db";
-import { bestSheet, looksLikeOldExcel, looksLikeZip, readWorkbook, toTabText, type Sheet } from "@/lib/xlsx";
+import { looksLikeCalendar } from "@/lib/import-ics";
+import { bestSheet, looksLikeOldExcel, looksLikeZip, readCalendarsInZip, readWorkbook, toTabText, type Sheet } from "@/lib/xlsx";
 import {
   applyImportAction,
   previewImportAction,
   type ImportKind,
 } from "./actions";
+
+/** Where a team keeps vacation before switching, and which tab that starts on. */
+const STARTS = [
+  ["excel", "people"],
+  ["planner", "people"],
+  ["calendar", "timeoff"],
+  ["tool", "people"],
+  ["directory", "people"],
+  ["paper", "people"],
+] as const;
+type Start = (typeof STARTS)[number][0];
 
 /** Sheet names that fit each tab, so "Urlaub 2026" opens on the time-off tab and "Mitarbeiter" on the people tab. */
 const SHEET_FITS: Record<ImportKind, RegExp> = {
@@ -43,6 +55,7 @@ export function ImportClient({ slug }: { slug: string }) {
   const [sendWelcome, setSendWelcome] = useState(true);
   const [sheets, setSheets] = useState<Sheet[] | null>(null);
   const [sheetIndex, setSheetIndex] = useState(0);
+  const [start, setStart] = useState<Start | null>(null);
   const [pending, startTransition] = useTransition();
 
   const reset = () => {
@@ -75,10 +88,19 @@ export function ImportClient({ slug }: { slug: string }) {
       return;
     }
     if (!looksLikeZip(bytes)) {
-      setText(decodeText(bytes));
+      const text = decodeText(bytes);
+      // A calendar file only makes sense as time off.
+      if (looksLikeCalendar(text) && kind !== "timeoff") setKind("timeoff");
+      setText(text);
       return;
     }
     try {
+      const calendars = await readCalendarsInZip(bytes);
+      if (calendars) {
+        setKind("timeoff");
+        setText(calendars);
+        return;
+      }
       const book = (await readWorkbook(bytes)).filter((s) => s.rows.length > 0);
       if (book.length === 0) throw new Error("empty workbook");
       setSheets(book);
@@ -122,6 +144,35 @@ export function ImportClient({ slug }: { slug: string }) {
 
   return (
     <div className="space-y-4">
+      <section className="space-y-2" aria-labelledby="import-start">
+        <h3 id="import-start" className="font-medium">
+          {t.start.question}
+        </h3>
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
+          {STARTS.map(([key, tab]) => (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={start === key}
+              onClick={() => {
+                setStart(key);
+                if (tab !== kind) switchKind(tab);
+              }}
+              className={`rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+                start === key ? "border-primary bg-primary/5 text-primary" : "border-border bg-surface hover:border-primary/50"
+              }`}
+            >
+              {t.start.options[key].title}
+            </button>
+          ))}
+        </div>
+        {start && (
+          <p className="rounded-xl bg-primary/5 p-3 text-sm" aria-live="polite">
+            {t.start.options[start].how}
+          </p>
+        )}
+      </section>
+
       <div role="tablist" className="flex gap-1 border-b border-border">
         {(["people", "timeoff"] as const).map((k) => (
           <button
@@ -269,7 +320,8 @@ export function ImportClient({ slug }: { slug: string }) {
                   String(r.line),
                   <span key="p">
                     {r.name ?? r.email}
-                    {r.name && (
+                    {/* Someone already in may have an email the sheet doesn't show. */}
+                    {r.name && (r.email || r.status === "new") && (
                       <span className="block text-xs text-muted">
                         {r.email || t.withoutEmail}
                       </span>

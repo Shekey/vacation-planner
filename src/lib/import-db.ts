@@ -6,10 +6,12 @@ import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { regionsOf } from "@/lib/holiday-regions";
 import { isLocale, messagesFor, type Locale } from "@/lib/i18n";
-import { findPerson, parsePeople, spansConflict, type ImportError, type PersonRow, type TimeOffRow } from "@/lib/import";
+import { findPerson, parsePeople, parseTable, spansConflict, type ImportError, type PersonRow, type TimeOffRow } from "@/lib/import";
+import { findGrid, peopleOfGrid } from "@/lib/import-grid";
 import { readTimeOff, type TimeOffSource } from "@/lib/import-time-off";
-import { hasNoEmail, NO_EMAIL_DOMAIN, noEmailAddress } from "@/lib/no-email";
+import { hasNoEmail, noEmailAddress } from "@/lib/no-email";
 import { accessOf, isOverLimit } from "@/lib/plans";
+import { toTabText } from "@/lib/xlsx";
 
 type Workspace = {
   id: string;
@@ -47,25 +49,27 @@ export async function planPeople(workspace: Workspace, settings: Settings, text:
   const names = (code: string) => [regionsOf(country, "en"), regionsOf(country, "de")].map((l) => l.find((r) => r.code === code)?.name ?? "");
   // Without a holiday country there are no states to match, so a state column is left out rather than failing every row.
   const regions = country ? regionsOf(country, "en").map((r) => ({ code: r.code, names: names(r.code) })) : null;
-  const parsed = parsePeople(text, { countWeekends: settings.countWeekends, regions });
+  const parsed = parsePeople(peopleText(text, Number(todayIn(workspace.timezone).slice(0, 4))), { countWeekends: settings.countWeekends, regions });
   const tooMany = parsed.length > MAX_IMPORT_ROWS;
 
-  const emails = parsed.filter((r) => !r.error && r.email).map((r) => r.email);
-  const [existing, withoutEmail, current] = await Promise.all([
-    db.membership.findMany({
-      where: { workspaceId: workspace.id, isSample: false, user: { email: { in: emails } } },
-      select: { removedAt: true, user: { select: { email: true } } },
-    }),
-    noEmailMembers(workspace.id),
+  const [members, current] = await Promise.all([
+    db.membership.findMany({ where: { workspaceId: workspace.id, isSample: false }, select: { id: true, removedAt: true, user: { select: { email: true, name: true } } } }),
     db.membership.count({ where: { workspaceId: workspace.id, removedAt: null, isSample: false } }),
   ]);
-  const byEmail = new Map(existing.map((m) => [m.user.email, m]));
+  const byEmail = new Map(members.map((m) => [m.user.email, m]));
+  const known = (removed: boolean) =>
+    members.filter((m) => Boolean(m.removedAt) === removed).map((m) => ({ id: m.id, name: m.user.name, email: hasNoEmail(m.user.email) ? "" : m.user.email }));
+  const [active, removed] = [known(false), known(true)];
 
   const rows = parsed.slice(0, MAX_IMPORT_ROWS).map((r): PeopleRow => {
     if (r.error) return { ...r, status: "error" };
-    // Someone without email is matched by name, so importing the same sheet twice doesn't add them twice.
-    const m = r.email ? byEmail.get(r.email) : withoutEmail.get(nameKey(r.name ?? ""));
-    return { ...r, status: m ? (m.removedAt ? "removed" : "exists") : "new" };
+    if (r.email) {
+      const m = byEmail.get(r.email);
+      return { ...r, status: m ? (m.removedAt ? "removed" : "exists") : "new" };
+    }
+    // A name alone is matched against everyone, so a year planner doesn't add "Lena" next to the Lena Wagner already in.
+    if (findPerson(r.name ?? "", active)) return { ...r, status: "exists" };
+    return { ...r, status: findPerson(r.name ?? "", removed) ? "removed" : "new" };
   });
   const counts = {
     new: rows.filter((r) => r.status === "new").length,
@@ -77,15 +81,11 @@ export async function planPeople(workspace: Workspace, settings: Settings, text:
   return { rows, counts, room: { current, max, fits: current + counts.new <= max }, tooMany, regionIgnored: rows.some((r) => r.regionIgnored) };
 }
 
-const nameKey = (name: string) => name.trim().toLowerCase().replace(/\s+/g, " ");
-
-/** People added without email in this workspace, by name. */
-async function noEmailMembers(workspaceId: string) {
-  const members = await db.membership.findMany({
-    where: { workspaceId, isSample: false, user: { email: { endsWith: `@${NO_EMAIL_DOMAIN}` } } },
-    include: { user: { select: { email: true, name: true } } },
-  });
-  return new Map(members.map((m) => [nameKey(m.user.name ?? ""), m]));
+/** A year planner's names (and allowance column, if it has one) as a people list; anything else as it is. */
+function peopleText(text: string, year: number): string {
+  const table = parseTable(text);
+  const grid = findGrid(table, year);
+  return grid ? toTabText(peopleOfGrid(table, grid)) : text;
 }
 
 export type PeopleResult = { created: number; emailed: number; emailFailed: number };
