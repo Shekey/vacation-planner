@@ -82,6 +82,7 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 - Leave `AUTH_URL` unset on Vercel; the app uses the production domain. Never use `vacation-planner.vercel.app`: that is someone else's site.
 - Emails reach real people only after a domain is verified in Resend and `EMAIL_FROM` uses it; with `onboarding@resend.dev` Resend delivers only to the Resend account owner (seen 2026-10-03).
 - Never run `prisma migrate reset` against a real database.
+- Database changes (#30): `vercel-build` builds first, then migrates. Migrations are expand/contract (README, "Database changes"); the *Migrations* workflow (`scripts/check-migrations.mjs`, `src/lib/migration-check.mjs`) fails a PR with `DROP COLUMN`, `DROP TABLE`, `RENAME` or an edited/removed migration unless it has the label `breaking-migration`.
 
 ## Open items
 

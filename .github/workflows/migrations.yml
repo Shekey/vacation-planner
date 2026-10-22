@@ -1,0 +1,24 @@
+name: Migrations
+
+# Separate from CI so adding or removing the label re-runs only this check.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    paths: ["prisma/migrations/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  additive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: node scripts/check-migrations.mjs "origin/${{ github.base_ref }}"
+        env:
+          BREAKING_MIGRATION_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'breaking-migration') && '1' || '0' }}
