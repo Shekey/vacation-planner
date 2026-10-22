@@ -97,7 +97,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
 
         <h2>5. Retention period</h2>
         <p>
-          We store account data until the account is deleted. In a monthly clean-up we automatically delete bookings three years after they
+          We store account data until the account is deleted. In a daily clean-up we automatically delete bookings three years after they
           end (sick days twelve months after they end), the data of people who were removed from a workspace three years ago, completed invitations 30 days after they were sent,
           and expired sessions and sign-in links, and activity log entries after 12 months. When a paid plan or the trial ends, the workspace
           moves to the free plan and nothing is deleted. People removed from a workspace, cancelled bookings and deleted workspaces can be
@@ -211,7 +211,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
 
       <h2>5. Speicherdauer</h2>
       <p>
-        Kontodaten speichern wir, bis das Konto gelöscht wird. Bei einem monatlichen Löschlauf löschen wir automatisch Buchungen drei Jahre
+        Kontodaten speichern wir, bis das Konto gelöscht wird. Bei einem täglichen Löschlauf löschen wir automatisch Buchungen drei Jahre
         nach ihrem Ende (Krankheitstage zwölf Monate nach ihrem Ende), die Daten von Personen, die seit drei Jahren aus einem Workspace entfernt sind, erledigte Einladungen 30 Tage nach
         dem Versand, abgelaufene Sitzungen und Anmeldelinks sowie Einträge des Verlaufs nach 12 Monaten. Endet ein bezahlter Tarif oder die
         Testphase, wechselt der Workspace in den Free-Tarif; dabei wird nichts gelöscht. Entfernte Personen, stornierte Buchungen und

@@ -10,11 +10,12 @@ export async function importHolidays(
   country: string,
   year: number,
   locale: Locale = "en",
+  fetchHolidays = fetchPublicHolidays,
 ): Promise<{ count: number } | { error: string }> {
   const t = messagesFor(locale).errors;
   let holidays;
   try {
-    holidays = await fetchPublicHolidays(country, year);
+    holidays = await fetchHolidays(country, year);
   } catch (e) {
     return { error: t.holidaysLoadFailed((e as Error).message) };
   }

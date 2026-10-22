@@ -69,7 +69,7 @@ export const settings = defineMessages({
     supportRevoked: "Support access is off.",
     deleteHeading: "Delete workspace",
     deleteBody: (name: string) =>
-      `Deletes ${name} with all its members' bookings, allowances and holidays, for everyone. A paid plan is cancelled with it, so nothing more is charged. You can restore the workspace from your workspace list for 30 days; after that it is gone for good. To hand the workspace over instead, make someone else an admin in Members.`,
+      `Deletes ${name} with all its members' bookings, allowances and holidays, for everyone. A paid plan is not renewed, so nothing more is charged. You can restore the workspace from your workspace list for 30 days, with its plan if the paid period hasn't ended; after that it is gone for good. To hand the workspace over instead, make someone else an admin in Members.`,
     typeToConfirm: (name: string) => `Type ${name} to confirm`,
     deleteButton: "Delete workspace",
     errors: {
@@ -159,7 +159,7 @@ export const settings = defineMessages({
     supportRevoked: "Der Support-Zugriff ist aus.",
     deleteHeading: "Workspace löschen",
     deleteBody: (name: string) =>
-      `Löscht ${name} mit allen Buchungen, Urlaubsansprüchen und Feiertagen aller Mitglieder, für alle. Ein bezahlter Tarif wird dabei gekündigt, es wird also nichts mehr abgebucht. Du kannst den Workspace 30 Tage lang in deiner Workspace-Liste wiederherstellen, danach ist er endgültig weg. Um den Workspace stattdessen zu übergeben, mach unter Mitglieder jemand anderen zum Admin.`,
+      `Löscht ${name} mit allen Buchungen, Urlaubsansprüchen und Feiertagen aller Mitglieder, für alle. Ein bezahlter Tarif verlängert sich nicht mehr, es wird also nichts mehr abgebucht. Du kannst den Workspace 30 Tage lang in deiner Workspace-Liste wiederherstellen, mit seinem Tarif, solange der bezahlte Zeitraum noch läuft; danach ist er endgültig weg. Um den Workspace stattdessen zu übergeben, mach unter Mitglieder jemand anderen zum Admin.`,
     typeToConfirm: (name: string) => `Gib zur Bestätigung ${name} ein`,
     deleteButton: "Workspace löschen",
     errors: {

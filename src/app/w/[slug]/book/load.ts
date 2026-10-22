@@ -1,4 +1,4 @@
-import { activeBookingsBetween, allowanceSummary, regionOf, spanOf } from "@/lib/bookings";
+import { activeBookingsBetween, allowanceSummaries, regionOf, spanOf } from "@/lib/bookings";
 import { addDays, fromISO, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { getLocale, getMessages } from "@/lib/i18n/server";
@@ -32,20 +32,20 @@ export async function loadBookingFormData(ctx: Ctx) {
     include: { user: { select: { name: true, email: true } } },
     orderBy: { user: { email: "asc" } },
   });
-  const members = await Promise.all(
-    memberships.map(async (m) => {
-      const s = await allowanceSummary(m, settings, currentYear, undefined, today);
-      const label = `${m.user.name ?? m.user.email}${m.isSample ? ` (${common.sample})` : ""}`;
-      return {
-        id: m.id,
-        name: m.id === membership.id ? t.you(label) : label,
-        allowance: s.allowance,
-        takenThisYear: s.used + s.pending,
-        region: regionOf(m, settings),
-        workDays: m.workDays,
-      };
-    }),
-  );
+  // One batch for the whole team: a query per person would run out of database connections in a big team.
+  const summaries = await allowanceSummaries(memberships, settings, currentYear, today);
+  const members = memberships.map((m) => {
+    const s = summaries.get(m.id)!;
+    const label = `${m.user.name ?? m.user.email}${m.isSample ? ` (${common.sample})` : ""}`;
+    return {
+      id: m.id,
+      name: m.id === membership.id ? t.you(label) : label,
+      allowance: s.allowance,
+      takenThisYear: s.used + s.pending,
+      region: regionOf(m, settings),
+      workDays: m.workDays,
+    };
+  });
   members.sort((a, b) => Number(b.id === membership.id) - Number(a.id === membership.id));
 
   const bookings = await activeBookingsBetween(workspace.id, addDays(today, -31), addDays(today, 400));

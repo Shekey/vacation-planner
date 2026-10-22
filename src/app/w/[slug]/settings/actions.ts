@@ -13,7 +13,7 @@ import { isPlainName } from "@/lib/mail-limits";
 import { postToChannels, type ChatChannel } from "@/lib/notify";
 import { requireAdmin, settingsOf } from "@/lib/session";
 import { isSlackWebhookUrl } from "@/lib/slack";
-import { cancelSubscriptionNow } from "@/lib/stripe";
+import { stopRenewal } from "@/lib/stripe";
 import { isTeamsWebhookUrl } from "@/lib/teams";
 import { isLocale, messagesFor, type Messages } from "@/lib/i18n";
 import { getMessages } from "@/lib/i18n/server";
@@ -121,8 +121,9 @@ export async function deleteWorkspaceAction(slug: string, _prev: ActionResult, f
   if (String(formData.get("confirmName") ?? "").trim() !== ctx.workspace.name) {
     return { error: (await getMessages()).settings.errors.confirmName };
   }
-  // Hidden, not deleted: admins can restore it for RESTORE_DAYS, then the monthly purge deletes it (src/lib/retention.ts).
-  await cancelSubscriptionNow(ctx.workspace.stripeSubscriptionId);
+  // Hidden, not deleted: admins can restore it for RESTORE_DAYS, then the daily purge deletes it (src/lib/retention.ts).
+  // The plan isn't renewed but keeps running, so a restore brings it back as it was; the purge cancels it.
+  await stopRenewal(ctx.workspace.stripeSubscriptionId);
   await db.workspace.update({ where: { id: ctx.workspace.id }, data: { deletedAt: new Date() } });
   await recordAudit({ workspaceId: ctx.workspace.id, actorId: ctx.user.id, action: "workspace.deleted" });
   redirect("/");

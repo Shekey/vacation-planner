@@ -3,7 +3,7 @@ import { ActionForm } from "@/components/action-form";
 import { AllowanceCard } from "@/components/allowance-card";
 import { StatusBadge, TypeDot, typeLabel } from "@/components/badges";
 import { halfDayLabel } from "@/lib/booking-days";
-import { allowanceSummary, spanOf } from "@/lib/bookings";
+import { allowanceSummary, spanOf, withDays } from "@/lib/bookings";
 import { formatRange, fromISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { formatNumber } from "@/lib/i18n";
@@ -31,7 +31,7 @@ export default async function MyTimeOffPage({
   const today = todayIn(workspace.timezone);
   const year = Number(today.slice(0, 4));
 
-  const [summary, nextYear, bookings] = await Promise.all([
+  const [summary, nextYear, saved] = await Promise.all([
     allowanceSummary(membership, settings, year, undefined, today),
     allowanceSummary(membership, settings, year + 1, undefined, today),
     db.booking.findMany({
@@ -42,6 +42,12 @@ export default async function MyTimeOffPage({
       take: 100,
     }),
   ]);
+  // Counted like the allowance card above, so the list and "days left" agree.
+  const bookings = await withDays(
+    workspace.id,
+    settings,
+    saved.map((b) => ({ ...b, membership })),
+  );
   const feedUrl = membership.calendarToken
     ? `${await appOrigin()}/api/calendar/${membership.calendarToken}.ics`
     : null;
@@ -69,7 +75,7 @@ export default async function MyTimeOffPage({
           </div>
           <div className="text-sm opacity-70">
             {typeLabel(b.type, locale, b.specialReason)} ·{" "}
-            {common.days(formatNumber(Number(b.daysCount), locale))}
+            {common.days(formatNumber(b.days, locale))}
             {half && ` · ${half}`}
             {b.note && ` · ${b.note}`}
             {b.decisionNote && ` · ${t.adminNote(b.decisionNote)}`}
