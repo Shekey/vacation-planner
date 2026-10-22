@@ -38,7 +38,7 @@ export default async function PeoplePage({ params }: PageProps<"/w/[slug]/people
       if (current) {
         const span = spanOf(current);
         const portion = portionOn(span, today);
-        const kind = typeLabel(current.type, locale);
+        const kind = typeLabel(current.type, locale, current.specialReason);
         todayStatus =
           portion === "AM"
             ? t.offMorning(kind)
@@ -61,7 +61,7 @@ export default async function PeoplePage({ params }: PageProps<"/w/[slug]/people
           return {
             id: b.id,
             label: formatRange(span.start, span.end, locale),
-            detail: `${typeLabel(b.type, locale)} · ${common.days(formatNumber(days, locale))}${half ? ` · ${half}` : ""}`,
+            detail: `${typeLabel(b.type, locale, b.specialReason)} · ${common.days(formatNumber(days, locale))}${half ? ` · ${half}` : ""}`,
             pending: b.status === "PENDING",
             color: typeColor(b.type),
           };

@@ -1,4 +1,4 @@
-import type { BookingStatus, BookingType, Prisma, Role } from "@/generated/prisma/client";
+import type { BookingStatus, BookingType, Prisma, Role, SpecialReason } from "@/generated/prisma/client";
 import {
   allowanceIn,
   carriedOverStatus,
@@ -52,16 +52,19 @@ export function rulesFor(
 
 /**
  * Hides other people's sick days from a viewer who isn't an admin: they show as "Other" without a note,
- * since being sick is health data (Art. 9 GDPR). Only the person and admins see them as sick.
+ * since being sick is health data (Art. 9 GDPR). Only the person and admins see them as sick, and only they
+ * see why someone takes special leave.
  */
-export function forViewer<T extends { type: BookingType; note: string | null; membershipId: string }>(
+export function forViewer<T extends { type: BookingType; note: string | null; membershipId: string; specialReason?: SpecialReason | null }>(
   bookings: T[],
   viewer: { membershipId: string; role: Role },
 ): T[] {
   if (viewer.role === "ADMIN") return bookings;
-  return bookings.map((b) =>
-    b.type === "SICK" && b.membershipId !== viewer.membershipId ? { ...b, type: "OTHER" as const, note: null } : b,
-  );
+  return bookings.map((b) => {
+    if (b.membershipId === viewer.membershipId) return b;
+    if (b.type === "SICK") return { ...b, type: "OTHER" as const, note: null };
+    return b.specialReason ? { ...b, specialReason: null } : b;
+  });
 }
 
 /** The region whose holidays apply to a member: their own, else the workspace default, else nationwide only. */
@@ -109,7 +112,7 @@ export function isOverlapError(e: unknown) {
 
 type Actor = { userId: string; membershipId: string; role: Role };
 
-type BookingInput = BookingSpan & { type: BookingType; note: string | null };
+type BookingInput = BookingSpan & { type: BookingType; note: string | null; specialReason?: SpecialReason | null };
 
 function prepare(input: BookingInput, settings: Settings, rules: DayRules, t: Messages["errors"]) {
   const error = validateSpan(input, settings);
@@ -123,6 +126,7 @@ function prepare(input: BookingInput, settings: Settings, rules: DayRules, t: Me
     endPart: input.endPart,
     type: input.type,
     note: input.note,
+    specialReason: input.type === "SPECIAL" ? (input.specialReason ?? null) : null,
     daysCount,
   };
 }

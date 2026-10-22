@@ -12,7 +12,9 @@ import { appOrigin } from "@/lib/url";
 
 const schema = z.object({
   membershipId: z.string().min(1),
-  type: z.enum(["VACATION", "SICK", "OTHER"]),
+  type: z.enum(["VACATION", "SICK", "SPECIAL", "OTHER"]),
+  // "" when the person doesn't say.
+  specialReason: z.enum(["WEDDING", "BIRTH", "BEREAVEMENT", "MOVING", "OTHER", ""]).optional(),
   start: z.string().refine(isISODate),
   end: z.string().refine(isISODate),
   startPart: z.enum(["FULL", "PM"]),
@@ -28,8 +30,8 @@ export async function saveBooking(slug: string, bookingId: string | null, _prev:
     return { error: field === "start" ? t.pickStart : field === "end" ? t.pickEnd : t.invalid };
   }
   // Bookings carry no free text, so nothing personal ends up in notes (and no diagnosis next to sick days).
-  const { membershipId, ...rest } = parsed.data;
-  const input = { ...rest, note: null };
+  const { membershipId, specialReason, ...rest } = parsed.data;
+  const input = { ...rest, specialReason: specialReason || null, note: null };
   const common = {
     workspace: ctx.workspace,
     settings: settingsOf(ctx.workspace),

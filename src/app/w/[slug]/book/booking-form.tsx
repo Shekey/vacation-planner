@@ -18,6 +18,9 @@ import { eachDay, formatDate, formatRange, type ISODate } from "@/lib/dates";
 import { formatNumber } from "@/lib/i18n";
 import { understaffedDays } from "@/lib/staffing";
 
+const SPECIAL_REASONS = ["WEDDING", "BIRTH", "BEREAVEMENT", "MOVING", "OTHER"] as const;
+type SpecialReason = (typeof SPECIAL_REASONS)[number];
+
 type Member = {
   id: string;
   name: string;
@@ -53,7 +56,8 @@ export type BookingFormProps = {
   team: TeamBooking[];
   initial: {
     membershipId: string;
-    type: "VACATION" | "SICK" | "OTHER";
+    type: "VACATION" | "SICK" | "SPECIAL" | "OTHER";
+    specialReason?: SpecialReason | null;
     start: ISODate;
     end: ISODate;
     startPart: "FULL" | "PM";
@@ -218,7 +222,7 @@ export function BookingForm(props: BookingFormProps) {
       <fieldset className="space-y-1">
         <legend className="text-sm font-medium">{t.type}</legend>
         <div className="flex flex-wrap gap-2">
-          {(["VACATION", "SICK", "OTHER"] as const).map((option) => (
+          {(["VACATION", "SICK", "SPECIAL", "OTHER"] as const).map((option) => (
             <label
               key={option}
               className={`cursor-pointer rounded-lg border px-3 py-1.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40 text-sm ${
@@ -240,6 +244,20 @@ export function BookingForm(props: BookingFormProps) {
           ))}
         </div>
       </fieldset>
+
+      {type === "SPECIAL" && (
+        <label className="block space-y-1">
+          <span className="text-sm font-medium">{t.reason}</span>
+          <select className="input" name="specialReason" defaultValue={initial.specialReason ?? ""}>
+            <option value="">{t.noReason}</option>
+            {SPECIAL_REASONS.map((r) => (
+              <option key={r} value={r}>
+                {messages.common.specialReason[r]}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <label className="block space-y-1">
@@ -394,6 +412,7 @@ export function BookingForm(props: BookingFormProps) {
               </p>
             )}
             {sick && <p className="opacity-70">{t.sickHint}</p>}
+            {type === "SPECIAL" && <p className="opacity-70">{t.specialHint}</p>}
           </>
         ) : (
           <p className="opacity-70">{t.pickDates}</p>

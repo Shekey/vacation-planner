@@ -68,7 +68,7 @@ export default async function MyTimeOffPage({
             <StatusBadge status={b.status} locale={locale} />
           </div>
           <div className="text-sm opacity-70">
-            {typeLabel(b.type, locale)} ·{" "}
+            {typeLabel(b.type, locale, b.specialReason)} ·{" "}
             {common.days(formatNumber(Number(b.daysCount), locale))}
             {half && ` · ${half}`}
             {b.note && ` · ${b.note}`}
