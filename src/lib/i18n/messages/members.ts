@@ -50,9 +50,12 @@ export const members = defineMessages({
       badge: "No email address",
       emailLabel: "Email address",
       emailFor: (who: string) => `Email address for ${who}`,
-      emailHint: "Once you add it, they get an email telling them where to sign in. Everything booked so far stays.",
+      emailHint:
+        "Once you add it, they get an email telling them where to sign in. If they already use the app in another team, they get an invitation and join once they accept it. Everything booked so far stays.",
       emailAdded: (email: string) => `Saved. ${email} got an email telling them where to sign in.`,
       emailAddedNoMail: (email: string) => `Saved. Today's limit for emails to new people is used up, so ${email} didn't get an email. Tell them to sign in with this address.`,
+      invitedExisting: (email: string) =>
+        `${email} already uses the app, so they got an invitation. Once they accept it, they sign in with that address and keep everything booked so far.`,
       errors: {
         name: "Enter the person's name.",
         nameLong: "That name is too long.",
@@ -169,9 +172,12 @@ export const members = defineMessages({
       badge: "Keine E-Mail-Adresse",
       emailLabel: "E-Mail-Adresse",
       emailFor: (who: string) => `E-Mail-Adresse für ${who}`,
-      emailHint: "Sobald du sie einträgst, bekommt die Person eine E-Mail, wo sie sich anmelden kann. Alles bisher Gebuchte bleibt.",
+      emailHint:
+        "Sobald du sie einträgst, bekommt die Person eine E-Mail, wo sie sich anmelden kann. Nutzt sie die App schon in einem anderen Team, bekommt sie eine Einladung und ist dabei, sobald sie sie annimmt. Alles bisher Gebuchte bleibt.",
       emailAdded: (email: string) => `Gespeichert. ${email} hat eine E-Mail bekommen, wo die Anmeldung geht.`,
       emailAddedNoMail: (email: string) => `Gespeichert. Das Tageslimit für E-Mails an neue Leute ist erreicht, deshalb hat ${email} keine E-Mail bekommen. Sag bitte Bescheid, dass die Anmeldung mit dieser Adresse geht.`,
+      invitedExisting: (email: string) =>
+        `${email} nutzt die App schon, deshalb ging eine Einladung raus. Sobald sie angenommen ist, meldet sich die Person mit dieser Adresse an und behält alles bisher Gebuchte.`,
       errors: {
         name: "Gib den Namen der Person ein.",
         nameLong: "Der Name ist zu lang.",

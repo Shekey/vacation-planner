@@ -1,18 +1,20 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 import { safeRedirectPath } from "@/lib/security";
-import { tooManySignInLinks } from "@/lib/sign-in-limit";
+import { checkSignInAttempt, clientIp } from "@/lib/sign-in-limit";
 
 /** Emails a sign-in link, then shows "check your email" with the address it went to. */
 export async function sendSignInLinkAction(formData: FormData) {
   const address = String(formData.get("email") ?? "").trim();
   const callbackUrl = safeRedirectPath(formData.get("callbackUrl"));
-  if (await tooManySignInLinks(address)) {
-    redirect(`/sign-in?${new URLSearchParams({ error: "RateLimited", email: address, callbackUrl })}`);
-  }
+  const decision = await checkSignInAttempt(address, clientIp(await headers()));
+  if (decision === "refused") redirect(`/sign-in?${new URLSearchParams({ error: "RateLimited", email: address, callbackUrl })}`);
+  // The links sent in the last minutes still work, so the person sees "check your email", not an error.
+  if (decision === "enough") redirect(`/sign-in?${new URLSearchParams({ sent: "1", again: "1", email: address, callbackUrl })}`);
   let next: URL;
   try {
     next = new URL(await signIn("resend", { email: address, redirectTo: callbackUrl, redirect: false }), "http://local");
