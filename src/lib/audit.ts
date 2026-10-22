@@ -4,6 +4,8 @@ export const AUDIT_ACTIONS = [
   "member.removed",
   "member.restored",
   "member.role_changed",
+  "member.added_without_email",
+  "member.email_added",
   "booking.cancelled",
   "booking.restored",
   "booking.approved",
