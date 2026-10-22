@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
-import { applyPeople, applyTimeOff, planPeople } from "@/lib/import-db";
+import { applyPeople, applyTimeOff, planPeople, planTimeOff } from "@/lib/import-db";
 import { hasNoEmail } from "@/lib/no-email";
 import { makeWorkspace } from "@/test/db";
 
@@ -33,5 +33,54 @@ describe("importing people without an email address", () => {
     const [from, to] = weekNextYear();
     expect(await applyTimeOff(team.workspace, team.settings, actor, `Name;Von;Bis\nmaria schulz;${from};${to}\n`)).toEqual({ created: 1, days: 5 });
     expect(await db.booking.count({ where: { membershipId: maria.id } })).toBe(1);
+  });
+});
+
+describe("time off from other tools, planners and calendars", () => {
+  async function team() {
+    const t = await makeWorkspace();
+    await db.user.update({ where: { id: t.member.user.id }, data: { name: "Lena Wagner" } });
+    await db.user.update({ where: { id: t.admin.user.id }, data: { name: "Anna Wagner" } });
+    return t;
+  }
+
+  it("finds people with an email by their name, and asks for the email when a name fits two", async () => {
+    const t = await team();
+    const [from, to] = weekNextYear();
+    const plan = await planTimeOff(
+      t.workspace,
+      t.settings,
+      `Employee;Absence type;Start date;End date;Status\nWagner, Lena;Paid time off;${from};${to};approved\nWagner;Paid time off;${from};${to};approved\nLena Wagner;Paid time off;${from};${to};declined`,
+    );
+    expect(plan.rows.map((r) => r.error?.code ?? r.membershipId)).toEqual([t.member.id, "ambiguousName", "notApproved"]);
+    expect(plan.counts).toMatchObject({ ok: 1, days: 5 });
+  });
+
+  it("books a year planner's runs of U for the right person", async () => {
+    const t = await team();
+    const [monday] = weekNextYear();
+    const header = ["Name", ...Array.from({ length: 7 }, (_, i) => new Date(Date.parse(monday) + i * 86_400_000).toISOString().slice(0, 10))];
+    const text = [header, ["Lena", "U", "U", "U", "U", "U"], ["Anna W.", "", "", "½"]].map((r) => r.join("\t")).join("\n");
+    const result = await applyTimeOff(t.workspace, t.settings, { id: t.admin.user.id }, text);
+    expect(result).toEqual({ created: 2, days: 5.5 });
+    const lena = await db.booking.findFirstOrThrow({ where: { membershipId: t.member.id } });
+    expect([lena.startDate.toISOString().slice(0, 10), Number(lena.daysCount), lena.status]).toEqual([monday, 5, "APPROVED"]);
+  });
+
+  it("books all-day events from an Outlook calendar file", async () => {
+    const t = await team();
+    const [from, to] = weekNextYear();
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "BEGIN:VEVENT",
+      "SUMMARY:Urlaub Lena",
+      `DTSTART;VALUE=DATE:${from.replace(/-/g, "")}`,
+      `DTEND;VALUE=DATE:${new Date(Date.parse(to) + 86_400_000).toISOString().slice(0, 10).replace(/-/g, "")}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+    const plan = await planTimeOff(t.workspace, t.settings, ics);
+    expect(plan.source).toBe("calendar");
+    expect(plan.rows[0]).toMatchObject({ status: "ok", membershipId: t.member.id, start: from, end: to, daysCount: 5 });
   });
 });

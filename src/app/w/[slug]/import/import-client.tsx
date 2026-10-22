@@ -168,7 +168,7 @@ export function ImportClient({ slug }: { slug: string }) {
         <label className="text-sm text-primary hover:underline">
           <input
             type="file"
-            accept=".xlsx,.csv,.txt,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            accept=".xlsx,.csv,.txt,.ics,text/csv,text/plain,text/calendar,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             className="sr-only"
             onChange={async (e) => {
               const file = e.target.files?.[0];
@@ -336,6 +336,9 @@ export function ImportClient({ slug }: { slug: string }) {
               timeOff.counts.errors,
             )}
           </p>
+          {timeOff.source !== "list" && (
+            <p className="text-xs text-muted">{t.source[timeOff.source]}</p>
+          )}
           <Table
             head={[
               t.columns.row,
@@ -348,8 +351,9 @@ export function ImportClient({ slug }: { slug: string }) {
                 (a, b) =>
                   Number(b.status === "error") - Number(a.status === "error"),
               )
-              .map((r) => ({
-                key: r.line,
+              // A year planner gives several bookings per row, so the row number alone isn't unique.
+              .map((r, i) => ({
+                key: `${r.line}-${i}`,
                 error: r.status === "error",
                 cells: [
                   String(r.line),
@@ -385,7 +389,7 @@ function Table({
   rows,
 }: {
   head: string[];
-  rows: { key: number; error: boolean; cells: React.ReactNode[] }[];
+  rows: { key: number | string; error: boolean; cells: React.ReactNode[] }[];
 }) {
   return (
     <div className="max-h-96 overflow-auto rounded-xl border border-border bg-surface">
