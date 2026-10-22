@@ -20,3 +20,15 @@ export function databaseUrl({ direct = false } = {}) {
 }
 
 export const DATABASE_URL_NAMES = [...POOLED, ...DIRECT];
+
+/**
+ * Whether the Vercel build may run migrations. Production does; so do CI and local builds outside Vercel.
+ * A preview usually shares the production database (the Neon integration hands every environment the same URL),
+ * so a preview migrates only when its project opts in with MIGRATE_ON_PREVIEW=1, e.g. for a Neon branch per preview.
+ * @param {Record<string, string | undefined>} env
+ * @returns {boolean}
+ */
+export function shouldMigrateOnBuild(env) {
+  if (env.VERCEL_ENV === "production" || !env.VERCEL_ENV) return true;
+  return env.MIGRATE_ON_PREVIEW === "1";
+}
