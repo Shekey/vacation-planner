@@ -49,6 +49,15 @@ describe("who may book", () => {
     expect(booking.status).toBe("APPROVED");
   });
 
+  it("refuses a booking that spans years instead of counting every day", async () => {
+    const team = await makeWorkspace();
+    const huge = { ...week, start: "2030-01-01", end: "9999-12-31" };
+    await expect(book(team, team.member, team.member, huge)).rejects.toThrow(errors.outOfRange);
+    const long = { ...week, start: "2029-01-01", end: "2030-01-02" };
+    await expect(book(team, team.member, team.member, long)).rejects.toThrow(errors.tooLong);
+    expect(await db.booking.count({ where: { workspaceId: team.workspace.id } })).toBe(0);
+  });
+
   it("doesn't let anyone reach a booking in another workspace", async () => {
     const [team, stranger] = await Promise.all([makeWorkspace(), makeWorkspace()]);
     const booking = await book(team, team.member, team.member);
