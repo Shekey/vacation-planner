@@ -8,6 +8,7 @@ import {
   parseTable,
   parseTimeOff,
   parseWorkDays,
+  findPerson,
   spansConflict,
 } from "./import";
 
@@ -208,5 +209,77 @@ describe("spansConflict", () => {
   it("lets a morning and an afternoon share a day", () => {
     expect(spansConflict(span("2026-11-04", "2026-11-04", "FULL", "AM"), span("2026-11-04", "2026-11-04", "PM", "FULL"))).toBe(false);
     expect(spansConflict(span("2026-11-04", "2026-11-04", "FULL", "AM"), span("2026-11-04", "2026-11-04"))).toBe(true);
+  });
+});
+
+describe("findPerson", () => {
+  const people = [
+    { id: "lena", name: "Lena Wagner", email: "lena.wagner@praxis.de" },
+    { id: "juergen", name: "Jürgen Müller", email: "jm@praxis.de" },
+    { id: "anna-s", name: "Anna Schmidt", email: "anna@praxis.de" },
+    { id: "anna-k", name: "Anna Krüger", email: "krueger@praxis.de" },
+    { id: "noname", name: null, email: "murat@praxis.de" },
+  ];
+  it("matches the full name in any order, with or without umlauts", () => {
+    expect(findPerson("Lena Wagner", people)).toBe("lena");
+    expect(findPerson("Wagner, Lena", people)).toBe("lena");
+    expect(findPerson("  lena   WAGNER ", people)).toBe("lena");
+    expect(findPerson("Juergen Mueller", people)).toBe("juergen");
+    expect(findPerson("Müller, Jürgen", people)).toBe("juergen");
+  });
+  it("matches a first name, last name or initial when only one person fits", () => {
+    expect(findPerson("Lena", people)).toBe("lena");
+    expect(findPerson("Krüger", people)).toBe("anna-k");
+    expect(findPerson("Anna K.", people)).toBe("anna-k");
+  });
+  it("says ambiguous when two people fit, and null when nobody does", () => {
+    expect(findPerson("Anna", people)).toBe("ambiguous");
+    expect(findPerson("Petra", people)).toBeNull();
+    expect(findPerson("", people)).toBeNull();
+  });
+  it("falls back to the part of the email before the @", () => {
+    expect(findPerson("Murat", people)).toBe("noname");
+  });
+});
+
+describe("exports from other tools", () => {
+  it("reads a Personio-style absence export: names, status, half days on a range", () => {
+    const rows = parseTimeOff(
+      [
+        "Employee;Absence type;Start date;End date;Half day start;Half day end;Status",
+        "Lena Wagner;Paid time off;2026-12-21;2026-12-31;false;true;approved",
+        "Lena Wagner;Paid time off;2026-08-03;2026-08-07;false;false;declined",
+        "Jürgen Müller;Training;2026-11-09;2026-11-10;;;Approved",
+        "Jürgen Müller;Sick leave;2026-10-01;2026-10-02;;;approved",
+        "Jürgen Müller;Paid time off;2027-01-04;2027-01-04;;;pending",
+      ].join("\n"),
+    );
+    expect(rows[0]).toMatchObject({ name: "Lena Wagner", email: "", start: "2026-12-21", end: "2026-12-31", startPart: "FULL", endPart: "AM", type: "VACATION" });
+    expect(rows[0].error).toBeUndefined();
+    expect(rows[1].error).toEqual({ code: "notApproved", value: "declined" });
+    expect(rows[2]).toMatchObject({ type: "OTHER" });
+    expect(rows[3].error?.code).toBe("sick");
+    expect(rows[4].error?.code).toBe("pending");
+  });
+  it("reads German headers from absence.io-style exports and first/last name columns", () => {
+    const rows = parseTimeOff(
+      "Vorname\tNachname\tAbwesenheitsart\tStartdatum\tEnddatum\tGenehmigungsstatus\nLena\tWagner\tUrlaub\t21.12.2026\t23.12.2026\tGenehmigt\nAnna\tKrüger\tElternzeit\t01.02.2027\t30.04.2027\tAbgelehnt",
+    );
+    expect(rows[0]).toMatchObject({ name: "Lena Wagner", start: "2026-12-21", end: "2026-12-23", type: "VACATION" });
+    expect(rows[0].error).toBeUndefined();
+    expect(rows[1].error).toEqual({ code: "notApproved", value: "Abgelehnt" });
+  });
+  it("a half day on both ends of one day is just the afternoon", () => {
+    const [row] = parseTimeOff("Email,From,To,Half day start,Half day end\nanna@x.de,2026-11-13,2026-11-13,yes,yes");
+    expect(row).toMatchObject({ startPart: "PM", endPart: "FULL" });
+  });
+  it("reads the people lists of Microsoft 365 and Google Workspace", () => {
+    const m365 = parsePeople("Block credential,Display name,First name,Last name,User principal name,Department\nFalse,Lena Wagner,Lena,Wagner,lena@praxis.de,Empfang", opts);
+    expect(m365[0]).toMatchObject({ email: "lena@praxis.de", name: "Lena Wagner" });
+    expect(m365[0].error).toBeUndefined();
+    const google = parsePeople("First Name [Required],Last Name [Required],Email Address [Required],Org Unit Path [Required]\nJürgen,Müller,jm@praxis.de,/", opts);
+    expect(google[0]).toMatchObject({ email: "jm@praxis.de", name: "Jürgen Müller" });
+    const personio = parsePeople("First name;Last name;Email;Hire date;Vacation days\nAnna;Krüger;anna@praxis.de;01.02.2025;30", opts);
+    expect(personio[0]).toMatchObject({ employmentStart: "2025-02-01", allowance: 30 });
   });
 });
