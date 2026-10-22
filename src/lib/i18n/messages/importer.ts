@@ -5,7 +5,7 @@ export const importer = defineMessages({
   en: {
     title: "Import from Excel",
     intro:
-      "Move your team over in a few minutes. Copy the cells from Excel and paste them here, or open a CSV file. You see what will happen for every row before anything is saved.",
+      "Move your team over in a few minutes. Open your Excel file, or copy the cells and paste them here. You see what will happen for every row before anything is saved.",
     tabs: { people: "1. People", timeOff: "2. Time off" },
     backToMembers: "← Back to Members",
     peopleHelp:
@@ -19,7 +19,10 @@ export const importer = defineMessages({
       "Email,From,To,Type,Half day\nanna@example.com,2026-12-21,2026-12-31,Vacation,\nben@example.com,2026-11-13,,Vacation,afternoon",
     pasteLabel: "Paste the cells from Excel here",
     pastePlaceholder: "Name\tEmail\tVacation days\nAnna Schmidt\tanna@example.com\t28",
-    chooseFile: "or choose a CSV file",
+    chooseFile: "or open an Excel or CSV file",
+    sheet: "Sheet",
+    fileUnreadable: "This file can't be read. Open an Excel file (.xlsx) or a CSV file, or copy the cells and paste them.",
+    oldExcel: "This is an old Excel file (.xls). In Excel, choose File → Save as → Excel workbook (.xlsx), then open that one.",
     check: "Check",
     checking: "Checking…",
     welcomeLabel: "Email the new people where to sign in",
@@ -94,7 +97,7 @@ export const importer = defineMessages({
   de: {
     title: "Import aus Excel",
     intro:
-      "Hol dein Team in wenigen Minuten rüber. Kopiere die Zellen aus Excel und füge sie hier ein, oder öffne eine CSV-Datei. Du siehst für jede Zeile, was passiert, bevor etwas gespeichert wird.",
+      "Hol dein Team in wenigen Minuten rüber. Öffne deine Excel-Datei, oder kopiere die Zellen und füge sie hier ein. Du siehst für jede Zeile, was passiert, bevor etwas gespeichert wird.",
     tabs: { people: "1. Personen", timeOff: "2. Urlaub" },
     backToMembers: "← Zurück zu Mitglieder",
     peopleHelp:
@@ -108,7 +111,10 @@ export const importer = defineMessages({
       "E-Mail;Von;Bis;Art;Halbtag\nanna@beispiel.de;21.12.2026;31.12.2026;Urlaub;\nben@beispiel.de;13.11.2026;;Urlaub;nachmittags",
     pasteLabel: "Füge die Zellen aus Excel hier ein",
     pastePlaceholder: "Name\tE-Mail\tUrlaubstage\nAnna Schmidt\tanna@beispiel.de\t28",
-    chooseFile: "oder wähle eine CSV-Datei",
+    chooseFile: "oder öffne eine Excel- oder CSV-Datei",
+    sheet: "Tabellenblatt",
+    fileUnreadable: "Diese Datei lässt sich nicht lesen. Öffne eine Excel-Datei (.xlsx) oder eine CSV-Datei, oder kopiere die Zellen und füge sie ein.",
+    oldExcel: "Das ist eine alte Excel-Datei (.xls). Wähle in Excel Datei → Speichern unter → Excel-Arbeitsmappe (.xlsx) und öffne dann diese.",
     check: "Prüfen",
     checking: "Wird geprüft…",
     welcomeLabel: "Den neuen Personen per E-Mail schreiben, wo sie sich anmelden",
