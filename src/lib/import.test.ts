@@ -148,10 +148,22 @@ describe("parsePeople", () => {
     expect(r.error).toBeUndefined();
     expect(r).toMatchObject({ region: null, regionIgnored: true });
   });
+  it("takes a row with a name and no email as someone without email, once", () => {
+    const rows = parsePeople("Name;E-Mail\nMaria Schulz;\nmaria  schulz;\n", opts);
+    expect(rows[0]).toMatchObject({ email: "", name: "Maria Schulz" });
+    expect(rows[0].error).toBeUndefined();
+    expect(rows[1].error?.code).toBe("duplicate");
+  });
   it("returns nothing for empty text", () => expect(parsePeople("  \n ", opts)).toEqual([]));
 });
 
 describe("parseTimeOff", () => {
+  it("reads a name instead of an email, for someone without email", () => {
+    const [row] = parseTimeOff("Name;Von;Bis\nMaria Schulz;02.11.2026;06.11.2026\n");
+    expect(row).toMatchObject({ email: "", name: "Maria Schulz", start: "2026-11-02", end: "2026-11-06" });
+    expect(row.error).toBeUndefined();
+  });
+
   it("reads ranges with German headers, a half day and a type", () => {
     const rows = parseTimeOff(
       "E-Mail;Von;Bis;Art;Halbtag\n" +

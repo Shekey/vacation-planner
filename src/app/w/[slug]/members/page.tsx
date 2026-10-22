@@ -7,11 +7,13 @@ import { usingTestSender } from "@/lib/email";
 import { regionsOf } from "@/lib/holiday-regions";
 import type { Locale } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
+import { hasNoEmail } from "@/lib/no-email";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/session";
 import { restoreCutoff, restoreDaysLeft } from "@/lib/undo";
 import { SampleTeamButton } from "../sample-team-button";
 import {
+  addWithoutEmailAction,
   inviteAction,
   removeMemberAction,
   restoreMemberAction,
@@ -116,6 +118,30 @@ export default async function MembersPage({
           </div>
         </ActionForm>
         <p className="text-xs opacity-60">{t.inviteHint}</p>
+        <details className="rounded-lg border border-border px-3 py-2">
+          <summary className="cursor-pointer py-1 text-sm font-medium">
+            {t.noEmail.toggle}
+          </summary>
+          <ActionForm
+            action={addWithoutEmailAction.bind(null, slug)}
+            className="mt-2 space-y-2"
+            resetOnSuccess
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                name="name"
+                required
+                maxLength={100}
+                autoComplete="off"
+                aria-label={t.noEmail.nameLabel}
+                placeholder={t.noEmail.namePlaceholder}
+                className="input w-auto min-w-0 flex-1"
+              />
+              <button className="btn">{t.noEmail.add}</button>
+            </div>
+            <p className="text-xs opacity-60">{t.noEmail.hint}</p>
+          </ActionForm>
+        </details>
         <p className="text-sm">
           <Link
             href={`/w/${slug}/import`}
@@ -178,6 +204,7 @@ export default async function MembersPage({
             const partTime = workDaysLabel(m.workDays, WEEKDAYS);
             const started = m.employmentStart ? toISO(m.employmentStart) : "";
             const workDays = m.workDays.length ? m.workDays : teamWorkDays;
+            const noEmail = hasNoEmail(m.user.email);
             return (
               <li
                 key={m.id}
@@ -198,10 +225,17 @@ export default async function MembersPage({
                       )}
                       {m.isSample && <SampleBadge label={common.sample} />}
                     </div>
-                    {m.user.name && !m.isSample && (
-                      <div className="truncate text-sm opacity-60">
-                        {m.user.email}
+                    {noEmail ? (
+                      <div className="text-sm text-amber-800 dark:text-amber-300">
+                        {t.noEmail.badge}
                       </div>
+                    ) : (
+                      m.user.name &&
+                      !m.isSample && (
+                        <div className="truncate text-sm opacity-60">
+                          {m.user.email}
+                        </div>
+                      )
                     )}
                   </div>
                 </div>
@@ -210,11 +244,11 @@ export default async function MembersPage({
                     action={updateMemberAction.bind(null, slug, m.id)}
                     className="flex flex-wrap items-center gap-2 text-sm"
                   >
-                    {/* Sample people can't sign in, so they stay members. */}
+                    {/* Sample people and people without email can't sign in, so they stay members. */}
                     <select
                       name="role"
                       defaultValue={m.role}
-                      disabled={m.isSample}
+                      disabled={m.isSample || noEmail}
                       className="input w-auto py-1"
                       aria-label={t.roleFor(who)}
                     >
@@ -257,6 +291,22 @@ export default async function MembersPage({
                           </option>
                         ))}
                       </select>
+                    )}
+                    {noEmail && (
+                      <label className="flex w-full flex-wrap items-center gap-2">
+                        <span className="opacity-60">{t.noEmail.emailLabel}</span>
+                        <input
+                          name="email"
+                          type="email"
+                          autoComplete="off"
+                          className="input w-auto min-w-0 flex-1 py-1"
+                          aria-label={t.noEmail.emailFor(who)}
+                          aria-describedby={`no-email-${m.id}`}
+                        />
+                        <span id={`no-email-${m.id}`} className="basis-full text-xs opacity-60">
+                          {t.noEmail.emailHint}
+                        </span>
+                      </label>
                     )}
                     <button
                       className="btn-secondary px-3 py-1"

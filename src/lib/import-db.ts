@@ -7,6 +7,7 @@ import { sendEmail } from "@/lib/email";
 import { regionsOf } from "@/lib/holiday-regions";
 import { isLocale, messagesFor, type Locale } from "@/lib/i18n";
 import { parsePeople, parseTimeOff, spansConflict, type ImportError, type PersonRow, type TimeOffRow } from "@/lib/import";
+import { NO_EMAIL_DOMAIN, noEmailAddress } from "@/lib/no-email";
 import { accessOf, isOverLimit } from "@/lib/plans";
 
 type Workspace = {
@@ -46,19 +47,21 @@ export async function planPeople(workspace: Workspace, settings: Settings, text:
   const parsed = parsePeople(text, { countWeekends: settings.countWeekends, regions });
   const tooMany = parsed.length > MAX_IMPORT_ROWS;
 
-  const emails = parsed.filter((r) => !r.error).map((r) => r.email);
-  const [existing, current] = await Promise.all([
+  const emails = parsed.filter((r) => !r.error && r.email).map((r) => r.email);
+  const [existing, withoutEmail, current] = await Promise.all([
     db.membership.findMany({
       where: { workspaceId: workspace.id, isSample: false, user: { email: { in: emails } } },
       select: { removedAt: true, user: { select: { email: true } } },
     }),
+    noEmailMembers(workspace.id),
     db.membership.count({ where: { workspaceId: workspace.id, removedAt: null, isSample: false } }),
   ]);
   const byEmail = new Map(existing.map((m) => [m.user.email, m]));
 
   const rows = parsed.slice(0, MAX_IMPORT_ROWS).map((r): PeopleRow => {
     if (r.error) return { ...r, status: "error" };
-    const m = byEmail.get(r.email);
+    // Someone without email is matched by name, so importing the same sheet twice doesn't add them twice.
+    const m = r.email ? byEmail.get(r.email) : withoutEmail.get(nameKey(r.name ?? ""));
     return { ...r, status: m ? (m.removedAt ? "removed" : "exists") : "new" };
   });
   const counts = {
@@ -69,6 +72,17 @@ export async function planPeople(workspace: Workspace, settings: Settings, text:
   };
   const max = accessOf(workspace).maxMembers;
   return { rows, counts, room: { current, max, fits: current + counts.new <= max }, tooMany, regionIgnored: rows.some((r) => r.regionIgnored) };
+}
+
+const nameKey = (name: string) => name.trim().toLowerCase().replace(/\s+/g, " ");
+
+/** People added without email in this workspace, by name. */
+async function noEmailMembers(workspaceId: string) {
+  const members = await db.membership.findMany({
+    where: { workspaceId, isSample: false, user: { email: { endsWith: `@${NO_EMAIL_DOMAIN}` } } },
+    include: { user: { select: { email: true, name: true } } },
+  });
+  return new Map(members.map((m) => [nameKey(m.user.name ?? ""), m]));
 }
 
 export type PeopleResult = { created: number; emailed: number; emailFailed: number };
@@ -91,9 +105,10 @@ export async function applyPeople(
   const users = await db.$transaction(async (tx) => {
     const made: { email: string; name: string | null; locale: string | null }[] = [];
     for (const r of fresh) {
+      const email = r.email || noEmailAddress();
       const user = await tx.user.upsert({
-        where: { email: r.email },
-        create: { email: r.email, name: r.name },
+        where: { email },
+        create: { email, name: r.name },
         // Someone who already uses the app elsewhere keeps their own name.
         update: {},
         select: { id: true, name: true, locale: true },
@@ -104,7 +119,8 @@ export async function applyPeople(
         create: {
           workspaceId: workspace.id,
           userId: user.id,
-          role: r.role,
+          // Someone without email can't sign in, so they can't be an admin either.
+          role: r.email ? r.role : "MEMBER",
           annualAllowanceDays: r.allowance ?? defaultAllowance,
           workDays: r.workDays ?? [],
           employmentStart: r.employmentStart ? fromISO(r.employmentStart) : null,
@@ -112,12 +128,13 @@ export async function applyPeople(
         },
         update: {},
       });
-      made.push({ email: r.email, name: r.name ?? user.name, locale: user.locale });
+      // People without email get nothing sent; they're counted in "created" all the same.
+      if (r.email) made.push({ email: r.email, name: r.name ?? user.name, locale: user.locale });
     }
     return made;
   });
 
-  await recordAudit({ workspaceId: workspace.id, actorId: actor.id, action: "import.people", detail: String(users.length) });
+  await recordAudit({ workspaceId: workspace.id, actorId: actor.id, action: "import.people", detail: String(fresh.length) });
 
   let emailed = 0;
   let emailFailed = 0;
@@ -130,7 +147,7 @@ export async function applyPeople(
       else emailFailed++;
     }
   }
-  return { created: users.length, emailed, emailFailed };
+  return { created: fresh.length, emailed, emailFailed };
 }
 
 // ---------- time off ----------
@@ -151,12 +168,18 @@ export async function planTimeOff(workspace: Workspace, settings: Settings, text
   const today = todayIn(workspace.timezone, now);
   const thisYear = Number(today.slice(0, 4));
 
-  const emails = [...new Set(rows.filter((r) => !r.error).map((r) => r.email))];
-  const members = await db.membership.findMany({
-    where: { workspaceId: workspace.id, isSample: false, user: { email: { in: emails } } },
-    include: { user: { select: { email: true, name: true } } },
-  });
-  const memberOf = new Map(members.map((m) => [m.user.email, m]));
+  const emails = [...new Set(rows.filter((r) => !r.error && r.email).map((r) => r.email))];
+  const [withEmail, withoutEmail] = await Promise.all([
+    db.membership.findMany({
+      where: { workspaceId: workspace.id, isSample: false, user: { email: { in: emails } } },
+      include: { user: { select: { email: true, name: true } } },
+    }),
+    noEmailMembers(workspace.id),
+  ]);
+  const members = [...withEmail, ...withoutEmail.values()];
+  const byEmail = new Map(withEmail.map((m) => [m.user.email, m]));
+  // A row with an email names that person; one with only a name, someone added without email.
+  const memberFor = (r: TimeOffRow) => (r.email ? byEmail.get(r.email) : withoutEmail.get(nameKey(r.name)));
   const dated = rows.filter((r) => !r.error);
   const lastEnd = dated.reduce((max, r) => (r.end > max ? r.end : max), "1970-01-01");
   const firstStart = dated.reduce((min, r) => (r.start < min ? r.start : min), "9999-12-31");
@@ -198,14 +221,14 @@ export async function planTimeOff(workspace: Workspace, settings: Settings, text
       out.push(base);
       continue;
     }
-    const member = memberOf.get(r.email);
+    const member = memberFor(r);
     if (!member) {
-      fail({ code: "notMember", value: r.email });
+      fail({ code: "notMember", value: r.email || r.name });
       continue;
     }
     base.who = member.user.name ?? member.user.email;
     if (member.removedAt) {
-      fail({ code: "removedMember", value: r.email });
+      fail({ code: "removedMember", value: r.email || r.name });
       continue;
     }
     const year = (d: string) => Number(d.slice(0, 4));
