@@ -224,6 +224,7 @@ export function ImportClient({ slug }: { slug: string }) {
                     r.allowance !== null
                       ? `${formatNumber(r.allowance, locale)} ${messages.members.daysPerYear}`
                       : null,
+                    r.carriedOver !== null ? t.leftOver(formatNumber(r.carriedOver, locale)) : null,
                     r.workDays && r.workDays.length
                       ? r.workDays.map((d) => weekdays[d - 1]).join(", ")
                       : null,

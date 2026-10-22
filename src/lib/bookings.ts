@@ -430,6 +430,8 @@ export type AllowanceSummary = {
   allowance: number | null;
   /** Days carried over from last year, before any expired. */
   carriedOver: number;
+  /** True when an admin entered the carried-over days instead of them being calculated from bookings. */
+  carriedOverEntered: boolean;
   /** When carried-over days expire this year, if the workspace sets a deadline. */
   carryOverExpiresOn: ISODate | null;
   /** Carried-over days still to take before the deadline. */
@@ -501,15 +503,16 @@ export async function allowanceSummary(
   today: ISODate = todayIn("UTC"),
 ): Promise<AllowanceSummary> {
   const rules = rulesFor(membership, settings, holidays ?? (await loadHolidays(membership.workspaceId, regionOf(membership, settings))));
-  const [{ used, pending }, past] = await Promise.all([
+  const [{ used, pending }, past, entered] = await Promise.all([
     vacationDaysInYear(membership.id, rules, year),
     db.allowanceYear.findMany({ where: { membershipId: membership.id, year: { in: [year - 1, year] } } }),
+    db.carriedOver.findUnique({ where: { membershipId_year: { membershipId: membership.id, year } } }),
   ]);
   const current = membership.annualAllowanceDays === null ? null : Number(membership.annualAllowanceDays);
   const kept = past.map((p) => ({ year: p.year, days: p.days === null ? null : Number(p.days) }));
   const yearly = allowanceIn(year, current, kept);
   if (yearly === null) {
-    return { year, allowance: null, carriedOver: 0, carryOverExpiresOn: null, carryOverLeft: 0, carryOverExpired: 0, used, pending, remaining: null };
+    return { year, allowance: null, carriedOver: 0, carriedOverEntered: false, carryOverExpiresOn: null, carryOverLeft: 0, carryOverExpired: 0, used, pending, remaining: null };
   }
   const employmentStart = membership.employmentStart ? toISO(membership.employmentStart) : null;
   const base = proratedAllowance(yearly, employmentStart, year);
@@ -517,7 +520,10 @@ export async function allowanceSummary(
   // Nothing carries over from a year the person wasn't here yet (by start date, else by joining date).
   const since = employmentStart ?? toISO(membership.joinedAt);
   const lastYearly = allowanceIn(year - 1, current, kept);
-  if (settings.maxCarryOverDays && lastYearly !== null && Number(since.slice(0, 4)) < year) {
+  if (entered) {
+    // Entered by an admin for a team that moved over from Excel: their number counts, without the cap.
+    carriedOver = Number(entered.days);
+  } else if (settings.maxCarryOverDays && lastYearly !== null && Number(since.slice(0, 4)) < year) {
     const last = await vacationDaysInYear(membership.id, rules, year - 1);
     carriedOver = carryOver(proratedAllowance(lastYearly, employmentStart, year - 1), last.used + last.pending, settings.maxCarryOverDays);
   }
@@ -536,6 +542,7 @@ export async function allowanceSummary(
     year,
     allowance,
     carriedOver,
+    carriedOverEntered: entered !== null,
     carryOverExpiresOn,
     carryOverLeft,
     carryOverExpired,
