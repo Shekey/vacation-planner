@@ -432,7 +432,7 @@ export type AllowanceSummary = {
   carriedOver: number;
   /** True when an admin entered the carried-over days instead of them being calculated from bookings. */
   carriedOverEntered: boolean;
-  /** When carried-over days expire this year, if the workspace sets a deadline. */
+  /** When carried-over days expire this year, if the workspace sets a deadline and this person isn't exempt from it. */
   carryOverExpiresOn: ISODate | null;
   /** Carried-over days still to take before the deadline. */
   carryOverLeft: number;
@@ -503,10 +503,11 @@ export async function allowanceSummary(
   today: ISODate = todayIn("UTC"),
 ): Promise<AllowanceSummary> {
   const rules = rulesFor(membership, settings, holidays ?? (await loadHolidays(membership.workspaceId, regionOf(membership, settings))));
-  const [{ used, pending }, past, entered] = await Promise.all([
+  const [{ used, pending }, past, entered, noExpiry] = await Promise.all([
     vacationDaysInYear(membership.id, rules, year),
     db.allowanceYear.findMany({ where: { membershipId: membership.id, year: { in: [year - 1, year] } } }),
     db.carriedOver.findUnique({ where: { membershipId_year: { membershipId: membership.id, year } } }),
+    db.keepCarriedOver.findUnique({ where: { membershipId_year: { membershipId: membership.id, year } } }),
   ]);
   const current = membership.annualAllowanceDays === null ? null : Number(membership.annualAllowanceDays);
   const kept = past.map((p) => ({ year: p.year, days: p.days === null ? null : Number(p.days) }));
@@ -530,7 +531,7 @@ export async function allowanceSummary(
   let carryOverExpiresOn: ISODate | null = null;
   let carryOverLeft = 0;
   let carryOverExpired = 0;
-  if (carriedOver > 0 && settings.carryOverExpiry) {
+  if (carriedOver > 0 && settings.carryOverExpiry && !noExpiry) {
     carryOverExpiresOn = `${year}-${settings.carryOverExpiry}`;
     const byDeadline = await vacationDaysBetween(membership.id, rules, `${year}-01-01`, carryOverExpiresOn);
     const status = carriedOverStatus(carriedOver, byDeadline.used + byDeadline.pending, today > carryOverExpiresOn);

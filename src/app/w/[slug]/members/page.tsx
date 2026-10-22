@@ -48,12 +48,15 @@ export default async function MembersPage({
   const WEEKDAYS = t.weekdays;
 
   const year = Number(todayIn(workspace.timezone).slice(0, 4));
+  const expiry = workspace.settings?.carryOverExpiry;
+  const carryOverExpiry = expiry ? formatDate(`${year}-${expiry}`, { day: "numeric", month: "long" }, locale) : null;
   const [members, invites, samples, removed] = await Promise.all([
     db.membership.findMany({
       where: { workspaceId: workspace.id, removedAt: null },
       include: {
         user: { select: { name: true, email: true } },
         carriedOver: { where: { year } },
+        keepCarried: { where: { year } },
       },
       orderBy: { joinedAt: "asc" },
     }),
@@ -337,6 +340,7 @@ export default async function MembersPage({
                               )
                             : t.startDate,
                           carried !== null ? t.carriedSummary(carried, year - 1) : null,
+                          m.keepCarried.length > 0 ? t.keepCarriedSummary : null,
                         ]
                           .filter(Boolean)
                           .join(" · ")}
@@ -387,6 +391,21 @@ export default async function MembersPage({
                           />
                         </label>
                         <p className="text-xs opacity-60">{t.carriedHint}</p>
+                        {carryOverExpiry && (
+                          <>
+                            <input type="hidden" name="keepCarriedShown" value="1" />
+                            <label className="flex items-start gap-2">
+                              <input
+                                name="keepCarried"
+                                type="checkbox"
+                                defaultChecked={m.keepCarried.length > 0}
+                                className="mt-0.5"
+                              />
+                              <span>{t.keepCarriedLabel(year - 1, carryOverExpiry)}</span>
+                            </label>
+                            <p className="text-xs opacity-60">{t.keepCarriedHint}</p>
+                          </>
+                        )}
                       </div>
                     </details>
                   </ActionForm>

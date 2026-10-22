@@ -64,6 +64,10 @@ export const members = defineMessages({
     carriedSummary: (days: number, lastYear: number) => `${days} ${days === 1 ? "day" : "days"} from ${lastYear}`,
     carriedHint:
       "Moving over from Excel or another tool? Enter the days this person still has from last year. Leave it empty and the app works it out from last year's bookings. Your carry-over deadline still applies.",
+    keepCarriedLabel: (lastYear: number, deadline: string) => `Days from ${lastYear} don't expire on ${deadline} this year`,
+    keepCarriedSummary: "left-over days don't expire",
+    keepCarriedHint:
+      "For someone who couldn't take their vacation because of a long illness, maternity or parental leave: the law keeps those days, so they don't expire on your deadline. No reason is stored.",
     removeConfirm: (who: string) => `Remove ${who}? Their future bookings will be cancelled.`,
     removeLabel: (who: string) => `Remove ${who}`,
     remove: "Remove",
@@ -176,6 +180,10 @@ export const members = defineMessages({
     carriedSummary: (days: number, lastYear: number) => `${String(days).replace(".", ",")} ${days === 1 ? "Tag" : "Tage"} Rest aus ${lastYear}`,
     carriedHint:
       "Du kommst von Excel oder einem anderen Programm? Trag die Tage ein, die diese Person aus dem Vorjahr noch hat. Bleibt das Feld leer, rechnet die App sie aus den Buchungen des Vorjahrs aus. Deine Frist für Resturlaub gilt weiter.",
+    keepCarriedLabel: (lastYear: number, deadline: string) => `Resturlaub aus ${lastYear} verfällt dieses Jahr nicht am ${deadline}`,
+    keepCarriedSummary: "Resturlaub verfällt nicht",
+    keepCarriedHint:
+      "Für jemanden, der seinen Urlaub wegen langer Krankheit, Mutterschutz oder Elternzeit nicht nehmen konnte: Diese Tage bleiben laut Gesetz erhalten und verfallen nicht zu deiner Frist. Ein Grund wird nicht gespeichert.",
     removeConfirm: (who: string) => `${who} entfernen? Zukünftige Buchungen werden storniert.`,
     removeLabel: (who: string) => `${who} entfernen`,
     remove: "Entfernen",
