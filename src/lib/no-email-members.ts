@@ -18,11 +18,12 @@ export async function addWithoutEmail(
   return membership;
 }
 
-export type AttachResult = { ok: true } | { error: "inUse" };
+export type AttachResult = { ok: true } | { error: "inUse" } | { invite: true };
 
 /**
  * Gives someone added without email their real address. If that address already has an account (they use the app
- * in another team), the membership moves to that account and the placeholder is deleted; their bookings stay.
+ * in another team), nothing moves yet: the caller sends an invitation, and accepting it moves the membership with
+ * its bookings onto that account (`acceptInvitation`). Nobody joins a workspace without saying yes.
  */
 export async function attachEmail(
   member: { id: string; workspaceId: string; userId: string },
@@ -33,19 +34,12 @@ export async function attachEmail(
   if (!hasNoEmail(placeholder.email)) return { ok: true };
   const existing = await db.user.findUnique({
     where: { email },
-    select: { id: true, name: true, memberships: { where: { workspaceId: member.workspaceId }, select: { id: true } } },
+    select: { memberships: { where: { workspaceId: member.workspaceId, removedAt: null }, select: { id: true } } },
   });
   if (existing && existing.memberships.length > 0) return { error: "inUse" };
+  if (existing) return { invite: true };
 
-  await db.$transaction(async (tx) => {
-    if (!existing) {
-      await tx.user.update({ where: { id: member.userId }, data: { email } });
-      return;
-    }
-    await tx.membership.update({ where: { id: member.id }, data: { userId: existing.id } });
-    if (!existing.name && placeholder.name) await tx.user.update({ where: { id: existing.id }, data: { name: placeholder.name } });
-    await tx.user.delete({ where: { id: member.userId } });
-  });
+  await db.user.update({ where: { id: member.userId }, data: { email } });
   await recordAudit({ workspaceId: member.workspaceId, actorId, action: "member.email_added", targetLabel: placeholder.name ?? email });
   return { ok: true };
 }
