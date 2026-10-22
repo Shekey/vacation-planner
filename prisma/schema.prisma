@@ -214,6 +214,7 @@ model Membership {
   bookings       Booking[]
   pastAllowances AllowanceYear[]
   carriedOver    CarriedOver[]
+  keepCarried    KeepCarriedOver[]
 
   @@unique([workspaceId, userId])
 }
@@ -238,6 +239,18 @@ model CarriedOver {
   // The year the days are carried into.
   year         Int
   days         Decimal @db.Decimal(4, 1)
+
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@id([membershipId, year])
+}
+
+// Carried-over days that don't expire on the workspace's deadline in this year, for one person: after long
+// illness, maternity or parental leave the law keeps them (up to 15 months after the year). No reason is stored.
+model KeepCarriedOver {
+  membershipId String
+  // The year the days were carried into.
+  year         Int
 
   membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
 
