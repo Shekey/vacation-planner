@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { applyPeople, applyTimeOff, MAX_IMPORT_ROWS, planPeople, planTimeOff, type PeoplePlan, type TimeOffPlan } from "@/lib/import-db";
+import { applyPeople, applyTimeOff, MAX_IMPORT_ROWS, MAX_TIME_OFF_ROWS, planPeople, planTimeOff, type PeoplePlan, type TimeOffPlan } from "@/lib/import-db";
 import { getMessages } from "@/lib/i18n/server";
 import { accessOf } from "@/lib/plans";
 import { requireAdmin, settingsOf } from "@/lib/session";
@@ -19,7 +19,8 @@ export async function previewImportAction(slug: string, kind: ImportKind, text: 
   if (text.trim() === "") return { error: t.nothingToCheck };
   const settings = settingsOf(workspace);
   const plan = kind === "people" ? { people: await planPeople(workspace, settings, text) } : { timeOff: await planTimeOff(workspace, settings, text) };
-  if ((plan.people ?? plan.timeOff)?.tooMany) return { error: t.errors.tooMany(MAX_IMPORT_ROWS) };
+  if (plan.people?.tooMany) return { error: t.errors.tooMany(MAX_IMPORT_ROWS) };
+  if (plan.timeOff?.tooMany) return { error: t.errors.tooMany(MAX_TIME_OFF_ROWS) };
   return plan;
 }
 
@@ -45,7 +46,7 @@ export async function applyImportAction(slug: string, kind: ImportKind, text: st
 
   const result = await applyTimeOff(workspace, settings, user, text);
   if ("error" in result) {
-    if (result.error === "tooMany") return { error: t.errors.tooMany(MAX_IMPORT_ROWS) };
+    if (result.error === "tooMany") return { error: t.errors.tooMany(MAX_TIME_OFF_ROWS) };
     if (result.error === "overLimit") return { error: t.errors.overLimit };
     if (result.error === "conflict") return { error: t.errors.conflict };
     return { error: t.doneNothing };

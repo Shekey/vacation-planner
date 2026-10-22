@@ -6,8 +6,9 @@ import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { regionsOf } from "@/lib/holiday-regions";
 import { isLocale, messagesFor, type Locale } from "@/lib/i18n";
-import { parsePeople, parseTimeOff, spansConflict, type ImportError, type PersonRow, type TimeOffRow } from "@/lib/import";
-import { NO_EMAIL_DOMAIN, noEmailAddress } from "@/lib/no-email";
+import { findPerson, parsePeople, spansConflict, type ImportError, type PersonRow, type TimeOffRow } from "@/lib/import";
+import { readTimeOff, type TimeOffSource } from "@/lib/import-time-off";
+import { hasNoEmail, NO_EMAIL_DOMAIN, noEmailAddress } from "@/lib/no-email";
 import { accessOf, isOverLimit } from "@/lib/plans";
 
 type Workspace = {
@@ -24,6 +25,8 @@ type Actor = { id: string };
 
 /** Most rows one import takes, so a wrong paste can't run for minutes. The biggest plan holds 75 people. */
 export const MAX_IMPORT_ROWS = 300;
+/** A year planner for 75 people easily holds 600 bookings, so time off may have more rows. */
+export const MAX_TIME_OFF_ROWS = 2000;
 
 // ---------- people ----------
 
@@ -167,27 +170,32 @@ export type TimeOffPlan = {
   counts: { ok: number; errors: number; days: number };
   tooMany: boolean;
   overLimit: boolean;
+  /** What the text was read as: a list, an Excel year planner or a calendar file. */
+  source: TimeOffSource;
 };
 
 export async function planTimeOff(workspace: Workspace, settings: Settings, text: string, now = new Date()): Promise<TimeOffPlan> {
-  const parsed = parseTimeOff(text);
-  const tooMany = parsed.length > MAX_IMPORT_ROWS;
-  const rows = parsed.slice(0, MAX_IMPORT_ROWS);
   const today = todayIn(workspace.timezone, now);
   const thisYear = Number(today.slice(0, 4));
+  const { rows: parsed, source } = readTimeOff(text, today);
+  const tooMany = parsed.length > MAX_TIME_OFF_ROWS;
+  const rows = parsed.slice(0, MAX_TIME_OFF_ROWS);
 
-  const emails = [...new Set(rows.filter((r) => !r.error && r.email).map((r) => r.email))];
-  const [withEmail, withoutEmail] = await Promise.all([
-    db.membership.findMany({
-      where: { workspaceId: workspace.id, isSample: false, user: { email: { in: emails } } },
-      include: { user: { select: { email: true, name: true } } },
-    }),
-    noEmailMembers(workspace.id),
-  ]);
-  const members = [...withEmail, ...withoutEmail.values()];
-  const byEmail = new Map(withEmail.map((m) => [m.user.email, m]));
-  // A row with an email names that person; one with only a name, someone added without email.
-  const memberFor = (r: TimeOffRow) => (r.email ? byEmail.get(r.email) : withoutEmail.get(nameKey(r.name)));
+  const members = await db.membership.findMany({
+    where: { workspaceId: workspace.id, isSample: false },
+    include: { user: { select: { email: true, name: true } } },
+  });
+  const byEmail = new Map(members.map((m) => [m.user.email, m]));
+  const byId = new Map(members.map((m) => [m.id, m]));
+  const known = (list: typeof members) => list.map((m) => ({ id: m.id, name: m.user.name, email: hasNoEmail(m.user.email) ? "" : m.user.email }));
+  const active = known(members.filter((m) => !m.removedAt));
+  const removed = known(members.filter((m) => m.removedAt));
+  // A row with an email names that person; a name is looked up among the people in, then among those removed.
+  const memberFor = (r: TimeOffRow) => {
+    if (r.email) return byEmail.get(r.email);
+    const id = findPerson(r.name, active) ?? findPerson(r.name, removed);
+    return id === "ambiguous" ? id : id ? byId.get(id) : undefined;
+  };
   const dated = rows.filter((r) => !r.error);
   const lastEnd = dated.reduce((max, r) => (r.end > max ? r.end : max), "1970-01-01");
   const firstStart = dated.reduce((min, r) => (r.start < min ? r.start : min), "9999-12-31");
@@ -230,6 +238,10 @@ export async function planTimeOff(workspace: Workspace, settings: Settings, text
       continue;
     }
     const member = memberFor(r);
+    if (member === "ambiguous") {
+      fail({ code: "ambiguousName", value: r.name });
+      continue;
+    }
     if (!member) {
       fail({ code: "notMember", value: r.email || r.name });
       continue;
@@ -271,6 +283,7 @@ export async function planTimeOff(workspace: Workspace, settings: Settings, text
     counts: { ok: ok.length, errors: out.length - ok.length, days: ok.reduce((sum, r) => sum + r.daysCount, 0) },
     tooMany,
     overLimit: isOverLimit(accessOf(workspace), memberCount),
+    source,
   };
 }
 
