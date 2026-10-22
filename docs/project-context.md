@@ -64,7 +64,7 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 - Pages: `src/app/w/[slug]/` (overview, book, calendar, approvals, members, people, holidays, settings, me).
 - Crons (`vercel.json`): `/api/cron/daily-digest` daily 06:00 UTC (the Teams/Slack digest skips weekends; trial reminder emails go out every day, `src/lib/trial-reminders.ts`), `/api/cron/holidays` monthly. Both need `CRON_SECRET`.
 - Sample team: `src/lib/sample-team.ts` (names per team type, bookings), `src/lib/sample-team-db.ts` (add/remove), buttons in `src/app/w/[slug]/sample-team-button.tsx`. Sample people are `Membership.isSample` with a placeholder user at `<random>@sample.invalid`: never emailed (`sendEmail` drops them), can't sign in (`src/auth.ts`), not counted toward plan limits or the checklist, skipped by chat posts and the digest, labelled "Sample".
-- Build: `scripts/vercel-build.mjs` migrates on production, skips migrations on preview.
+- Build: `scripts/vercel-build.mjs` migrates on production (and outside Vercel), never on preview unless `MIGRATE_ON_PREVIEW=1` (`shouldMigrateOnBuild` in `src/lib/database-url.mjs`); previews share the production database.
 - Security: headers in `next.config.ts`; helpers in `src/lib/security.ts`; magic-link throttle (3 per address per 10 min) in `src/lib/sign-in-limit.ts`.
 - Landing page (2026-10-17, round 2): own look instead of template SaaS: Bricolage Grotesque headings and Caveat handwriting via next/font (self-hosted), looping product demo in the hero (`src/components/landing/hero-demo.tsx`), team-type tabs with scenario calendars (`team-switcher.tsx`), price slider (`price-picker.tsx`), line icons (`icons.tsx`), scroll reveal (`reveal.tsx`). No emoji icons, no gradient blobs.
 - App navigation: everyday pages first, admin pages grouped under an "Admin" label; on phones a fixed bottom bar (`src/components/bottom-nav.tsx`) with Home, Calendar, Book, People, Me.
@@ -79,6 +79,7 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 
 ## Open items
 
+- Quality backlog (audit 2026-10-22): GitHub issues #23–#37, labelled `area:*` and `priority:P1`–`P3`. Work through them by priority in small PRs that say `Closes #N`. Code-structure work (#36) follows Ajdin's craft plugin (github.com/Shekey/claude-craft) and starts only after the database tests (#25).
 - Selling it: `docs/sales-plan.md` (current), README "Before you sell" for Ajdin's steps; older plan in the Claude Doc "Vacation Planner: plan for selling it" (pricing, billing, GDPR, launch).
 - Selling readiness and next rounds: Claude Doc "Vacation Planner: ready to sell? Next plan" (https://claude.ai/code/artifact/9d88c5b7-44ae-4c4a-9f0c-58e448840141). Round 1 is PR #9.
 - EU hosting (Neon and Vercel functions in Frankfurt): Ajdin will do this last; build as if it is done.

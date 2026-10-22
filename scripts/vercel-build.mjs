@@ -1,11 +1,15 @@
 // Vercel build: migrate the database, then build the app.
-// Preview deploys often have no database of their own; they still build, just without migrations.
+// Previews build without migrating unless opted in, so an unmerged migration never reaches the production database.
 import { execSync } from "node:child_process";
-import { DATABASE_URL_NAMES, databaseUrl } from "../src/lib/database-url.mjs";
+import { DATABASE_URL_NAMES, databaseUrl, shouldMigrateOnBuild } from "../src/lib/database-url.mjs";
 
 const run = (cmd) => execSync(cmd, { stdio: "inherit" });
 
-if (databaseUrl({ direct: true })) {
+if (!shouldMigrateOnBuild(process.env)) {
+  console.warn(
+    `Skipping migrations on this ${process.env.VERCEL_ENV} deploy. Set MIGRATE_ON_PREVIEW=1 only when previews have their own database.`,
+  );
+} else if (databaseUrl({ direct: true })) {
   run("prisma migrate deploy");
 } else if (process.env.VERCEL_ENV === "production") {
   console.error(
