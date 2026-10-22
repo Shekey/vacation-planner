@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { Role } from "@/generated/prisma/enums";
+import { mapLimit, SEND_CONCURRENCY } from "@/lib/background";
 import { db } from "@/lib/db";
 import { sendEmail, type SendResult } from "@/lib/email";
 import { messagesFor } from "@/lib/i18n";
@@ -75,11 +76,12 @@ export async function inviteMembers(emails: string[], role: Role, ctx: InviteCon
   const members = new Set(existing.map((m) => m.user.email));
   const toInvite = emails.filter((e) => !members.has(e));
   await assertColdMailRoom(ctx.workspace.id, toInvite.length);
-  const failed: { email: string; error: string }[] = [];
-  for (const email of toInvite) {
-    const sent = await issueInvitation(email, role, ctx);
-    if (!sent.ok) failed.push({ email, error: sent.error });
-  }
+  // A few at a time: 50 invitations one after another can run past the function time limit.
+  const results = await mapLimit(toInvite, SEND_CONCURRENCY, (email) => issueInvitation(email, role, ctx));
+  const failed = toInvite.flatMap((email, i) => {
+    const sent = results[i];
+    return sent.ok ? [] : [{ email, error: sent.error }];
+  });
   await recordColdMail(ctx.workspace.id, toInvite.length);
   return { invited: toInvite, alreadyMembers: [...members], failed };
 }
