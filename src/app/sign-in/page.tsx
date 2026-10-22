@@ -22,7 +22,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
     return (
       <Shell>
         <div className="space-y-3 text-center">
-          <div className="mx-auto grid size-12 place-items-center rounded-full bg-primary/10 text-2xl" aria-hidden>
+          <div className="mx-auto grid size-12 place-items-center rounded-full bg-primary-soft text-2xl" aria-hidden>
             ✉️
           </div>
           <h1 className="text-xl font-semibold">{t.checkEmail}</h1>

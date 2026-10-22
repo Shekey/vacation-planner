@@ -33,7 +33,7 @@ function Toggle({
       />
       <span>
         <span className="font-medium">{label}</span>
-        <span className="block text-sm opacity-70">{hint}</span>
+        <span className="block text-sm text-muted">{hint}</span>
       </span>
     </label>
   );
@@ -100,7 +100,7 @@ export default async function SettingsPage({
                 <option key={tz}>{tz}</option>
               ))}
             </select>
-            <span className="block text-xs opacity-60">{t.timezoneHint}</span>
+            <span className="block text-xs text-muted">{t.timezoneHint}</span>
           </label>
           <label className="block space-y-1">
             <span className="text-sm font-medium">{t.language}</span>
@@ -115,7 +115,7 @@ export default async function SettingsPage({
                 </option>
               ))}
             </select>
-            <span className="block text-xs opacity-60">{t.languageHint}</span>
+            <span className="block text-xs text-muted">{t.languageHint}</span>
           </label>
           <label className="block space-y-1">
             <span className="text-sm font-medium">{t.defaultAllowance}</span>
@@ -130,7 +130,7 @@ export default async function SettingsPage({
                 defaultAllowance == null ? "" : Number(defaultAllowance)
               }
             />
-            <span className="block text-xs opacity-60">
+            <span className="block text-xs text-muted">
               {t.defaultAllowanceHint}
             </span>
           </label>
@@ -150,7 +150,7 @@ export default async function SettingsPage({
               defaultValue={settings.maxCarryOverDays ?? ""}
               placeholder={t.carryOverPlaceholder}
             />
-            <span className="block text-xs opacity-60">{t.carryOverHint}</span>
+            <span className="block text-xs text-muted">{t.carryOverHint}</span>
           </label>
           <fieldset className="space-y-1">
             <legend className="text-sm font-medium">{t.expiry.legend}</legend>
@@ -186,7 +186,7 @@ export default async function SettingsPage({
                 ))}
               </select>
             </div>
-            <span className="block text-xs opacity-60">{t.expiry.hint}</span>
+            <span className="block text-xs text-muted">{t.expiry.hint}</span>
           </fieldset>
           <label className="block space-y-1">
             <span className="text-sm font-medium">{t.minPeople}</span>
@@ -199,7 +199,7 @@ export default async function SettingsPage({
               defaultValue={settings.minPeoplePresent ?? ""}
               placeholder={t.minPeoplePlaceholder}
             />
-            <span className="block text-xs opacity-60">{t.minPeopleHint}</span>
+            <span className="block text-xs text-muted">{t.minPeopleHint}</span>
           </label>
         </section>
 
@@ -247,7 +247,7 @@ export default async function SettingsPage({
             defaultValue={teamsWebhookUrl}
             placeholder="https://…logic.azure.com/workflows/…"
           />
-          <p className="text-xs opacity-60">{t.teamsHint}</p>
+          <p className="text-xs text-muted">{t.teamsHint}</p>
         </section>
 
         <section className="card space-y-2">
@@ -260,7 +260,7 @@ export default async function SettingsPage({
             defaultValue={slackWebhookUrl}
             placeholder="https://hooks.slack.com/services/…"
           />
-          <p className="text-xs opacity-60">{t.slackHint}</p>
+          <p className="text-xs text-muted">{t.slackHint}</p>
         </section>
 
         <button className="btn">{t.save}</button>
@@ -269,7 +269,7 @@ export default async function SettingsPage({
       {chat && (teamsWebhookUrl || slackWebhookUrl) && (
         <section className="card space-y-3">
           <h2 className="font-medium">{t.chatCheckHeading}</h2>
-          <p className="text-sm opacity-70">{t.chatCheckBody}</p>
+          <p className="text-sm text-muted">{t.chatCheckBody}</p>
           {(
             [
               {
@@ -329,10 +329,10 @@ export default async function SettingsPage({
       />
 
       <section className="card space-y-3 border-red-500/40">
-        <h2 className="font-medium text-red-600 dark:text-red-400">
+        <h2 className="font-medium text-danger">
           {t.deleteHeading}
         </h2>
-        <p className="text-sm opacity-70">{t.deleteBody(workspace.name)}</p>
+        <p className="text-sm text-muted">{t.deleteBody(workspace.name)}</p>
         <ActionForm
           action={deleteWorkspaceAction.bind(null, slug)}
           className="space-y-3"

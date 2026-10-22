@@ -149,8 +149,8 @@ export default async function CalendarPage({
                   title={holidayOn(d, "")}
                   className={`min-w-6 p-1 text-center font-normal ${offDayClass(d)} ${
                     d === today
-                      ? "text-sky-700 font-bold dark:text-sky-400"
-                      : "opacity-70"
+                      ? "font-bold text-primary-ink"
+                      : "text-muted"
                   }`}
                 >
                   <div aria-hidden>
@@ -185,14 +185,13 @@ export default async function CalendarPage({
                     <span className="flex items-center gap-1.5">
                       <Avatar
                         label={label(m)}
-                        seed={m.user.email}
                         className="hidden size-5 text-[9px] sm:inline-grid"
                       />
                       <span className="min-w-0">
                         <span className="block truncate">
                           {label(m)}
                           {m.id === membership.id && (
-                            <span className="font-normal opacity-60">
+                            <span className="font-normal text-muted">
                               {t.you}
                             </span>
                           )}
@@ -274,7 +273,7 @@ export default async function CalendarPage({
           </tbody>
         </table>
       </ScrollToToday>
-      <p className="text-xs opacity-60">
+      <p className="text-xs text-muted">
         {t.hint}
         <span className="sm:hidden">{t.swipe}</span>
       </p>

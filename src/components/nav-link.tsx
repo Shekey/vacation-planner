@@ -12,7 +12,7 @@ export function NavLink({ href, children, exact }: { href: string; children: Rea
       href={href}
       aria-current={active ? "page" : undefined}
       className={`inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-        active ? "bg-primary/10 text-primary" : "text-muted hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10"
+        active ? "bg-primary-soft text-primary-ink" : "text-muted hover:bg-surface-muted hover:text-foreground"
       }`}
     >
       {children}

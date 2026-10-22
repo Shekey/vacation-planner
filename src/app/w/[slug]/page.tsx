@@ -182,7 +182,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
                 const portion = portionOn(spanOf(b), today);
                 return (
                   <li key={b.id} className="flex items-center gap-2.5">
-                    <Avatar label={name(b)} seed={b.membership.user.email} />
+                    <Avatar label={name(b)} />
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 font-medium">
                         <span className="truncate">{name(b)}</span>
@@ -218,7 +218,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
                 const half = halfDayLabel(span, locale);
                 return (
                   <li key={b.id} className="flex items-center gap-2.5 py-2">
-                    <Avatar label={name(b)} seed={b.membership.user.email} />
+                    <Avatar label={name(b)} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 font-medium">
                         <span className="truncate">{name(b)}</span>

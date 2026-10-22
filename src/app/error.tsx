@@ -25,7 +25,7 @@ export default function ErrorPage({ error, retry }: { error: Error & { digest?: 
           {t.home}
         </Link>
       </div>
-      <p className="text-sm opacity-70">
+      <p className="text-sm text-muted">
         {t.reference} <code className="rounded bg-muted/20 px-1">{reference}</code>.{" "}
         <Link href="/impressum" className="underline">
           {t.contact}

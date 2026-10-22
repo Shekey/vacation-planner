@@ -45,7 +45,7 @@ No design yet for: My time off (`/me`), People, Holidays, Import, Account, `/adm
 | `success` / `success-soft` | `#2b7164` / `#eaf3ef` | Approved badge | new |
 | `warning` / `warning-soft` | amber, dashed border | Pending badge and pending bars | new |
 
-Type: **Inter** only (regular and semibold; 11/12/13/14/15/17/26/32/48 px; line height 1.45). Self-hosted with `next/font`. Bricolage Grotesque and Caveat go away. Radii: 18 px cards, 12 px buttons, 10 px tiles and nav items, 6 px badges. Icons are Lucide (calendar-check-2, house, calendar-days, sun, users, settings-2, bell, …): add `lucide-react` and import icons one by one (tree-shaken).
+Type: **Inter** only (regular and semibold; 11/12/13/14/15/17/26/32/48 px; line height 1.45). Self-hosted with `next/font`. Bricolage Grotesque and Caveat go away with the landing rebuild (#110); until then only the old landing uses them. Radii: 18 px cards, 12 px buttons, 10 px tiles and nav items, 6 px badges. Icons are Lucide (calendar-check-2, house, calendar-days, sun, users, settings-2, bell, …): add `lucide-react` and import icons one by one (tree-shaken).
 
 Contrast checked against WCAG AA: white on `#0878a4` is 4.96:1 and passes. Three pairs fail by a hair: `#64757a` on the page background (4.47), on `#f0f2ee` (4.27), and `#0878a4` text on `#e8f4f8` (4.42, the active nav item). Fix: muted becomes `#5c6d72` and active nav text uses `primary-ink`. Visually the same.
 

@@ -344,7 +344,7 @@ export function BookingForm(props: BookingFormProps) {
         aria-live="polite"
       >
         {problem ? (
-          <p className="text-red-600 dark:text-red-400">{problem}</p>
+          <p className="text-danger">{problem}</p>
         ) : start && end ? (
           <>
             <p>
@@ -365,8 +365,8 @@ export function BookingForm(props: BookingFormProps) {
               <p
                 className={
                   remainingAfter < 0
-                    ? "text-red-600 dark:text-red-400"
-                    : "opacity-70"
+                    ? "text-danger"
+                    : "text-muted"
                 }
               >
                 {remainingAfter < 0
@@ -375,7 +375,7 @@ export function BookingForm(props: BookingFormProps) {
               </p>
             )}
             {holidaysInRange.length > 0 && (
-              <p className="opacity-70">
+              <p className="text-muted">
                 {t.holidaysList(
                   holidaysInRange
                     .map(
@@ -387,7 +387,7 @@ export function BookingForm(props: BookingFormProps) {
               </p>
             )}
             {shortDays.length > 0 && (
-              <p className="text-red-600 dark:text-red-400">
+              <p className="text-danger">
                 {t.understaffed(
                   shortDays[0].present,
                   props.memberCount,
@@ -405,22 +405,22 @@ export function BookingForm(props: BookingFormProps) {
                 {t.alsoOff(overlapping.join(", "))}
               </p>
             )}
-            {willBePending && <p className="opacity-70">{t.needsApproval}</p>}
+            {willBePending && <p className="text-muted">{t.needsApproval}</p>}
             {sick && vacationReturned > 0 && (
               <p className={props.isAdmin ? undefined : "text-amber-700 dark:text-amber-400"}>
                 {props.isAdmin ? t.sickGivesBack(fmt(vacationReturned)) : t.sickAskAdmin}
               </p>
             )}
-            {sick && <p className="opacity-70">{t.sickHint}</p>}
-            {type === "SPECIAL" && <p className="opacity-70">{t.specialHint}</p>}
+            {sick && <p className="text-muted">{t.sickHint}</p>}
+            {type === "SPECIAL" && <p className="text-muted">{t.specialHint}</p>}
           </>
         ) : (
-          <p className="opacity-70">{t.pickDates}</p>
+          <p className="text-muted">{t.pickDates}</p>
         )}
       </div>
 
       {state.error && (
-        <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>
+        <p className="text-sm text-danger">{state.error}</p>
       )}
       <button
         className="btn"

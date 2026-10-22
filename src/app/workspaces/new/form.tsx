@@ -137,7 +137,7 @@ export function NewWorkspaceForm({
       </Step>
 
       <div aria-live="polite" role="status">
-        {state.error && <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>}
+        {state.error && <p className="text-sm text-danger">{state.error}</p>}
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <button className="btn px-5 py-2.5" disabled={pending}>

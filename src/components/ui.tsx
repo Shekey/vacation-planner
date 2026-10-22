@@ -1,25 +1,13 @@
-/** The sun-over-waves mark from the app icon, sized by className. */
+import { CalendarCheck2 } from "lucide-react";
+
+/** The calendar-check mark on the brand blue, sized by className. */
 export function LogoMark({ className = "size-7" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 64 64" className={className} aria-hidden>
-      <rect width="64" height="64" rx="14" fill="#0ea5e9" />
-      <circle cx="44" cy="20" r="8" fill="#fde047" />
-      <path d="M10 46c8-6 14-6 22 0s14 6 22 0v8H10z" fill="#ffffff" />
-    </svg>
+    <span aria-hidden className={`inline-grid shrink-0 place-items-center rounded-[30%] bg-[#0878a4] text-white ${className}`}>
+      <CalendarCheck2 className="size-[60%]" strokeWidth={2.25} />
+    </span>
   );
 }
-
-/* Dark enough for white initials (WCAG AA, 4.5:1). */
-const AVATAR_COLORS = [
-  "bg-sky-700",
-  "bg-emerald-700",
-  "bg-violet-600",
-  "bg-amber-700",
-  "bg-rose-600",
-  "bg-teal-700",
-  "bg-indigo-600",
-  "bg-orange-700",
-];
 
 /** "Ada Lovelace" → "AL", "ada@x.com" → "A", "Marie Schmitt (Empfang)" → "MS". */
 export function initials(label: string): string {
@@ -34,26 +22,12 @@ export function initials(label: string): string {
   return letters.toUpperCase();
 }
 
-/** A stable color per person, so someone looks the same everywhere. */
-function colorFor(seed: string) {
-  let h = 0;
-  for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  return AVATAR_COLORS[h % AVATAR_COLORS.length];
-}
-
-export function Avatar({
-  label,
-  seed,
-  className = "size-7 text-xs",
-}: {
-  label: string;
-  seed?: string;
-  className?: string;
-}) {
+/** Initials on the soft brand tint, as in the design; the name next to it tells people apart. */
+export function Avatar({ label, className = "size-7 text-xs" }: { label: string; className?: string }) {
   return (
     <span
       aria-hidden
-      className={`inline-grid shrink-0 place-items-center rounded-full font-semibold text-white ${colorFor(seed ?? label)} ${className}`}
+      className={`inline-grid shrink-0 place-items-center rounded-[33%] bg-primary-soft font-semibold text-primary-ink ${className}`}
     >
       {initials(label)}
     </span>
@@ -69,7 +43,7 @@ export function EmptyState({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg bg-black/[0.025] px-3 py-3 text-sm text-muted dark:bg-white/[0.03]">
+    <div className="flex items-center gap-3 rounded-[10px] bg-surface-muted px-3 py-3 text-sm text-muted [&_a]:text-primary-ink">
       <span className="text-lg" aria-hidden>
         {icon}
       </span>
@@ -88,7 +62,7 @@ export function SampleBadge({
 }) {
   return (
     <span
-      className={`${className} inline-block rounded bg-amber-100 px-1.5 py-px align-middle text-[10px] font-semibold tracking-wide text-amber-900 uppercase dark:bg-amber-900/40 dark:text-amber-200`}
+      className={`${className} inline-block rounded bg-warning-soft px-1.5 py-px align-middle text-[10px] font-semibold tracking-wide text-warning uppercase`}
     >
       {label}
     </span>

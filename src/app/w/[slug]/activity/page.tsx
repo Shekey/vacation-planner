@@ -58,7 +58,7 @@ export default async function ActivityPage({ params }: PageProps<"/w/[slug]/acti
     <div className="max-w-3xl space-y-6">
       <section className="card space-y-2">
         <h2 className="font-medium">{t.cancelledHeading}</h2>
-        <p className="text-xs opacity-60">{t.cancelledHint}</p>
+        <p className="text-xs text-muted">{t.cancelledHint}</p>
         {cancelled.length === 0 ? (
           <p className="text-sm text-muted">{t.cancelledEmpty}</p>
         ) : (
@@ -84,7 +84,7 @@ export default async function ActivityPage({ params }: PageProps<"/w/[slug]/acti
 
       <section className="card space-y-2">
         <h2 className="font-medium">{t.title}</h2>
-        <p className="text-xs opacity-60">{t.intro}</p>
+        <p className="text-xs text-muted">{t.intro}</p>
         {events.length === 0 ? (
           <p className="text-sm text-muted">{t.empty}</p>
         ) : (

@@ -134,7 +134,7 @@ export default async function ApprovalsPage({
   });
 
   if (!settings.approvalsEnabled) {
-    return <p className="opacity-70">{t.turnedOff}</p>;
+    return <p className="text-muted">{t.turnedOff}</p>;
   }
 
   return (
@@ -155,7 +155,6 @@ export default async function ApprovalsPage({
                         label={
                           b.membership.user.name ?? b.membership.user.email
                         }
-                        seed={b.membership.user.email}
                       />
                       {b.membership.user.name ?? b.membership.user.email}
                       {b.membership.isSample && (
@@ -170,10 +169,10 @@ export default async function ApprovalsPage({
                       {half && ` · ${half}`}
                     </div>
                     {b.note && (
-                      <div className="text-sm opacity-70">“{b.note}”</div>
+                      <div className="text-sm text-muted">“{b.note}”</div>
                     )}
                   </div>
-                  <div className="text-right text-xs opacity-70">
+                  <div className="text-right text-xs text-muted">
                     {summary.remaining !== null &&
                       t.daysLeft(
                         formatNumber(summary.remaining, locale),
@@ -183,7 +182,7 @@ export default async function ApprovalsPage({
                   </div>
                 </div>
                 {shortDays.length > 0 && (
-                  <p className="text-sm text-red-600 dark:text-red-400">
+                  <p className="text-sm text-danger">
                     {t.understaffed(
                       shortDays[0].present,
                       memberCount,
@@ -221,7 +220,7 @@ export default async function ApprovalsPage({
                   <button
                     name="decision"
                     value="reject"
-                    className="rounded-lg border border-red-600/60 px-4 py-1.5 font-medium text-red-600 dark:text-red-400 transition-colors hover:bg-red-500/10"
+                    className="rounded-lg border border-red-600/60 px-4 py-1.5 font-medium text-danger transition-colors hover:bg-red-500/10"
                   >
                     {t.decline}
                   </button>

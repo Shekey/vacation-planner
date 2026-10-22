@@ -52,7 +52,7 @@ export default async function AccountPage({
             autoFocus
           />
         </label>
-        <p className="text-sm opacity-70">{t.nameHint(user.email)}</p>
+        <p className="text-sm text-muted">{t.nameHint(user.email)}</p>
         <button className="btn">{t.save}</button>
       </ActionForm>
 
@@ -82,14 +82,14 @@ export default async function AccountPage({
             {t.languageSystem(LOCALE_NAMES[locale])}
           </button>
         </form>
-        <p className="text-sm opacity-70">{t.languageHint}</p>
+        <p className="text-sm text-muted">{t.languageHint}</p>
       </section>
 
       {user.name && (
         <>
           <section className="card space-y-2">
             <h2 className="font-medium">{t.yourData}</h2>
-            <p className="text-sm opacity-70">{t.yourDataBody}</p>
+            <p className="text-sm text-muted">{t.yourDataBody}</p>
             <a
               href="/api/account/export"
               className="btn-secondary inline-block"
@@ -100,10 +100,10 @@ export default async function AccountPage({
           </section>
 
           <section className="card space-y-3 border-red-500/40">
-            <h2 className="font-medium text-red-600 dark:text-red-400">
+            <h2 className="font-medium text-danger">
               {t.deleteHeading}
             </h2>
-            <p className="text-sm opacity-70">
+            <p className="text-sm text-muted">
               {t.deleteBody}
               {plan.alone.length > 0 &&
                 t.aloneIn(

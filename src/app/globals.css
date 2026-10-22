@@ -1,19 +1,30 @@
 @import "tailwindcss";
 
 /*
- * Theme tokens. Pages draw on `background`, cards on `surface`;
- * `primary` is the one accent (buttons, active tab, focus), matching the vacation blue on the calendar.
+ * Theme tokens from the Urlaubflow design (Figma "Vacation-APP"). Pages draw on `background`, cards on `surface`,
+ * quiet tiles on `surface-muted`; `primary` is the one accent (buttons, links, active nav, focus) and `primary-soft`
+ * its tinted background with `primary-ink` text on it. Status colours come in pairs: text on its `-soft` background.
+ * Every text pair passes WCAG AA (4.5:1); the design's #64757a muted was a hair short, so it is #5c6d72 here.
  */
 :root {
-  --background: #f5f7fa;
+  --background: #f7f7f2;
   --surface: #ffffff;
-  --foreground: #141821;
-  --muted: #5d6676;
-  --border: rgb(20 24 33 / 0.1);
-  /* sky-700: white text on it and blue links on white both pass WCAG AA (4.5:1); sky-600 did not. */
-  --primary: #0369a1;
-  --primary-hover: #075985;
+  --surface-muted: #f0f2ee;
+  --foreground: #20363e;
+  --muted: #5c6d72;
+  --border: #dfe6e3;
+  --primary: #0878a4;
+  --primary-hover: #086180;
   --primary-foreground: #ffffff;
+  --primary-ink: #086180;
+  --primary-soft: #e8f4f8;
+  --accent: #48bed4;
+  --success: #2b7164;
+  --success-soft: #eaf3ef;
+  --warning: #8a5a00;
+  --warning-soft: #fdf1d8;
+  --danger: #9b2c2c;
+  --danger-soft: #fbe9e7;
   /* Native controls (date pickers, selects, scrollbars) follow the theme. */
   color-scheme: light dark;
 }
@@ -21,43 +32,55 @@
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-ink: var(--primary-ink);
+  --color-primary-soft: var(--primary-soft);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   --font-hand: var(--font-caveat), "Comic Sans MS", cursive;
 }
 
+/* The design has no dark version; these keep its hues on a deep blue-green ground. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0c0f14;
-    --surface: #151a22;
-    --foreground: #e8ebf0;
-    --muted: #9aa3b2;
+    --background: #0f1719;
+    --surface: #172225;
+    --surface-muted: #1d2a2e;
+    --foreground: #e6eeec;
+    --muted: #9fb0b4;
     --border: rgb(255 255 255 / 0.1);
-    --primary: #38bdf8;
-    --primary-hover: #7dd3fc;
-    --primary-foreground: #082032;
+    --primary: #4fc0e0;
+    --primary-hover: #8fd6ea;
+    --primary-foreground: #06263a;
+    --primary-ink: #8fd6ea;
+    --primary-soft: #12313d;
+    --accent: #48bed4;
+    --success: #7fd1b9;
+    --success-soft: #173a33;
+    --warning: #f2c46b;
+    --warning-soft: #3d2f12;
+    --danger: #f2a49b;
+    --danger-soft: #3a1c1a;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family:
-    "Inter var",
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
+  font-family: var(--font-sans);
   font-feature-settings: "cv11", "ss01";
 }
 
@@ -92,26 +115,26 @@ label:has(> input[type="radio"]) {
     @apply leading-relaxed;
   }
   .input {
-    @apply w-full rounded-lg border border-border bg-surface px-3 py-2 shadow-xs outline-none transition-shadow placeholder:text-muted/70 focus:border-primary focus:ring-3 focus:ring-primary/20 dark:bg-white/5;
+    @apply w-full rounded-[10px] border border-border bg-surface px-3 py-2 outline-none transition-shadow placeholder:text-muted/70 focus:border-primary focus:ring-3 focus:ring-primary/20 dark:bg-white/5;
   }
   .input option {
     @apply bg-surface text-foreground;
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover active:translate-y-px disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-[18px] py-2 font-semibold text-primary-foreground transition-colors hover:bg-primary-hover active:translate-y-px disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-4 py-2 font-medium shadow-xs transition-colors hover:bg-black/[0.03] disabled:opacity-50 dark:hover:bg-white/5;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-surface px-[18px] py-2 font-semibold transition-colors hover:bg-surface-muted disabled:opacity-50;
   }
   .card {
-    @apply rounded-xl border border-border bg-surface p-4 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_1px_8px_-2px_rgb(0_0_0/0.04)] sm:p-5;
+    @apply rounded-[18px] border border-border bg-surface p-4 sm:p-6;
   }
   /* A card that is itself a link. */
   .card-link {
-    @apply transition-[border-color,box-shadow,transform] hover:-translate-y-px hover:border-primary/40 hover:shadow-md;
+    @apply transition-[border-color,box-shadow,transform] hover:-translate-y-px hover:border-primary/40 hover:shadow-sm;
   }
   .eyebrow {
-    @apply text-xs font-medium tracking-wide text-muted uppercase;
+    @apply text-xs font-semibold tracking-wide text-muted uppercase;
   }
 }
 

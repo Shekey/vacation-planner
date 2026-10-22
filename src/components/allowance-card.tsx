@@ -37,14 +37,14 @@ export function AllowanceCard({
         <h2 className="font-medium">{t.title(year)}</h2>
         {remaining !== null && (
           <span
-            className={`text-sm ${remaining < 0 ? "text-red-600 dark:text-red-400" : "opacity-70"}`}
+            className={`text-sm ${remaining < 0 ? "text-danger" : "text-muted"}`}
           >
             {t.left(fmt(remaining), fmt(allowance!))}
           </span>
         )}
       </div>
       {allowance === null ? (
-        <p className="text-sm opacity-70">
+        <p className="text-sm text-muted">
           {t.noAllowance(fmt(used), pending ? fmt(pending) : null)}
           {editHref && (
             <>
@@ -67,7 +67,7 @@ export function AllowanceCard({
               style={{ width: `${pct(pending)}%` }}
             />
           </div>
-          <p className="text-sm opacity-70">
+          <p className="text-sm text-muted">
             {t.taken(fmt(used), pending ? fmt(pending) : null)}
             {carriedOver > carryOverExpired &&
               t.carriedOver(fmt(carriedOver - carryOverExpired), year - 1)}
