@@ -10,6 +10,8 @@ export type PersonRow = {
   email: string;
   /** A made-up person from "Fill with a sample team". */
   sample: boolean;
+  /** Added without an email address; their placeholder address isn't shown. */
+  noEmail: boolean;
   /** e.g. "Off today (vacation) until 16 Oct" or null when in. */
   todayStatus: string | null;
   upcoming: { id: string; label: string; detail: string; pending: boolean; color: string }[];
@@ -53,7 +55,7 @@ export function PeopleSearch({ people }: { people: PersonRow[] }) {
                       {p.name}
                       {p.sample && <SampleBadge label={common.sample} />}
                     </div>
-                    {p.name !== p.email && !p.sample && <div className="truncate text-xs opacity-60">{p.email}</div>}
+                    {p.name !== p.email && !p.sample && !p.noEmail && <div className="truncate text-xs opacity-60">{p.email}</div>}
                   </div>
                 </div>
                 <span

@@ -271,7 +271,7 @@ export function ImportClient({ slug }: { slug: string }) {
                     {r.name ?? r.email}
                     {r.name && (
                       <span className="block text-xs text-muted">
-                        {r.email}
+                        {r.email || t.withoutEmail}
                       </span>
                     )}
                   </span>,
@@ -353,7 +353,7 @@ export function ImportClient({ slug }: { slug: string }) {
                 error: r.status === "error",
                 cells: [
                   String(r.line),
-                  r.who ?? r.email,
+                  r.who ?? (r.email || r.name),
                   r.start
                     ? `${formatRange(r.start, r.end, locale)}${r.type === "OTHER" ? ` · ${messages.common.type.OTHER}` : ""}${
                         r.startPart === "PM"
