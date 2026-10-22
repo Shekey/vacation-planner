@@ -59,11 +59,20 @@ export function countDays(span: BookingSpan, rules: DayRules, clip?: { from: ISO
   return total;
 }
 
-export type SpanProblem = "endBeforeStart" | "invalidHalfDay" | "halfDaysOff" | "morningAndAfternoon";
+export type SpanProblem = "endBeforeStart" | "invalidHalfDay" | "halfDaysOff" | "morningAndAfternoon" | "tooLong" | "outOfRange";
+
+/** One booking covers at most this many calendar days; it also keeps the stored day count within its column. */
+export const MAX_BOOKING_DAYS = 366;
+
+/** Bookable years: wide enough for history and long-range planning, narrow enough to rule out typos like 0202. */
+export const FIRST_BOOKING_YEAR = 2000;
+export const LAST_BOOKING_YEAR = 2100;
 
 /** Returns what's wrong (a key into the `errors` messages), or null when the span is valid. */
 export function validateSpan(span: BookingSpan, opts: { allowHalfDays: boolean }): SpanProblem | null {
   if (span.end < span.start) return "endBeforeStart";
+  if (span.start < `${FIRST_BOOKING_YEAR}-01-01` || span.end > `${LAST_BOOKING_YEAR}-12-31`) return "outOfRange";
+  if (Math.round((Date.parse(span.end) - Date.parse(span.start)) / 86_400_000) >= MAX_BOOKING_DAYS) return "tooLong";
   if (span.startPart === "AM" || span.endPart === "PM") return "invalidHalfDay";
   if (!opts.allowHalfDays && (span.startPart !== "FULL" || span.endPart !== "FULL")) {
     return "halfDaysOff";
