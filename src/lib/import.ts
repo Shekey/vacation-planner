@@ -12,8 +12,9 @@ import { eachDay, type ISODate } from "@/lib/dates";
 /** Splits pasted or uploaded text into rows of cells. Detects tab, semicolon or comma, honours "quotes", skips empty rows. */
 export function parseTable(input: string): string[][] {
   const text = input.replace(/^﻿/, "").replace(/\r\n?/g, "\n");
-  const firstLine = text.split("\n").find((l) => l.trim() !== "") ?? "";
-  const count = (ch: string) => firstLine.split(ch).length - 1;
+  // A title row ("Urlaubsplaner 2026") can come first, so look at the first few lines, not just one.
+  const firstLines = text.split("\n").filter((l) => l.trim() !== "").slice(0, 5).join("\n");
+  const count = (ch: string) => firstLines.split(ch).length - 1;
   const delimiter = count("\t") > 0 ? "\t" : count(";") > 0 ? ";" : ",";
 
   const rows: string[][] = [];
@@ -48,20 +49,26 @@ const norm = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
 
 /** Column names people use in Excel, English and German, lower-case without spaces or punctuation. */
 const HEADERS = {
-  email: ["email", "emailadresse", "mail", "mailadresse", "emailaddress"],
-  name: ["name", "fullname", "vollstandigername", "vollername", "mitarbeiter", "mitarbeitende", "employee", "person"].map(norm),
-  firstName: ["firstname", "vorname", "given name"].map(norm),
-  lastName: ["lastname", "nachname", "familienname", "surname"].map(norm),
-  allowance: ["allowance", "yearlyallowance", "vacationdays", "days", "urlaubstage", "urlaubsanspruch", "anspruch", "tage", "jahresurlaub", "urlaub"].map(norm),
+  // Also the names in exports from Microsoft 365 (User principal name), Google Workspace (Email Address [Required]) and HR tools.
+  email: ["email", "emailadresse", "mail", "mailadresse", "emailaddress", "userprincipalname", "emailaddressrequired", "workemail", "primaryemail", "geschaftlicheemail", "geschäftlicheemail", "dienstlicheemail", "arbeitsemail"].map(norm),
+  name: ["name", "fullname", "vollstandigername", "vollername", "mitarbeiter", "mitarbeitende", "mitarbeiterin", "mitarbeitername", "employee", "employeename", "person", "displayname", "anzeigename", "username", "member", "teammember", "staff"].map(norm),
+  firstName: ["firstname", "vorname", "given name", "firstnamerequired", "first"].map(norm),
+  lastName: ["lastname", "nachname", "familienname", "surname", "lastnamerequired", "familyname", "last"].map(norm),
+  allowance: ["allowance", "yearlyallowance", "vacationdays", "days", "urlaubstage", "urlaubsanspruch", "anspruch", "tage", "jahresurlaub", "urlaub", "entitlement", "annualentitlement", "leaveallowance", "jahresanspruch", "urlaubsanspruchtage"].map(norm),
   carriedOver: ["carriedover", "carryover", "leftover", "leftoverdays", "daysleftlastyear", "resturlaub", "restvorjahr", "resturlaubvorjahr", "ubertrag", "übertrag", "urlaubsubertrag"].map(norm),
   workDays: ["workdays", "workingdays", "arbeitstage", "arbeitstag", "wochentage"].map(norm),
-  employmentStart: ["employmentstart", "startdate", "start", "eintritt", "eintrittsdatum", "beschaftigtseit", "beschäftigtseit", "firstday", "joined"].map(norm),
+  employmentStart: ["employmentstart", "startdate", "start", "eintritt", "eintrittsdatum", "beschaftigtseit", "beschäftigtseit", "firstday", "joined", "hiredate", "dateofhire", "employmentstartdate", "joiningdate"].map(norm),
   region: ["region", "state", "bundesland", "land"].map(norm),
   role: ["role", "rolle"].map(norm),
-  from: ["from", "start", "startdate", "von", "beginn", "firstday", "ersterurlaubstag", "erstertag"].map(norm),
-  to: ["to", "end", "enddate", "bis", "ende", "lastday", "letzterurlaubstag", "letztertag"].map(norm),
-  type: ["type", "art", "typ", "leavetype", "abwesenheit", "grund"].map(norm),
+  from: ["from", "start", "startdate", "von", "beginn", "firstday", "ersterurlaubstag", "erstertag", "startdatum", "vondatum", "datumvon", "abwesenheitvon", "leavestart", "firstdayofleave", "beginndatum"].map(norm),
+  to: ["to", "end", "enddate", "bis", "ende", "lastday", "letzterurlaubstag", "letztertag", "enddatum", "bisdatum", "datumbis", "abwesenheitbis", "leaveend", "lastdayofleave"].map(norm),
+  type: ["type", "art", "typ", "leavetype", "abwesenheit", "grund", "absencetype", "abwesenheitsart", "abwesenheitstyp", "timeofftype", "urlaubsart", "kategorie", "category", "policy"].map(norm),
   half: ["half", "halfday", "halbtag", "tagesteil", "part", "dayhalf"].map(norm),
+  // Personio and others mark half days on a range: the first day starts after lunch, the last ends at lunch.
+  halfStart: ["halfdaystart", "halfdayonstart", "startshalfday", "halbertaganfang", "halbtagbeginn", "halbtagstart", "ersterTaghalb"].map(norm),
+  halfEnd: ["halfdayend", "halfdayonend", "endshalfday", "halbertagende", "halbtagende", "letzterTaghalb"].map(norm),
+  // Exports from other tools list declined and cancelled requests too.
+  status: ["status", "requeststatus", "approvalstatus", "genehmigungsstatus", "antragsstatus", "state"].map(norm),
 } as const;
 
 type Field = keyof typeof HEADERS;
@@ -197,7 +204,13 @@ export type ImportErrorCode =
   | "outOfRange"
   | "overlap"
   | "notMember"
-  | "removedMember";
+  | "removedMember"
+  | "ambiguousName"
+  | "notApproved"
+  | "pending"
+  | "gridMark"
+  | "recurring"
+  | "timed";
 
 export type ImportError = { code: ImportErrorCode; value?: string };
 
@@ -334,18 +347,36 @@ export type TimeOffRow = {
   error?: ImportError;
 };
 
-const VACATION_WORDS = ["vacation", "urlaub", "holiday", "ferien", "annualleave", "erholungsurlaub", ""].map(norm);
-const OTHER_WORDS = ["other", "sonstiges", "sonderurlaub", "unbezahlt", "unpaid", "training", "fortbildung", "uberstunden", "überstunden", "ueberstunden", "freizeitausgleich", "toil", "special", "sonstige"].map(norm);
-const SICK_WORDS = ["sick", "krank", "krankheit", "krankmeldung"].map(norm);
+// Also the type names of Personio, absence.io, Timetastic and Vacation Tracker.
+const VACATION_WORDS = ["vacation", "urlaub", "holiday", "holidays", "ferien", "annualleave", "erholungsurlaub", "paidtimeoff", "pto", "jahresurlaub", "bezahlterurlaub", "tarifurlaub", "urlaubstag", "leave", "timeoff", "vacationday", ""].map(norm);
+const OTHER_WORDS = [
+  "other", "sonstiges", "sonstige", "sonderurlaub", "unbezahlt", "unbezahlterurlaub", "unpaid", "unpaidleave", "training", "fortbildung", "weiterbildung", "schulung",
+  "seminar", "bildungsurlaub", "uberstunden", "überstunden", "ueberstunden", "uberstundenabbau", "überstundenabbau", "freizeitausgleich", "zeitausgleich", "toil",
+  "special", "specialleave", "elternzeit", "parentalleave", "mutterschutz", "maternityleave", "paternityleave", "compassionateleave", "bereavement", "umzug",
+  "hochzeit", "dienstreise", "businesstrip", "conference", "konferenz",
+].map(norm);
+const SICK_WORDS = ["sick", "sickness", "sickleave", "illness", "krank", "krankheit", "krankmeldung", "krankheitstag", "kindkrank", "krankeskind", "sickchild", "arbeitsunfahigkeit", "arbeitsunfähigkeit", "au"].map(norm);
+const APPROVED = ["", "approved", "accepted", "confirmed", "genehmigt", "bestatigt", "bestätigt", "angenommen", "freigegeben", "ok", "taken", "genommen"].map(norm);
+const PENDING = ["pending", "requested", "open", "waiting", "awaitingapproval", "beantragt", "offen", "ausstehend", "wartend", "angefragt", "inprogress"].map(norm);
+const YES = ["yes", "ja", "true", "wahr", "x", "1", "y", "j"].map(norm);
+const NO = ["", "no", "nein", "false", "falsch", "0", "n"].map(norm);
 const MORNING = ["am", "morning", "vormittag", "vormittags", "morgens", "morgen"].map(norm);
 const AFTERNOON = ["pm", "afternoon", "nachmittag", "nachmittags"].map(norm);
 const FULL = ["full", "fullday", "ganztag", "ganztags", "ganz", ""].map(norm);
+
+/** What kind of absence a word in a sheet names, e.g. "Fortbildung" → Other; null when it isn't one we know. */
+export function timeOffType(word: string): "VACATION" | "OTHER" | "SICK" | null {
+  const w = norm(word);
+  if (SICK_WORDS.includes(w)) return "SICK";
+  if (OTHER_WORDS.includes(w)) return "OTHER";
+  return VACATION_WORDS.includes(w) ? "VACATION" : null;
+}
 
 /** Date ranges per person, e.g. "anna@x.de, 02.11.2026, 06.11.2026, Urlaub" or with header columns Email, Von, Bis, Art, Halbtag. */
 export function parseTimeOff(text: string): TimeOffRow[] {
   const table = parseTable(text);
   if (table.length === 0) return [];
-  const fields = ["email", "name", "from", "to", "type", "half"] as const;
+  const fields = ["email", "name", "firstName", "lastName", "from", "to", "type", "half", "halfStart", "halfEnd", "status"] as const;
   const header = mapHeader(table[0], fields);
   const body = header ? table.slice(1) : table;
   const firstLine = header ? 2 : 1;
@@ -357,9 +388,14 @@ export function parseTimeOff(text: string): TimeOffRow[] {
     let toCell: string;
     let typeCell = "";
     let halfCell = "";
+    let halfStartCell = "";
+    let halfEndCell = "";
+    let statusCell = "";
     if (header) {
       const get = (f: Field) => (header[f] !== undefined ? (cells[header[f]!] ?? "").trim() : "");
-      [emailCell, nameCell, fromCell, toCell, typeCell, halfCell] = [get("email"), get("name"), get("from"), get("to"), get("type"), get("half")];
+      [emailCell, fromCell, toCell, typeCell, halfCell] = [get("email"), get("from"), get("to"), get("type"), get("half")];
+      [halfStartCell, halfEndCell, statusCell] = [get("halfStart"), get("halfEnd"), get("status")];
+      nameCell = get("name") || [get("firstName"), get("lastName")].filter(Boolean).join(" ");
     } else {
       emailCell = cells.find((c) => c.includes("@")) ?? "";
       const dates = cells.filter((c) => c && !c.includes("@") && parseDateCell(c) !== null && parseDateCell(c) !== "bad");
@@ -376,6 +412,10 @@ export function parseTimeOff(text: string): TimeOffRow[] {
     };
     if (!email && !nameCell) return fail("noEmail");
     if (email && !isEmail(email)) return fail("badEmail", email);
+
+    const status = norm(statusCell);
+    if (PENDING.includes(status)) return fail("pending", statusCell);
+    if (!APPROVED.includes(status)) return fail("notApproved", statusCell);
 
     const start = parseDateCell(fromCell);
     if (start === null) return fail("noStart");
@@ -399,6 +439,16 @@ export function parseTimeOff(text: string): TimeOffRow[] {
       if (MORNING.includes(half)) row.endPart = "AM";
       else row.startPart = "PM";
     } else if (!FULL.includes(half)) return fail("half", halfCell);
+
+    for (const [cell, edge] of [[halfStartCell, "start"], [halfEndCell, "end"]] as const) {
+      const v = norm(cell);
+      if (YES.includes(v)) {
+        if (edge === "start") row.startPart = "PM";
+        else row.endPart = "AM";
+      } else if (!NO.includes(v)) return fail("half", cell);
+    }
+    // One half day marked on both ends of a single day means just that half.
+    if (row.start === row.end && row.startPart === "PM" && row.endPart === "AM") row.endPart = "FULL";
     return row;
   });
 }
@@ -413,4 +463,51 @@ export function spansConflict(a: BookingSpan, b: BookingSpan): boolean {
     const pb = portionOn(b, day);
     return pa !== null && pb !== null && (pa === "FULL" || pb === "FULL" || pa === pb);
   });
+}
+
+// ---------- finding people by name ----------
+
+export type KnownPerson = { id: string; name: string | null; email: string };
+
+/** "Jürgen Müller", "juergen mueller" and "Müller, Jürgen" all give the same words: juergen, mueller. */
+function nameWords(name: string): string[] {
+  const folded = name
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "");
+  const [last, first] = folded.split(",");
+  const ordered = first !== undefined ? `${first} ${last}` : folded;
+  return ordered.split(/[^\p{L}\p{N}.]+/u).filter(Boolean);
+}
+
+/**
+ * Who a name in a sheet or calendar means: the full name in any order, else a first or last name (or "Lena W.") that
+ * fits exactly one person, else the part of an email address before the @. Null when nobody fits, "ambiguous" when
+ * more than one does and the admin has to use the email.
+ */
+export function findPerson(cell: string, people: KnownPerson[]): string | "ambiguous" | null {
+  const words = nameWords(cell);
+  if (words.length === 0) return null;
+  const key = (w: string[]) => [...w].map((x) => x.replace(/\.$/, "")).sort().join(" ");
+  const tiers: ((p: KnownPerson) => boolean)[] = [
+    (p) => key(nameWords(p.name ?? "")) === key(words),
+    (p) => {
+      const theirs = nameWords(p.name ?? "");
+      // Every word given is one of their words, or the initial of one ("Lena W.").
+      return words.every((w) =>
+        w.endsWith(".") && w.length <= 3 ? theirs.some((t) => t.startsWith(w.slice(0, -1))) : theirs.includes(w),
+      );
+    },
+    (p) => words.length === 1 && p.email.split("@")[0].toLowerCase() === words[0],
+  ];
+  for (const fits of tiers) {
+    const found = people.filter(fits);
+    if (found.length === 1) return found[0].id;
+    if (found.length > 1) return "ambiguous";
+  }
+  return null;
 }
