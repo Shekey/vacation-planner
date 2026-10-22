@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { BookingType } from "@/generated/prisma/enums";
+import type { BookingType, SpecialReason } from "@/generated/prisma/enums";
 import type { BookingSpan } from "@/lib/booking-days";
 import { allowanceSummary, cancelBooking, createBooking, decideBooking, restoreBooking, updateBooking } from "@/lib/bookings";
 import { toISO } from "@/lib/dates";
@@ -13,7 +13,7 @@ const errors = messagesFor("en").errors;
 const origin = "https://app.test";
 
 /** Mon 4 – Fri 8 March 2030: five working days. */
-const week: BookingSpan & { type: BookingType; note: null } = {
+const week: BookingSpan & { type: BookingType; note: null; specialReason?: SpecialReason } = {
   type: "VACATION",
   note: null,
   start: "2030-03-04",
@@ -300,5 +300,21 @@ describe("sick days", () => {
     await purgeOldData(new Date("2026-06-01T00:00:00Z"));
     const left = await db.booking.findMany({ where: { id: { in: [ill.id, away.id] } } });
     expect(left.map((b) => b.id)).toEqual([away.id]);
+  });
+});
+
+describe("special leave", () => {
+  it("needs approval like vacation but doesn't count against it", async () => {
+    const team = await makeWorkspace({ approvalsEnabled: true });
+    const booking = await book(team, team.member, team.member, { ...week, type: "SPECIAL", specialReason: "WEDDING" });
+    expect([booking.status, booking.specialReason]).toEqual(["PENDING", "WEDDING"]);
+    await decideBooking({ workspace: team.workspace, settings: team.settings, actor: team.admin.actor, bookingId: booking.id, approve: true, note: null, origin });
+    expect(await allowanceSummary(team.member, team.settings, 2030, new Set(), "2030-01-15")).toMatchObject({ used: 0, remaining: 20 });
+  });
+
+  it("keeps a reason only on special leave", async () => {
+    const team = await makeWorkspace();
+    const booking = await book(team, team.member, team.member, { ...week, type: "OTHER", specialReason: "WEDDING" });
+    expect(booking.specialReason).toBeNull();
   });
 });

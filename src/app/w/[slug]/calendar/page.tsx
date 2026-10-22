@@ -223,7 +223,7 @@ export default async function CalendarPage({
                     const title = hits
                       .map(
                         ({ b, portion }) =>
-                          `${t.booking(label(m), typeLabel(b.type, locale), portion !== "FULL" ? common.dayPart[portion] : null, b.status === "PENDING")}${
+                          `${t.booking(label(m), typeLabel(b.type, locale, b.specialReason), portion !== "FULL" ? common.dayPart[portion] : null, b.status === "PENDING")}${
                             b.note ? ` – ${b.note}` : ""
                           }`,
                       )
