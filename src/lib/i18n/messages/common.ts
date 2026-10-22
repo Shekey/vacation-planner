@@ -1,9 +1,10 @@
+import { BRAND } from "@/lib/brand";
 import { defineMessages } from "../define";
 
 /** Words used all over the app: header, footer, booking types and statuses, relative days. */
 export const common = defineMessages({
   en: {
-    appName: "Vacation Planner",
+    appName: BRAND.name,
     appDescription:
       "Team vacation planning with yearly allowances, half days, regional public holidays, approvals and Microsoft Teams or Slack updates.",
     skipToContent: "Skip to content",
@@ -12,7 +13,7 @@ export const common = defineMessages({
     yourProfile: "Your profile",
     legalNav: "Legal",
     productNav: { label: "Product", forWhom: "Who it's for", features: "Features", pricing: "Prices", faq: "FAQ" },
-    footer: { impressum: "Legal notice", privacy: "Privacy", terms: "Terms", dpa: "DPA", beta: "Vacation Planner is currently operating in public beta testing." },
+    footer: { impressum: "Legal notice", privacy: "Privacy", terms: "Terms", dpa: "DPA", beta: "Urlaubflow is currently operating in public beta testing." },
     language: "Language",
     languageSwitched: "Language changed",
     admin: "Admin",
@@ -54,7 +55,7 @@ export const common = defineMessages({
     },
   },
   de: {
-    appName: "Vacation Planner",
+    appName: BRAND.name,
     appDescription:
       "Urlaubsplanung fürs Team mit Jahresurlaub, halben Tagen, regionalen Feiertagen, Freigaben und Nachrichten in Microsoft Teams oder Slack.",
     skipToContent: "Zum Inhalt springen",
@@ -63,7 +64,7 @@ export const common = defineMessages({
     yourProfile: "Dein Profil",
     legalNav: "Rechtliches",
     productNav: { label: "Produkt", forWhom: "Für wen", features: "Funktionen", pricing: "Preise", faq: "Fragen" },
-    footer: { impressum: "Impressum", privacy: "Datenschutz", terms: "AGB", dpa: "AVV", beta: "Der Vacation Planner läuft derzeit im öffentlichen Beta-Test." },
+    footer: { impressum: "Impressum", privacy: "Datenschutz", terms: "AGB", dpa: "AVV", beta: "Urlaubflow läuft derzeit im öffentlichen Beta-Test." },
     language: "Sprache",
     languageSwitched: "Sprache geändert",
     admin: "Admin",

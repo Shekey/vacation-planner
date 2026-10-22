@@ -93,7 +93,7 @@ export const landing = defineMessages({
       title: "Before and after",
       beforeTitle: "Today",
       note: ["Anna – Urlaub 3.–7.3.??", "ask Ben on WhatsApp", "days left: 12? 14?", "NRW holiday on Thursday??", "who covers reception Fri?!"],
-      afterTitle: "With Vacation Planner",
+      afterTitle: "With Urlaubflow",
       before: [
         "Requests by WhatsApp, on paper or shouted across the room",
         "An Excel sheet only one person really understands",
@@ -388,7 +388,7 @@ export const landing = defineMessages({
       title: "Vorher und nachher",
       beforeTitle: "Heute",
       note: ["Anna – Urlaub 3.–7.3.??", "Ben per WhatsApp fragen", "Resturlaub: 12? 14?", "Feiertag NRW am Do.??", "Wer macht Fr. den Empfang?!"],
-      afterTitle: "Mit Vacation Planner",
+      afterTitle: "Mit Urlaubflow",
       before: [
         "Anträge per WhatsApp, auf Zetteln oder zwischen Tür und Angel",
         "Eine Excel-Tabelle, die nur eine Person wirklich versteht",

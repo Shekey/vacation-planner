@@ -14,7 +14,7 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
     return (
       <LegalPage locale="en" path="/avv" title="Data Processing Agreement (DPA) pursuant to Art. 28 GDPR" updated="2026-10-21">
         <p>
-          This agreement applies between the customer that uses a workspace in Vacation Planner (“Controller”) and the following provider
+          This agreement applies between the customer that uses a workspace in Urlaubflow (“Controller”) and the following provider
           (“Processor”). It is concluded through use of the service in accordance with the <a href={agb}>terms and conditions</a>.
         </p>
         <Operator locale="en" />
@@ -105,7 +105,7 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
   return (
     <LegalPage locale="de" path="/avv" title="Auftragsverarbeitungsvertrag (AVV) nach Art. 28 DSGVO" updated="2026-10-21">
       <p>
-        Dieser Vertrag gilt zwischen dem Kunden, der einen Workspace im Vacation Planner nutzt („Verantwortlicher“), und dem folgenden
+        Dieser Vertrag gilt zwischen dem Kunden, der einen Workspace in Urlaubflow nutzt („Verantwortlicher“), und dem folgenden
         Anbieter („Auftragsverarbeiter“). Er wird mit der Nutzung des Dienstes gemäß den <a href={agb}>AGB</a> geschlossen.
       </p>
       <Operator locale="de" />

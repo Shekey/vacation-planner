@@ -19,7 +19,7 @@ export default async function TermsPage({ searchParams }: PageProps<"/agb">) {
       <LegalPage locale="en" path="/agb" title="General Terms and Conditions" updated="2026-10-20">
         <h2>1. Scope</h2>
         <p>
-          These terms apply to the use of Vacation Planner, offered by {OPERATOR.name}, {OPERATOR.address} (“Provider”). The service is
+          These terms apply to the use of Urlaubflow, offered by {OPERATOR.name}, {OPERATOR.address} (“Provider”). The service is
           aimed exclusively at entrepreneurs within the meaning of § 14 BGB (German Civil Code), not at consumers. Deviating terms of the
           customer do not apply.
         </p>
@@ -35,7 +35,7 @@ export default async function TermsPage({ searchParams }: PageProps<"/agb">) {
         <h2>{beta ? "3. Free beta phase" : "3. Trial period and conclusion of contract"}</h2>
         {beta && (
           <p>
-            Vacation Planner is in a public beta phase. Until the Provider announces its end by email, the service is free of charge with
+            Urlaubflow is in a public beta phase. Until the Provider announces its end by email, the service is free of charge with
             all features and without a limit on team size; the plans and the 99% availability in section 2 do not apply. In the beta the
             service is provided as it is, may change or be interrupted, and the Provider may end the beta with reasonable notice; no data
             is deleted when it ends. A customer who creates a workspace during the beta receives a permanent discount of{" "}
@@ -107,7 +107,7 @@ export default async function TermsPage({ searchParams }: PageProps<"/agb">) {
     <LegalPage locale="de" path="/agb" title="Allgemeine Geschäftsbedingungen" updated="2026-10-20">
       <h2>1. Geltungsbereich</h2>
       <p>
-        Diese AGB gelten für die Nutzung des Vacation Planner, angeboten von {OPERATOR.name}, {OPERATOR.address} („Anbieter“). Das Angebot
+        Diese AGB gelten für die Nutzung von Urlaubflow, angeboten von {OPERATOR.name}, {OPERATOR.address} („Anbieter“). Das Angebot
         richtet sich ausschließlich an Unternehmer im Sinne von § 14 BGB, nicht an Verbraucher. Abweichende Bedingungen des Kunden gelten
         nicht.
       </p>
@@ -123,7 +123,7 @@ export default async function TermsPage({ searchParams }: PageProps<"/agb">) {
       <h2>{beta ? "3. Kostenlose Beta-Phase" : "3. Testphase und Vertragsschluss"}</h2>
       {beta && (
         <p>
-          Der Vacation Planner befindet sich in einer öffentlichen Beta-Phase. Bis der Anbieter ihr Ende per E-Mail ankündigt, ist der Dienst
+          Urlaubflow befindet sich in einer öffentlichen Beta-Phase. Bis der Anbieter ihr Ende per E-Mail ankündigt, ist der Dienst
           mit allen Funktionen und ohne Begrenzung der Teamgröße kostenlos; die Tarife und die Verfügbarkeit von 99 % aus Ziffer 2 gelten
           nicht. In der Beta wird der Dienst so bereitgestellt, wie er ist, kann sich ändern oder unterbrochen werden, und der Anbieter kann
           die Beta mit angemessener Frist beenden; dabei werden keine Daten gelöscht. Ein Kunde, der in der Beta einen Workspace anlegt,

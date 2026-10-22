@@ -18,7 +18,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
         <p>The controller responsible for data processing on this website and for the accounts of workspace administrators is:</p>
         <Operator locale="en" />
         <p>
-          For the data a company manages about its employees in Vacation Planner (vacations, absences, allowances), that company is the
+          For the data a company manages about its employees in Urlaubflow (vacations, absences, allowances), that company is the
           controller. We process this data on its behalf under Art. 28 GDPR; see the <a href={avv}>data processing agreement</a>.
         </p>
 
@@ -125,7 +125,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
       <p>Verantwortlich für die Datenverarbeitung auf dieser Website und für Konten von Workspace-Administratoren ist:</p>
       <Operator locale="de" />
       <p>
-        Für die Daten, die ein Unternehmen über seine Mitarbeitenden im Vacation Planner verwaltet (Urlaube, Abwesenheiten, Kontingente),
+        Für die Daten, die ein Unternehmen über seine Mitarbeitenden in Urlaubflow verwaltet (Urlaube, Abwesenheiten, Kontingente),
         ist das jeweilige Unternehmen Verantwortlicher. Wir verarbeiten diese Daten in seinem Auftrag nach Art. 28 DSGVO; siehe den{" "}
         <a href={avv}>Auftragsverarbeitungsvertrag</a>.
       </p>

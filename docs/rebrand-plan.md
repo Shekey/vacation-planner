@@ -66,7 +66,7 @@ Both are small and touch mostly text, so they merge cleanly next to wave 1.
 
 ### R1. Rename to Urlaubflow
 
-- One constant `BRAND = { name: "Urlaubflow", domain: "urlaubflow.de" }` in `src/lib/brand.ts`; `common.appName` and everything else read it.
+- One constant `BRAND = { name: "Urlaubflow", domain: "urlaubflow.de" }` in `src/lib/brand.ts`; `common.appName`, manifest, emails, iCal and the 2FA issuer read it. Translations and legal texts spell the name out.
 - Text: i18n messages (`common`, `signIn`, `email`, `settings`, `landing`, `workspace`, `importer`), legal pages (AGB, Datenschutz, AVV, Impressum), manifest (name, short name, theme colour), TOTP issuer, data export file name (`urlaubflow-meine-daten.json` / `urlaubflow-my-data.json`), `.env.example`, README.
 - Kept on purpose: the iCal `UID` suffix `@vacation-planner` (changing it makes subscribed calendars show every absence twice), the repo and npm package name, database names.
 - German copy: "Urlaubflow" is a name, so no article ("in Urlaubflow", not "im Urlaubflow"). Legal texts change the product name only; the binding German version is reviewed in the diff.
@@ -185,10 +185,10 @@ Start the first block now; DNS and email verification can take a day.
 | Before #32 | Azure and Google app registrations use `https://urlaubflow.de` redirect URIs (do the domain first). |
 | Any time | Social profiles (LinkedIn page at least) for `sameAs` and trust; a Google Business Profile isn't needed for SaaS. |
 
-## Decisions (defaults used unless Ajdin says otherwise)
+## Decisions (defaults used unless Ajdin says otherwise; 0 and 1 are decided)
 
 0. Indexing stays off (noindex everywhere) until Ajdin says the site is ready.
-1. **German at `/`, English at `/en`** for public pages (recommended; needed for hreflang and German ranking). Asked in the thread.
+1. **German at `/`, English at `/en`** for public pages. Decided by Ajdin, 2026-10-22.
 2. Spelling is "Urlaubflow" (one word, capital U only).
 3. Dark mode stays, derived from the design colours.
 4. The landing drops the handwriting font and Bricolage headings for Inter, as the design does.

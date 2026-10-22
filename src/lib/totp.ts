@@ -1,4 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { BRAND } from "@/lib/brand";
 
 /**
  * Two-factor codes for the operator's team: time-based one-time passwords (RFC 6238, 6 digits, 30 seconds,
@@ -87,7 +88,7 @@ export function verifyTotp(secret: string, input: string, now: Date, lastStep: n
 }
 
 /** The address an authenticator app reads from the QR code. */
-export function otpauthUri(secret: string, account: string, issuer = "Vacation Planner"): string {
+export function otpauthUri(secret: string, account: string, issuer = BRAND.name): string {
   const label = `${encodeURIComponent(issuer)}:${encodeURIComponent(account)}`;
   return `otpauth://totp/${label}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=${DIGITS}&period=${STEP_SECONDS}`;
 }

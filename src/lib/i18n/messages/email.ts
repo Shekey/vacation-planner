@@ -4,12 +4,12 @@ import { defineMessages } from "../define";
 export const email = defineMessages({
   en: {
     signIn: {
-      subject: "Sign in to Vacation Planner",
+      subject: "Sign in to Urlaubflow",
       text: (url: string, minutes: number) =>
-        `Sign in to Vacation Planner with this link:\n\n${url}\n\nThe link works once and expires in ${minutes} minutes. If you didn't ask for it, you can ignore this email.`,
+        `Sign in to Urlaubflow with this link:\n\n${url}\n\nThe link works once and expires in ${minutes} minutes. If you didn't ask for it, you can ignore this email.`,
     },
     invite: {
-      subject: (inviter: string, workspace: string) => `${inviter} invited you to ${workspace} on Vacation Planner`,
+      subject: (inviter: string, workspace: string) => `${inviter} invited you to ${workspace} on Urlaubflow`,
       text: (inviter: string, workspace: string, url: string, days: number) =>
         `${inviter} invited you to join ${workspace}.\n\nAccept the invitation: ${url}\n\nThe link expires in ${days} days.`,
     },
@@ -30,16 +30,16 @@ export const email = defineMessages({
         `${who} reported sick for ${range} in ${workspace}. Colleagues only see "Other".\n\nCalendar: ${url}`,
     },
     welcome: {
-      subject: (workspace: string) => `You're on the vacation planner of ${workspace}`,
+      subject: (workspace: string) => `You're on Urlaubflow with ${workspace}`,
       text: (workspace: string, url: string) =>
-        `Your team now plans time off in Vacation Planner, in the workspace ${workspace}.\n\nSign in with this email address: ${url}\n\nYou get a sign-in link by email, no password needed. There you see the team calendar and your days left, and you can book time off.`,
+        `Your team now plans time off in Urlaubflow, in the workspace ${workspace}.\n\nSign in with this email address: ${url}\n\nYou get a sign-in link by email, no password needed. There you see the team calendar and your days left, and you can book time off.`,
     },
     trialEnding: {
       subject: (workspace: string, date: string, last: boolean) =>
         `${last ? "Last reminder: the" : "The"} free trial of ${workspace} ends on ${date}`,
       text: (o: { workspace: string; date: string; people: number; freeMax: number; billingUrl: string; contact: string }) =>
         [
-          `The free trial of ${o.workspace} on Vacation Planner ends on ${o.date}.`,
+          `The free trial of ${o.workspace} on Urlaubflow ends on ${o.date}.`,
           [
             "What happens then:",
             "• Nothing is deleted. People, bookings, allowances and holidays all stay as they are.",
@@ -55,12 +55,12 @@ export const email = defineMessages({
   },
   de: {
     signIn: {
-      subject: "Anmeldung bei Vacation Planner",
+      subject: "Anmeldung bei Urlaubflow",
       text: (url: string, minutes: number) =>
-        `Melde dich mit diesem Link bei Vacation Planner an:\n\n${url}\n\nDer Link funktioniert einmal und läuft in ${minutes} Minuten ab. Wenn du ihn nicht angefordert hast, kannst du diese E-Mail ignorieren.`,
+        `Melde dich mit diesem Link bei Urlaubflow an:\n\n${url}\n\nDer Link funktioniert einmal und läuft in ${minutes} Minuten ab. Wenn du ihn nicht angefordert hast, kannst du diese E-Mail ignorieren.`,
     },
     invite: {
-      subject: (inviter: string, workspace: string) => `${inviter} hat dich zu ${workspace} in Vacation Planner eingeladen`,
+      subject: (inviter: string, workspace: string) => `${inviter} hat dich zu ${workspace} in Urlaubflow eingeladen`,
       text: (inviter: string, workspace: string, url: string, days: number) =>
         `${inviter} hat dich eingeladen, ${workspace} beizutreten.\n\nEinladung annehmen: ${url}\n\nDer Link läuft in ${days} Tagen ab.`,
     },
@@ -81,16 +81,16 @@ export const email = defineMessages({
         `${who} hat sich für ${range} in ${workspace} krankgemeldet. Kolleginnen und Kollegen sehen nur „Sonstiges“.\n\nKalender: ${url}`,
     },
     welcome: {
-      subject: (workspace: string) => `Du bist im Urlaubsplaner von ${workspace}`,
+      subject: (workspace: string) => `Du bist bei Urlaubflow im Team von ${workspace}`,
       text: (workspace: string, url: string) =>
-        `Dein Team plant Urlaub jetzt im Vacation Planner, im Workspace ${workspace}.\n\nMelde dich mit dieser E-Mail-Adresse an: ${url}\n\nDu bekommst einen Anmeldelink per E-Mail, ein Passwort brauchst du nicht. Dort siehst du den Teamkalender und deine übrigen Urlaubstage und kannst Urlaub buchen.`,
+        `Dein Team plant Urlaub jetzt in Urlaubflow, im Workspace ${workspace}.\n\nMelde dich mit dieser E-Mail-Adresse an: ${url}\n\nDu bekommst einen Anmeldelink per E-Mail, ein Passwort brauchst du nicht. Dort siehst du den Teamkalender und deine übrigen Urlaubstage und kannst Urlaub buchen.`,
     },
     trialEnding: {
       subject: (workspace: string, date: string, last: boolean) =>
         `${last ? "Letzte Erinnerung: Die" : "Die"} kostenlose Testphase von ${workspace} endet am ${date}`,
       text: (o: { workspace: string; date: string; people: number; freeMax: number; billingUrl: string; contact: string }) =>
         [
-          `Die kostenlose Testphase von ${o.workspace} in Vacation Planner endet am ${o.date}.`,
+          `Die kostenlose Testphase von ${o.workspace} in Urlaubflow endet am ${o.date}.`,
           [
             "Was dann passiert:",
             "• Es wird nichts gelöscht. Personen, Buchungen, Urlaubsansprüche und Feiertage bleiben, wie sie sind.",

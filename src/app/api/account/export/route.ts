@@ -9,7 +9,7 @@ export async function GET() {
   return new Response(JSON.stringify(data, null, 2), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      "Content-Disposition": 'attachment; filename="vacation-planner-my-data.json"',
+      "Content-Disposition": 'attachment; filename="urlaubflow-my-data.json"',
       "Cache-Control": "no-store",
     },
   });

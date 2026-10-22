@@ -22,7 +22,7 @@ export const signIn = defineMessages({
     resend: "Send a new link",
     otherEmail: "Use a different email",
     confirm: {
-      title: "Sign in to Vacation Planner",
+      title: "Sign in to Urlaubflow",
       body: "Continue to sign in as",
       button: "Sign in",
       why: "This extra step stops company mail filters from using up your link before you click it.",
@@ -59,7 +59,7 @@ export const signIn = defineMessages({
     resend: "Neuen Link senden",
     otherEmail: "Andere E-Mail-Adresse verwenden",
     confirm: {
-      title: "Bei Vacation Planner anmelden",
+      title: "Bei Urlaubflow anmelden",
       body: "Weiter, um dich anzumelden als",
       button: "Anmelden",
       why: "Dieser Zwischenschritt verhindert, dass Mailfilter in Firmen deinen Link verbrauchen, bevor du klickst.",
