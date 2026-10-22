@@ -59,6 +59,10 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
           </li>
           <li>Server logs: IP address, time and page requested, for security and troubleshooting, stored for no longer than 30 days.</li>
           <li>
+            Sign-in requests: a keyed hash of the email address and of the IP address with the time, to limit how many sign-in links are
+            sent, deleted after two days at the latest.
+          </li>
+          <li>
             Usage statistics (PostHog, EU cloud): on the public pages (home page, sign-in, legal texts) we count visits and clicks and
             record anonymous session replays in which every input field is masked; inside the app we only count that a page was opened,
             with names, workspace addresses and identifiers removed from the address, and no replay. Nothing is stored in your browser
@@ -165,6 +169,10 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
         </li>
         <li>
           Server-Protokolle: IP-Adresse, Zeitpunkt und aufgerufene Seite, zur Sicherheit und Fehlersuche, höchstens 30 Tage gespeichert.
+        </li>
+        <li>
+          Anmeldeanfragen: ein mit einem geheimen Schlüssel gebildeter Hashwert der E-Mail-Adresse und der IP-Adresse mit Zeitpunkt, um die Zahl der
+          versendeten Anmeldelinks zu begrenzen, spätestens nach zwei Tagen gelöscht.
         </li>
         <li>
           Nutzungsstatistik (PostHog, EU-Cloud): Auf den öffentlichen Seiten (Startseite, Anmeldung, Rechtstexte) zählen wir Besuche und
