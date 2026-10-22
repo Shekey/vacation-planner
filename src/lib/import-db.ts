@@ -1,5 +1,6 @@
 import { recordAudit } from "@/lib/audit";
 import { countDays, validateSpan } from "@/lib/booking-days";
+import { mapLimit, SEND_CONCURRENCY } from "@/lib/background";
 import { ACTIVE_STATUSES, isOverlapError, loadHolidays, regionOf, rulesFor, type Settings } from "@/lib/bookings";
 import { fromISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
@@ -159,10 +160,12 @@ export async function applyPeople(
   let emailed = 0;
   let emailFailed = 0;
   if (opts.sendWelcome) {
-    for (const u of users) {
+    const results = await mapLimit(users, SEND_CONCURRENCY, (u) => {
       const locale: Locale = isLocale(u.locale) ? u.locale : (settings.locale ?? "en");
       const t = messagesFor(locale).email.welcome;
-      const sent = await sendEmail({ to: u.email, subject: t.subject(workspace.name), text: t.text(workspace.name, `${opts.origin}/sign-in`) });
+      return sendEmail({ to: u.email, subject: t.subject(workspace.name), text: t.text(workspace.name, `${opts.origin}/sign-in`) });
+    });
+    for (const sent of results) {
       if (sent.ok) emailed++;
       else emailFailed++;
     }

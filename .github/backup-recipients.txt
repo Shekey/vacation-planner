@@ -1,0 +1,2 @@
+# age public keys that can decrypt the nightly database backups, one per line (see docs/backups.md).
+# Public keys only. The private key stays offline with the owner and is never committed or stored in GitHub.

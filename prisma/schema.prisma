@@ -383,3 +383,19 @@ model ColdMail {
 
   @@index([workspaceId, createdAt])
 }
+
+// One row per request for a sign-in link (src/lib/sign-in-limit.ts). Address and network are kept only as keyed hashes,
+// for two days, to limit how many links one address gets, one network asks for and all of us send.
+model SignInAttempt {
+  id        String   @id @default(cuid())
+  emailHash String
+  // Null when the request came without a client address (local development).
+  ipHash    String?
+  // False when the address already had enough links and none was sent.
+  sent      Boolean
+  createdAt DateTime @default(now())
+
+  @@index([emailHash, createdAt])
+  @@index([ipHash, createdAt])
+  @@index([createdAt])
+}

@@ -12,7 +12,7 @@ export async function generateMetadata() {
 
 export default async function SignInPage({ searchParams }: PageProps<"/sign-in">) {
   if ((await auth())?.user) redirect("/");
-  const { sent, callbackUrl, email, error } = await searchParams;
+  const { sent, again, callbackUrl, email, error } = await searchParams;
   const t = (await getMessages()).signIn;
 
   const redirectTo = safeRedirectPath(callbackUrl);
@@ -31,7 +31,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
               {t.sentTo} <b className="break-words">{address}</b>
             </p>
           )}
-          <p className="text-muted">{t.sentBody}</p>
+          <p className="text-muted">{again ? t.alreadySent : t.sentBody}</p>
         </div>
         {address && (
           <form action={sendSignInLinkAction} className="mt-6 space-y-3 border-t border-border pt-4 text-center text-sm">
