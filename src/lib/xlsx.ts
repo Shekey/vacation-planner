@@ -198,3 +198,15 @@ export function bestSheet(sheets: Sheet[], fits: RegExp): number {
   const named = sheets.findIndex((s) => s.rows.length > 0 && fits.test(s.name));
   return named >= 0 ? named : Math.max(0, sheets.findIndex((s) => s.rows.length > 0));
 }
+
+/** The calendar files (.ics) in a zip, joined: Google Calendar exports a zip with one file per calendar. Null when there are none. */
+export async function readCalendarsInZip(data: Uint8Array): Promise<string | null> {
+  const entries = readEntries(data);
+  const texts: string[] = [];
+  for (const name of entries.keys()) {
+    if (!/\.ics$/i.test(name)) continue;
+    const text = await readText(data, entries, name);
+    if (text) texts.push(text);
+  }
+  return texts.length ? texts.join("\r\n") : null;
+}

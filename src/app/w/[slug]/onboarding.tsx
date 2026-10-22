@@ -31,7 +31,7 @@ export async function Onboarding({ slug, workspace }: { slug: string; workspace:
   const t = (await getMessages()).workspace.onboarding;
   const steps = [
     { key: "holidays", done: Boolean(s?.holidayCountry), href: `${base}/holidays` },
-    { key: "invite", done: members > 1 || invites > 0, href: `${base}/members` },
+    { key: "invite", done: members > 1 || invites > 0, href: `${base}/import` },
     { key: "staffing", done: s?.minPeoplePresent != null, href: `${base}/settings` },
     { key: "chat", done: Boolean(s?.teamsWebhookUrl || s?.slackWebhookUrl), href: `${base}/settings` },
     { key: "book", done: bookings > 0, href: `${base}/book` },

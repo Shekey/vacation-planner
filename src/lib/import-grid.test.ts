@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findGrid, gridMark, parseGrid } from "./import-grid";
+import { findGrid, gridMark, parseGrid, peopleOfGrid } from "./import-grid";
 import { parseTable } from "./import";
 
 const days = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => String(from + i));
@@ -66,5 +66,18 @@ describe("readTimeOff", () => {
     expect(readTimeOff("BEGIN:VCALENDAR\nBEGIN:VEVENT\nSUMMARY:Urlaub Anna\nDTSTART;VALUE=DATE:20261201\nEND:VEVENT\nEND:VCALENDAR", "2026-10-22").source).toBe("calendar");
     expect(readTimeOff(["Name", ...days(1, 10).map((d) => `${d}.12.2026`)].join("\t") + "\nAnna\tU", "2026-10-22")).toMatchObject({ source: "planner", rows: [{ name: "Anna", start: "2026-12-01" }] });
     expect(readTimeOff("Name;Von;Bis\nAnna;01.12.2026;05.12.2026", "2026-10-22").source).toBe("list");
+  });
+});
+
+describe("peopleOfGrid", () => {
+  it("takes the names and the allowance column left of the days, without sum rows", () => {
+    const table = [
+      ["", "Anspruch", ...days(1, 10).map((d) => `2026-03-${d.padStart(2, "0")}`)],
+      ["Lena Wagner", "30", "U"],
+      ["Murat", "28"],
+      ["Summe", "58"],
+    ];
+    const grid = findGrid(table, 2026)!;
+    expect(peopleOfGrid(table, grid)).toEqual([["Name", "Anspruch"], ["Lena Wagner", "30"], ["Murat", "28"]]);
   });
 });

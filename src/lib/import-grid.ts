@@ -143,13 +143,29 @@ export function findGrid(table: string[][], fallbackYear: number): Grid | null {
   return null;
 }
 
+/** Whether a row below the days names a person rather than summing up. */
+function isPersonRow(cells: string[], grid: Grid): boolean {
+  const who = (cells[grid.nameColumn] ?? "").trim();
+  return who !== "" && !NOT_A_PERSON.test(who) && /\p{L}/u.test(who);
+}
+
+/** The people in a planner: the columns left of the days (name, and allowance when there is such a column), with a header row. */
+export function peopleOfGrid(table: string[][], grid: Grid): string[][] {
+  const width = Math.min(...grid.dates.keys());
+  const header = table[grid.header].slice(0, width);
+  // The name column often has no heading in a planner; give it one so the columns are read by name.
+  header[grid.nameColumn] = header[grid.nameColumn]?.trim() || "Name";
+  const people = table.slice(grid.header + 1).filter((r) => isPersonRow(r, grid));
+  return [header, ...people.map((r) => r.slice(0, width))];
+}
+
 export function parseGrid(table: string[][], grid: Grid): TimeOffRow[] {
   const rows: TimeOffRow[] = [];
   const columns = [...grid.dates.keys()].sort((a, b) => a - b);
   for (let r = grid.header + 1; r < table.length; r++) {
     const cells = table[r];
-    const who = (cells[grid.nameColumn] ?? "").trim();
-    if (!who || NOT_A_PERSON.test(who) || !/\p{L}/u.test(who)) continue;
+    if (!isPersonRow(cells, grid)) continue;
+    const who = cells[grid.nameColumn].trim();
     const line = r + 1;
     const person = who.includes("@") ? { email: who.toLowerCase(), name: "" } : { email: "", name: who };
     const base = { line, ...person, startPart: "FULL" as const, endPart: "FULL" as const };

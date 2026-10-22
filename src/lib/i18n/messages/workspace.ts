@@ -41,14 +41,14 @@ export const workspace = defineMessages({
       allDoneSoon: "Most teams are set up in under five minutes.",
       steps: {
         holidays: "Import public holidays for your state",
-        invite: "Invite your team (paste emails straight from Excel)",
+        invite: "Bring your team over (from Excel, a year planner, Outlook or your old tool)",
         staffing: "Say how many people must be at work each day",
         chat: "Connect Microsoft Teams or Slack",
         book: "Book the first time off",
       },
       hints: {
         holidays: "Holidays then never count as vacation days.",
-        invite: "Everyone gets a sign-in link by email, no password needed.",
+        invite: "People and their booked vacation in a few minutes. Or invite people one by one under Members.",
         staffing: "You get a warning before too many people are off at once.",
         chat: "Bookings and a morning summary of who's out land in your channel.",
         book: "Try it yourself, it takes ten seconds.",
@@ -110,14 +110,14 @@ export const workspace = defineMessages({
       allDoneSoon: "Die meisten Teams sind in unter fünf Minuten startklar.",
       steps: {
         holidays: "Feiertage für dein Bundesland importieren",
-        invite: "Team einladen (E-Mails direkt aus Excel einfügen)",
+        invite: "Team übernehmen (aus Excel, Urlaubsplaner, Outlook oder deinem alten Tool)",
         staffing: "Festlegen, wie viele Leute täglich da sein müssen",
         chat: "Microsoft Teams oder Slack verbinden",
         book: "Den ersten Urlaub buchen",
       },
       hints: {
         holidays: "Feiertage zählen dann nie als Urlaubstage.",
-        invite: "Alle bekommen einen Anmeldelink per E-Mail, ganz ohne Passwort.",
+        invite: "Personen und ihr gebuchter Urlaub in wenigen Minuten. Oder lade sie einzeln unter Mitglieder ein.",
         staffing: "Du bekommst eine Warnung, bevor zu viele gleichzeitig fehlen.",
         chat: "Buchungen und morgens eine Übersicht, wer fehlt, landen in eurem Kanal.",
         book: "Probier es selbst aus, das dauert zehn Sekunden.",

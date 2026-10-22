@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { deflateRawSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { parsePeople, parseTimeOff } from "./import";
-import { bestSheet, isDateFormat, looksLikeOldExcel, looksLikeZip, readWorkbook, serialToISO, toTabText } from "./xlsx";
+import { bestSheet, isDateFormat, looksLikeOldExcel, looksLikeZip, readCalendarsInZip, readWorkbook, serialToISO, toTabText } from "./xlsx";
 
 /** A minimal zip (deflated entries, no CRC check on read) holding the given files. */
 function zip(files: Record<string, string>): Uint8Array {
@@ -135,5 +135,13 @@ describe("bestSheet", () => {
     expect(bestSheet(sheets, /urlaub|absence/i)).toBe(2);
     expect(bestSheet(sheets, /team|people/i)).toBe(1);
     expect(bestSheet([], /x/)).toBe(0);
+  });
+});
+
+describe("readCalendarsInZip", () => {
+  it("joins the calendars of a Google Calendar export and ignores other files", async () => {
+    const text = await readCalendarsInZip(zip({ "team@group.calendar.google.com.ics": "BEGIN:VCALENDAR\r\nEND:VCALENDAR", "readme.txt": "x", "me.ics": "BEGIN:VCALENDAR" }));
+    expect(text).toBe("BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\nBEGIN:VCALENDAR");
+    expect(await readCalendarsInZip(zip({ "a.txt": "x" }))).toBeNull();
   });
 });
