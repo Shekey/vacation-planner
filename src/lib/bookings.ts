@@ -1,5 +1,16 @@
 import type { BookingStatus, BookingType, Prisma, Role } from "@/generated/prisma/client";
-import { allowanceIn, carriedOverStatus, carryOver, countDays, proratedAllowance, validateSpan, type BookingSpan, type DayRules } from "@/lib/booking-days";
+import {
+  allowanceIn,
+  carriedOverStatus,
+  carryOver,
+  countDays,
+  proratedAllowance,
+  spanWithout,
+  spansOverlap,
+  validateSpan,
+  type BookingSpan,
+  type DayRules,
+} from "@/lib/booking-days";
 import { formatRange, fromISO, toISO, todayIn, type ISODate } from "@/lib/dates";
 import { getMessages } from "@/lib/i18n/server";
 import { formatNumber, isLocale, LOCALES, messagesFor, type Locale, type Messages } from "@/lib/i18n";
@@ -26,8 +37,6 @@ export type Settings = {
   slackWebhookUrl: string | null;
   /** Default region for regional holidays, e.g. "DE-BE". */
   holidayRegion: string | null;
-  /** Show colleagues' sick leave as "Other", without its note. */
-  hideSickType: boolean;
   /** Language of chat posts and of emails to people who haven't picked one; English when unset. */
   locale?: Locale;
 };
@@ -42,15 +51,14 @@ export function rulesFor(
 }
 
 /**
- * Hides other people's sick leave from a viewer who isn't an admin, when the workspace asks for it:
- * the booking shows as "Other" and loses its note, since both can be health data.
+ * Hides other people's sick days from a viewer who isn't an admin: they show as "Other" without a note,
+ * since being sick is health data (Art. 9 GDPR). Only the person and admins see them as sick.
  */
 export function forViewer<T extends { type: BookingType; note: string | null; membershipId: string }>(
   bookings: T[],
   viewer: { membershipId: string; role: Role },
-  settings: { hideSickType: boolean },
 ): T[] {
-  if (!settings.hideSickType || viewer.role === "ADMIN") return bookings;
+  if (viewer.role === "ADMIN") return bookings;
   return bookings.map((b) =>
     b.type === "SICK" && b.membershipId !== viewer.membershipId ? { ...b, type: "OTHER" as const, note: null } : b,
   );
@@ -119,9 +127,75 @@ function prepare(input: BookingInput, settings: Settings, rules: DayRules, t: Me
   };
 }
 
-/** Pending when approvals are on, unless an admin created it. */
-function initialStatus(actor: Actor, settings: Settings): BookingStatus {
-  return settings.approvalsEnabled && actor.role !== "ADMIN" ? "PENDING" : "APPROVED";
+/** Pending when approvals are on, unless an admin created it. Sick days are never asked for. */
+function initialStatus(actor: Actor, settings: Settings, type?: BookingType): BookingStatus {
+  return settings.approvalsEnabled && actor.role !== "ADMIN" && type !== "SICK" ? "PENDING" : "APPROVED";
+}
+
+type Tx = Parameters<Parameters<typeof db.$transaction>[0]>[0];
+
+/**
+ * Sick days during a vacation don't count as vacation (BUrlG §9): the vacation is cut around them and those
+ * days come back. Only an admin may do it, because they check the sick note (eAU) outside the app; the app
+ * keeps no note. Returns the vacation days given back.
+ */
+async function giveBackVacation(
+  tx: Tx,
+  opts: { membershipId: string; sick: BookingSpan; rules: DayRules; actor: Actor; exceptId?: string; t: Messages["errors"] },
+): Promise<number> {
+  const vacations = (
+    await tx.booking.findMany({
+      where: {
+        membershipId: opts.membershipId,
+        type: "VACATION",
+        status: { in: ACTIVE_STATUSES },
+        startDate: { lte: fromISO(opts.sick.end) },
+        endDate: { gte: fromISO(opts.sick.start) },
+        ...(opts.exceptId ? { id: { not: opts.exceptId } } : {}),
+      },
+    })
+  ).filter((b) => spansOverlap(spanOf(b), opts.sick));
+  if (vacations.length === 0) return 0;
+  if (opts.actor.role !== "ADMIN") throw new BookingError(opts.t.sickInVacation);
+
+  let returned = 0;
+  for (const b of vacations) {
+    const parts = spanWithout(spanOf(b), opts.sick)
+      .map((span) => ({ span, daysCount: countDays(span, opts.rules) }))
+      .filter((p) => p.daysCount > 0);
+    returned += Number(b.daysCount) - parts.reduce((sum, p) => sum + p.daysCount, 0);
+    if (parts.length === 0) {
+      // Not restorable on its own: the sick days are in the way, and the vacation was never taken.
+      await tx.booking.update({
+        where: { id: b.id },
+        data: { status: "CANCELLED", cancelledAt: new Date(), cancelledFrom: b.status, cancelReason: "SICK" },
+      });
+      continue;
+    }
+    // Shrink first, then add the part after, so the two never overlap on the way.
+    const [first, ...rest] = parts;
+    await tx.booking.update({ where: { id: b.id }, data: { ...dates(first.span), daysCount: first.daysCount } });
+    for (const part of rest) {
+      await tx.booking.create({
+        data: {
+          workspaceId: b.workspaceId,
+          membershipId: b.membershipId,
+          type: b.type,
+          status: b.status,
+          createdById: b.createdById,
+          decidedById: b.decidedById,
+          decidedAt: b.decidedAt,
+          ...dates(part.span),
+          daysCount: part.daysCount,
+        },
+      });
+    }
+  }
+  return returned;
+}
+
+function dates(span: BookingSpan) {
+  return { startDate: fromISO(span.start), endDate: fromISO(span.end), startPart: span.startPart, endPart: span.endPart };
 }
 
 async function write<T>(fn: () => Promise<T>): Promise<T> {
@@ -153,22 +227,30 @@ export async function createBooking(opts: {
   });
   if (!target) throw new BookingError(t.memberNotInWorkspace);
 
-  const status = initialStatus(actor, settings);
+  const status = initialStatus(actor, settings, input.type);
   const holidays = await loadHolidays(workspace.id, regionOf(target, settings));
+  const rules = rulesFor(target, settings, holidays);
+  const data = prepare(input, settings, rules, t);
+  let returned = 0;
   const booking = await write(() =>
-    db.booking.create({
-      data: {
-        ...prepare(input, settings, rulesFor(target, settings, holidays), t),
-        status,
-        workspaceId: workspace.id,
-        membershipId,
-        createdById: actor.userId,
-        ...(status === "APPROVED" && settings.approvalsEnabled ? { decidedById: actor.userId, decidedAt: new Date() } : {}),
-      },
+    db.$transaction(async (tx) => {
+      if (input.type === "SICK") returned = await giveBackVacation(tx, { membershipId, sick: input, rules, actor, t });
+      return tx.booking.create({
+        data: {
+          ...data,
+          status,
+          workspaceId: workspace.id,
+          membershipId,
+          createdById: actor.userId,
+          ...(status === "APPROVED" && settings.approvalsEnabled && input.type !== "SICK" ? { decidedById: actor.userId, decidedAt: new Date() } : {}),
+        },
+      });
     }),
   );
 
+  if (returned > 0) await recordVacationReturned(workspace.id, actor, target.user, input);
   if (status === "PENDING") await notifyAdminsOfRequest(workspace, settings, target.user, booking, opts.origin);
+  if (input.type === "SICK" && actor.role !== "ADMIN") await notifyAdminsOfSickDays(workspace, settings, target.user, booking, opts.origin);
   await announce(workspace.id, settings, target.user, booking, status === "PENDING" ? "requested" : "off", `${opts.origin}/w/${workspace.slug}/calendar`);
   return booking;
 }
@@ -186,8 +268,8 @@ async function announce(
   if ((!settings.teamsWebhookUrl && !settings.slackWebhookUrl) || isSampleEmail(person.email)) return;
   const locale = settings.locale ?? "en";
   const { chat, common } = messagesFor(locale);
-  // The channel is shared with colleagues, so private sick leave is posted as plain time off.
-  const type = settings.hideSickType && booking.type === "SICK" ? "OTHER" : booking.type;
+  // The channel is shared with colleagues, so sick days are posted as plain time off.
+  const type = booking.type === "SICK" ? "OTHER" : booking.type;
   await postToChannels(
     settings,
     chat.booking(
@@ -223,18 +305,23 @@ export async function updateBooking(opts: {
   }
 
   // A member changing dates sends the booking back for approval.
-  const status = initialStatus(actor, settings);
+  const status = initialStatus(actor, settings, input.type);
   const holidays = await loadHolidays(workspace.id, regionOf(existing.membership, settings));
+  const rules = rulesFor(existing.membership, settings, holidays);
+  const data = prepare(input, settings, rules, t);
+  let returned = 0;
   const booking = await write(() =>
-    db.booking.update({
-      where: { id: existing.id },
-      data: {
-        ...prepare(input, settings, rulesFor(existing.membership, settings, holidays), t),
-        status,
-        ...(status === "PENDING" ? { decidedById: null, decidedAt: null, decisionNote: null } : {}),
-      },
+    db.$transaction(async (tx) => {
+      if (input.type === "SICK") {
+        returned = await giveBackVacation(tx, { membershipId: existing.membershipId, sick: input, rules, actor, exceptId: existing.id, t });
+      }
+      return tx.booking.update({
+        where: { id: existing.id },
+        data: { ...data, status, ...(status === "PENDING" ? { decidedById: null, decidedAt: null, decisionNote: null } : {}) },
+      });
     }),
   );
+  if (returned > 0) await recordVacationReturned(workspace.id, actor, existing.membership.user, input);
   if (status === "PENDING") await notifyAdminsOfRequest(workspace, settings, existing.membership.user, booking, opts.origin);
   await announce(
     workspace.id,
@@ -407,6 +494,46 @@ async function notifyAdminsOfRequest(
       ),
     });
   }
+}
+
+/** Tells admins in their language that someone reported sick; the email says nothing beyond the dates. */
+async function notifyAdminsOfSickDays(
+  workspace: { id: string; name: string; slug: string },
+  settings: Settings,
+  person: { name: string | null; email: string },
+  booking: { startDate: Date; endDate: Date },
+  origin: string,
+) {
+  const admins = await db.membership.findMany({
+    where: { workspaceId: workspace.id, role: "ADMIN", removedAt: null },
+    select: { user: { select: { email: true, locale: true } } },
+  });
+  const who = person.name ?? person.email;
+  for (const locale of LOCALES) {
+    const to = admins.filter((a) => recipientLocale(a.user, settings) === locale).map((a) => a.user.email);
+    if (to.length === 0) continue;
+    const { email } = messagesFor(locale);
+    await sendEmail({
+      to,
+      subject: email.sick.subject(who),
+      text: email.sick.text(
+        who,
+        formatRange(toISO(booking.startDate), toISO(booking.endDate), locale),
+        workspace.name,
+        `${origin}/w/${workspace.slug}/calendar?month=${toISO(booking.startDate).slice(0, 7)}`,
+      ),
+    });
+  }
+}
+
+function recordVacationReturned(workspaceId: string, actor: Actor, person: { name: string | null; email: string }, sick: BookingSpan) {
+  return recordAudit({
+    workspaceId,
+    actorId: actor.userId,
+    action: "booking.vacation_returned",
+    targetLabel: person.name ?? person.email,
+    detail: bookingDetail(sick),
+  });
 }
 
 /** Bookings that touch [from, to], for calendars and "who's off". */

@@ -52,11 +52,7 @@ export default async function CalendarPage({
       include: { user: { select: { name: true, email: true } } },
     }),
     activeBookingsBetween(workspace.id, start, end).then((bs) =>
-      forViewer(
-        bs,
-        { membershipId: membership.id, role: membership.role },
-        settingsOf(workspace),
-      ),
+      forViewer(bs, { membershipId: membership.id, role: membership.role }),
     ),
     db.holiday.findMany({
       where: {
@@ -131,7 +127,7 @@ export default async function CalendarPage({
             </Link>
           )}
         </div>
-        <Legend locale={locale} />
+        <Legend locale={locale} withSick={membership.role === "ADMIN"} />
       </div>
 
       <ScrollToToday className="overflow-x-auto overscroll-x-contain rounded-xl border border-border bg-surface shadow-sm">

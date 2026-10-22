@@ -222,7 +222,7 @@ export const landing = defineMessages({
       items: [
         {
           q: "Who can see my bookings?",
-          a: "Only people in your workspace, and they only see dates and whether it's vacation or other time off. There are no sick days and no notes, so nothing sensitive is stored.",
+          a: "Only people in your workspace, and they only see dates and whether it's vacation or other time off. Sick days are dates only, with no diagnosis and no doctor's note: only the person and admins see them as sick, and they're deleted after a year. There are no notes.",
         },
         {
           q: "Where is our data stored?",
@@ -523,7 +523,7 @@ export const landing = defineMessages({
       items: [
         {
           q: "Wer kann meine Buchungen sehen?",
-          a: "Nur Personen in deinem Workspace, und die sehen nur die Daten und ob es Urlaub oder eine sonstige Abwesenheit ist. Es gibt keine Krankheitstage und keine Notizen, also werden keine sensiblen Daten gespeichert.",
+          a: "Nur Personen in deinem Workspace, und die sehen nur die Daten und ob es Urlaub oder eine sonstige Abwesenheit ist. Krankheitstage sind nur Daten, ohne Diagnose und ohne Krankmeldung: Als Krankheit sehen sie nur die Person und die Admins, und nach einem Jahr werden sie gelöscht. Notizen gibt es nicht.",
         },
         {
           q: "Wo werden unsere Daten gespeichert?",

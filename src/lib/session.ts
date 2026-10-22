@@ -46,7 +46,6 @@ type SettingsRow = {
   teamsWebhookUrl: string | null;
   slackWebhookUrl: string | null;
   holidayRegion: string | null;
-  hideSickType: boolean;
   locale: string;
 };
 
@@ -66,7 +65,6 @@ export function settingsOf(workspace: { settings: SettingsRow | null } & Billing
     teamsWebhookUrl: chat ? (s?.teamsWebhookUrl ?? null) : null,
     slackWebhookUrl: chat ? (s?.slackWebhookUrl ?? null) : null,
     holidayRegion: s?.holidayRegion ?? null,
-    hideSickType: s?.hideSickType ?? true,
     locale: isLocale(s?.locale) ? s.locale : "en",
   };
 }

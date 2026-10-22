@@ -9,6 +9,8 @@ import { useI18n } from "@/components/i18n-provider";
 import {
   countDays,
   portionOn,
+  spanWithout,
+  spansOverlap,
   validateSpan,
   type BookingSpan,
 } from "@/lib/booking-days";
@@ -29,6 +31,8 @@ type TeamBooking = BookingSpan & {
   id: string;
   membershipId: string;
   name: string;
+  /** Vacation, as opposed to any other time off. */
+  vacation: boolean;
 };
 
 export type BookingFormProps = {
@@ -70,9 +74,7 @@ export function BookingForm(props: BookingFormProps) {
   const fmt = (n: number) => formatNumber(n, locale);
   const [state, formAction, pending] = useActionState(props.action, {});
   const [membershipId, setMembershipId] = useState(initial.membershipId);
-  const [type, setType] = useState(
-    initial.type === "SICK" ? "OTHER" : initial.type,
-  );
+  const [type, setType] = useState(initial.type);
   const [start, setStart] = useState(initial.start);
   const [end, setEnd] = useState(initial.end);
   const [startsPm, setStartsPm] = useState(initial.startPart === "PM");
@@ -148,7 +150,28 @@ export function BookingForm(props: BookingFormProps) {
     return [...names.values()];
   }, [start, end, props.team, initial.bookingId, membershipId]);
 
-  const willBePending = settings.approvalsEnabled && !props.isAdmin;
+  const sick = type === "SICK";
+  const willBePending = settings.approvalsEnabled && !props.isAdmin && !sick;
+
+  // Sick days in this person's vacation give those vacation days back (admins only, see giveBackVacation).
+  const vacationReturned =
+    sick && start && end && !problem
+      ? props.team
+          .filter(
+            (b) =>
+              b.vacation &&
+              b.membershipId === membershipId &&
+              b.id !== initial.bookingId &&
+              spansOverlap(b, span),
+          )
+          .reduce(
+            (sum, b) =>
+              sum +
+              countDays(b, rules) -
+              spanWithout(b, span).reduce((s, p) => s + countDays(p, rules), 0),
+            0,
+          )
+      : 0;
 
   const shortDays =
     start && end && !problem && eachDay(start, end).length <= 366
@@ -194,9 +217,8 @@ export function BookingForm(props: BookingFormProps) {
 
       <fieldset className="space-y-1">
         <legend className="text-sm font-medium">{t.type}</legend>
-        <div className="flex gap-2">
-          {/* Sick leave isn't offered: it would be health data (Art. 9 GDPR). */}
-          {(["VACATION", "OTHER"] as const).map((option) => (
+        <div className="flex flex-wrap gap-2">
+          {(["VACATION", "SICK", "OTHER"] as const).map((option) => (
             <label
               key={option}
               className={`cursor-pointer rounded-lg border px-3 py-1.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40 text-sm ${
@@ -366,6 +388,12 @@ export function BookingForm(props: BookingFormProps) {
               </p>
             )}
             {willBePending && <p className="opacity-70">{t.needsApproval}</p>}
+            {sick && vacationReturned > 0 && (
+              <p className={props.isAdmin ? undefined : "text-amber-700 dark:text-amber-400"}>
+                {props.isAdmin ? t.sickGivesBack(fmt(vacationReturned)) : t.sickAskAdmin}
+              </p>
+            )}
+            {sick && <p className="opacity-70">{t.sickHint}</p>}
           </>
         ) : (
           <p className="opacity-70">{t.pickDates}</p>

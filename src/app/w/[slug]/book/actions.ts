@@ -12,7 +12,7 @@ import { appOrigin } from "@/lib/url";
 
 const schema = z.object({
   membershipId: z.string().min(1),
-  type: z.enum(["VACATION", "OTHER"]),
+  type: z.enum(["VACATION", "SICK", "OTHER"]),
   start: z.string().refine(isISODate),
   end: z.string().refine(isISODate),
   startPart: z.enum(["FULL", "PM"]),
@@ -27,7 +27,7 @@ export async function saveBooking(slug: string, bookingId: string | null, _prev:
     const field = parsed.error.issues[0].path[0];
     return { error: field === "start" ? t.pickStart : field === "end" ? t.pickEnd : t.invalid };
   }
-  // Bookings carry no free text, so nothing personal ends up in notes.
+  // Bookings carry no free text, so nothing personal ends up in notes (and no diagnosis next to sick days).
   const { membershipId, ...rest } = parsed.data;
   const input = { ...rest, note: null };
   const common = {

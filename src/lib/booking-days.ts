@@ -74,6 +74,45 @@ export function validateSpan(span: BookingSpan, opts: { allowHalfDays: boolean }
   return null;
 }
 
+// Half-day units, as in the database's overlap check: day d is [2d, 2d + 2), its afternoon starts at 2d + 1.
+const EPOCH = Date.UTC(2000, 0, 1);
+const dayNumber = (day: ISODate) => Math.round((Date.parse(`${day}T00:00:00Z`) - EPOCH) / 86_400_000);
+const dayOf = (n: number): ISODate => new Date(EPOCH + n * 86_400_000).toISOString().slice(0, 10);
+
+function halfDayRange(span: BookingSpan): [number, number] {
+  return [
+    dayNumber(span.start) * 2 + (span.startPart === "PM" ? 1 : 0),
+    dayNumber(span.end) * 2 + (span.endPart === "AM" ? 1 : 2),
+  ];
+}
+
+function spanOfRange(from: number, to: number): BookingSpan {
+  return {
+    start: dayOf(Math.floor(from / 2)),
+    startPart: from % 2 ? "PM" : "FULL",
+    end: dayOf(Math.floor((to - 1) / 2)),
+    endPart: to % 2 ? "AM" : "FULL",
+  };
+}
+
+/** Whether two spans share at least half a day. */
+export function spansOverlap(a: BookingSpan, b: BookingSpan): boolean {
+  const [aFrom, aTo] = halfDayRange(a);
+  const [bFrom, bTo] = halfDayRange(b);
+  return aFrom < bTo && bFrom < aTo;
+}
+
+/** What is left of `span` once `cut` is taken out of it: nothing, one part, or a part before and one after. */
+export function spanWithout(span: BookingSpan, cut: BookingSpan): BookingSpan[] {
+  const [from, to] = halfDayRange(span);
+  const [cutFrom, cutTo] = halfDayRange(cut);
+  if (cutTo <= from || to <= cutFrom) return [span];
+  const parts: BookingSpan[] = [];
+  if (from < cutFrom) parts.push(spanOfRange(from, cutFrom));
+  if (cutTo < to) parts.push(spanOfRange(cutTo, to));
+  return parts;
+}
+
 /** Labels a span for lists, e.g. "afternoon only" on single half days. */
 export function halfDayLabel(span: BookingSpan, locale: Locale = "en"): string | null {
   const t = messagesFor(locale).common.halfDay;

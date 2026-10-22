@@ -11,7 +11,7 @@ export const importer = defineMessages({
     peopleHelp:
       "One row per person, with a header row. Columns can be in any order: Name (or First name and Last name), Email, Vacation days, Left over (days still open from last year), Work days, Start date, State, Role. Only the email is required. Work days like Mo-Fr or Mo, We, Fr; dates like 01.03.2024 or 2024-03-01; role Admin or Member. Without a header row, the email, name and days are recognised by their content.",
     timeOffHelp:
-      "One row per absence, with a header row: Email, From, To, Type, Half day. “To” can stay empty for a single day. Type is Vacation (the default) or Other. Half day is morning or afternoon and works for a single day. The people must already be in the workspace, so import them first. Sick leave isn't imported because Vacation Planner doesn't store it.",
+      "One row per absence, with a header row: Email, From, To, Type, Half day. “To” can stay empty for a single day. Type is Vacation (the default) or Other. Half day is morning or afternoon and works for a single day. The people must already be in the workspace, so import them first. Sick days aren't imported: old ones aren't needed, and new ones are entered in the app.",
     templateLink: "Download a template",
     templatePeople:
       "Name,Email,Vacation days,Left over,Work days,Start date,State,Role\nAnna Schmidt,anna@example.com,28,5,Mo-Fr,01.03.2024,Berlin,Admin\nBen Meyer,ben@example.com,30,,Mo-Th,2025-01-15,,",
@@ -75,7 +75,7 @@ export const importer = defineMessages({
       noStart: () => "No start date",
       endBeforeStart: () => "The end is before the start",
       type: (v?: string) => `Type “${v}”: use Vacation or Other`,
-      sick: () => "Sick leave isn't stored in Vacation Planner",
+      sick: () => "Sick days aren't imported; enter them in the app",
       half: (v?: string) => `Half day “${v}”: use morning or afternoon`,
       halfRange: () => "A half day only works for a single day",
       halfDaysOff: () => "Half days are turned off in Settings",
@@ -99,7 +99,7 @@ export const importer = defineMessages({
     peopleHelp:
       "Eine Zeile pro Person, mit Kopfzeile. Die Spalten können in beliebiger Reihenfolge stehen: Name (oder Vorname und Nachname), E-Mail, Urlaubstage, Resturlaub (noch offene Tage aus dem Vorjahr), Arbeitstage, Eintritt, Bundesland, Rolle. Nur die E-Mail ist Pflicht. Arbeitstage wie Mo-Fr oder Mo, Mi, Fr; Datum wie 01.03.2024 oder 2024-03-01; Rolle Admin oder Mitglied. Ohne Kopfzeile werden E-Mail, Name und Tage am Inhalt erkannt.",
     timeOffHelp:
-      "Eine Zeile pro Abwesenheit, mit Kopfzeile: E-Mail, Von, Bis, Art, Halbtag. „Bis“ kann bei einem einzelnen Tag leer bleiben. Art ist Urlaub (Standard) oder Sonstiges. Halbtag ist vormittags oder nachmittags und geht bei einem einzelnen Tag. Die Personen müssen schon im Workspace sein, importiere sie also zuerst. Krankheit wird nicht importiert, weil der Vacation Planner sie nicht speichert.",
+      "Eine Zeile pro Abwesenheit, mit Kopfzeile: E-Mail, Von, Bis, Art, Halbtag. „Bis“ kann bei einem einzelnen Tag leer bleiben. Art ist Urlaub (Standard) oder Sonstiges. Halbtag ist vormittags oder nachmittags und geht bei einem einzelnen Tag. Die Personen müssen schon im Workspace sein, importiere sie also zuerst. Krankheitstage werden nicht importiert: Alte braucht es nicht, neue trägst du in der App ein.",
     templateLink: "Vorlage herunterladen",
     templatePeople:
       "Name;E-Mail;Urlaubstage;Resturlaub;Arbeitstage;Eintritt;Bundesland;Rolle\nAnna Schmidt;anna@beispiel.de;28;5;Mo-Fr;01.03.2024;Berlin;Admin\nBen Meyer;ben@beispiel.de;30;;Mo-Do;15.01.2025;;",
@@ -163,7 +163,7 @@ export const importer = defineMessages({
       noStart: () => "Kein Startdatum",
       endBeforeStart: () => "Das Ende liegt vor dem Start",
       type: (v?: string) => `Art „${v}“: nimm Urlaub oder Sonstiges`,
-      sick: () => "Krankheit speichert der Vacation Planner nicht",
+      sick: () => "Krankheitstage werden nicht importiert; trag sie in der App ein",
       half: (v?: string) => `Halbtag „${v}“: nimm vormittags oder nachmittags`,
       halfRange: () => "Ein halber Tag geht nur bei einem einzelnen Tag",
       halfDaysOff: () => "Halbe Tage sind in den Einstellungen ausgeschaltet",

@@ -8,6 +8,8 @@ export const errors = defineMessages({
     trial: "The trial",
     noWorkingDays: "That range has no working days in it.",
     overlap: "This overlaps another booking for the same person.",
+    sickInVacation:
+      "These days are in your vacation. Tell an admin you're sick: once they have your doctor's note, they enter the sick days and you get the vacation days back.",
     onlyAdminsBookForOthers: "Only admins can book time off for someone else.",
     memberNotInWorkspace: "That member is not in this workspace.",
     bookingNotFound: "Booking not found.",
@@ -41,6 +43,8 @@ export const errors = defineMessages({
     trial: "Die Testphase",
     noWorkingDays: "In diesem Zeitraum liegen keine Arbeitstage.",
     overlap: "Das überschneidet sich mit einer anderen Buchung dieser Person.",
+    sickInVacation:
+      "Diese Tage liegen in deinem Urlaub. Melde dich bei einem Admin krank: Sobald die Krankmeldung da ist, werden die Krankheitstage eingetragen und du bekommst die Urlaubstage zurück.",
     onlyAdminsBookForOthers: "Nur Admins können Abwesenheiten für andere buchen.",
     memberNotInWorkspace: "Diese Person ist nicht in diesem Workspace.",
     bookingNotFound: "Buchung nicht gefunden.",

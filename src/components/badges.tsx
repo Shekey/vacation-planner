@@ -38,11 +38,13 @@ export function StatusBadge({ status, locale }: { status: keyof typeof statusSty
   return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[status]}`}>{label}</span>;
 }
 
-export function Legend({ locale }: { locale: Locale }) {
+/** `withSick` for admins, the only ones who see colleagues' sick days as sick. */
+export function Legend({ locale, withSick }: { locale: Locale; withSick?: boolean }) {
   const t = messagesFor(locale).common;
+  const types = withSick ? (["VACATION", "SICK", "OTHER"] as const) : (["VACATION", "OTHER"] as const);
   return (
     <div className="flex flex-wrap items-center gap-4 text-xs opacity-80">
-      {(["VACATION", "OTHER"] as const).map((type) => (
+      {types.map((type) => (
         <span key={type} className="flex items-center gap-1.5">
           <TypeDot type={type} decorative locale={locale} /> {t.type[type]}
         </span>

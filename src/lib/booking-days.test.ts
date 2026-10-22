@@ -9,6 +9,8 @@ import {
   normalizeWorkDays,
   portionOn,
   proratedAllowance,
+  spanWithout,
+  spansOverlap,
   validateSpan,
   type BookingSpan,
 } from "./booking-days";
@@ -142,4 +144,34 @@ describe("isMonthDay", () => {
     expect(isMonthDay("13-01")).toBe(false);
     expect(isMonthDay("3-31")).toBe(false);
   });
+});
+
+describe("spanWithout", () => {
+  const holiday = span("2030-03-04", "2030-03-15");
+  it("keeps the days before and after sick days in the middle", () =>
+    expect(spanWithout(holiday, span("2030-03-06", "2030-03-07"))).toEqual([
+      span("2030-03-04", "2030-03-05"),
+      span("2030-03-08", "2030-03-15"),
+    ]));
+  it("keeps only the start when the rest is cut", () =>
+    expect(spanWithout(holiday, span("2030-03-11", "2030-03-20"))).toEqual([span("2030-03-04", "2030-03-10")]));
+  it("leaves nothing when the cut covers it all", () => expect(spanWithout(holiday, span("2030-03-01", "2030-03-31"))).toEqual([]));
+  it("leaves the span alone when the cut is elsewhere", () =>
+    expect(spanWithout(holiday, span("2030-04-01", "2030-04-02"))).toEqual([holiday]));
+  it("splits at lunch", () =>
+    expect(spanWithout(holiday, span("2030-03-06", "2030-03-07", "PM", "AM"))).toEqual([
+      span("2030-03-04", "2030-03-06", "FULL", "AM"),
+      span("2030-03-07", "2030-03-15", "PM", "FULL"),
+    ]));
+  it("keeps half-day edges of the original", () =>
+    expect(spanWithout(span("2030-03-04", "2030-03-08", "PM", "AM"), span("2030-03-05", "2030-03-07"))).toEqual([
+      span("2030-03-04", "2030-03-04", "PM", "FULL"),
+      span("2030-03-08", "2030-03-08", "FULL", "AM"),
+    ]));
+});
+
+describe("spansOverlap", () => {
+  it("lets a morning and an afternoon share a day", () =>
+    expect(spansOverlap(span("2030-03-04", "2030-03-04", "FULL", "AM"), span("2030-03-04", "2030-03-04", "PM"))).toBe(false));
+  it("sees a shared full day", () => expect(spansOverlap(span("2030-03-04", "2030-03-06"), span("2030-03-06", "2030-03-09"))).toBe(true));
 });
