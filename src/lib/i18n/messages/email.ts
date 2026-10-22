@@ -24,6 +24,11 @@ export const email = defineMessages({
       text: (who: string, days: string, range: string, workspace: string, url: string) =>
         `${who} requested ${days} off, ${range}, in ${workspace}.\n\nReview it: ${url}`,
     },
+    sick: {
+      subject: (who: string) => `${who} is off sick`,
+      text: (who: string, range: string, workspace: string, url: string) =>
+        `${who} reported sick for ${range} in ${workspace}. Colleagues only see "Other".\n\nCalendar: ${url}`,
+    },
     welcome: {
       subject: (workspace: string) => `You're on the vacation planner of ${workspace}`,
       text: (workspace: string, url: string) =>
@@ -69,6 +74,11 @@ export const email = defineMessages({
       subject: (who: string) => `${who} hat frei beantragt`,
       text: (who: string, days: string, range: string, workspace: string, url: string) =>
         `${who} hat ${days} frei beantragt, ${range}, in ${workspace}.\n\nAntrag ansehen: ${url}`,
+    },
+    sick: {
+      subject: (who: string) => `${who} ist krank`,
+      text: (who: string, range: string, workspace: string, url: string) =>
+        `${who} hat sich für ${range} in ${workspace} krankgemeldet. Kolleginnen und Kollegen sehen nur „Sonstiges“.\n\nKalender: ${url}`,
     },
     welcome: {
       subject: (workspace: string) => `Du bist im Urlaubsplaner von ${workspace}`,

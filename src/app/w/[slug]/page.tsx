@@ -32,7 +32,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
 
   const [bookings, summary, pendingCount, nextOff, nextHoliday, myBookings] = await Promise.all([
     activeBookingsBetween(workspace.id, today, horizon).then((bs) =>
-      forViewer(bs, { membershipId: membership.id, role: membership.role }, settings),
+      forViewer(bs, { membershipId: membership.id, role: membership.role }),
     ),
     allowanceSummary(membership, settings, year, holidays, today),
     membership.role === "ADMIN" && settings.approvalsEnabled

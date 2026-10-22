@@ -28,7 +28,8 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/calendar/[token
   const to = addDays(today, 400);
   const [bookings, holidays] = await Promise.all([
     activeBookingsBetween(workspace.id, from, to).then((bs) =>
-      forViewer(bs, { membershipId: membership.id, role: membership.role }, { hideSickType: workspace.settings?.hideSickType ?? true }),
+      // Calendar apps sync to phones and shared calendars, so even an admin's feed shows colleagues' sick days as other time off.
+      forViewer(bs, { membershipId: membership.id, role: "MEMBER" }),
     ),
     // The feed owner's holidays: nationwide plus their region's.
     db.holiday.findMany({

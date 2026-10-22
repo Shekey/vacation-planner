@@ -1,8 +1,10 @@
+import type { SpecialReason } from "@/generated/prisma/enums";
 import { messagesFor, type Locale } from "@/lib/i18n";
 
 const typeStyles = {
   VACATION: { className: "bg-sky-500" },
   SICK: { className: "bg-amber-500" },
+  SPECIAL: { className: "bg-emerald-500" },
   OTHER: { className: "bg-violet-500" },
 } as const;
 
@@ -22,8 +24,10 @@ export function TypeDot({ type, decorative, locale }: { type: BookingTypeKey; de
   );
 }
 
-export function typeLabel(type: BookingTypeKey, locale: Locale) {
-  return messagesFor(locale).common.type[type];
+/** "Special leave (wedding)" when a reason is given and the viewer may see it (see forViewer). */
+export function typeLabel(type: BookingTypeKey, locale: Locale, specialReason?: SpecialReason | null) {
+  const t = messagesFor(locale).common;
+  return type === "SPECIAL" && specialReason ? `${t.type[type]} (${t.specialReason[specialReason]})` : t.type[type];
 }
 
 const statusStyles = {
@@ -38,11 +42,13 @@ export function StatusBadge({ status, locale }: { status: keyof typeof statusSty
   return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[status]}`}>{label}</span>;
 }
 
-export function Legend({ locale }: { locale: Locale }) {
+/** `withSick` for admins, the only ones who see colleagues' sick days as sick. */
+export function Legend({ locale, withSick }: { locale: Locale; withSick?: boolean }) {
   const t = messagesFor(locale).common;
+  const types = withSick ? (["VACATION", "SICK", "SPECIAL", "OTHER"] as const) : (["VACATION", "SPECIAL", "OTHER"] as const);
   return (
     <div className="flex flex-wrap items-center gap-4 text-xs opacity-80">
-      {(["VACATION", "OTHER"] as const).map((type) => (
+      {types.map((type) => (
         <span key={type} className="flex items-center gap-1.5">
           <TypeDot type={type} decorative locale={locale} /> {t.type[type]}
         </span>

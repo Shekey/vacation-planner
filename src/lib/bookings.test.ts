@@ -9,7 +9,7 @@ const bookings = [
 
 describe("forViewer", () => {
   it("shows a colleague's sick leave as other, without the note", () => {
-    const seen = forViewer(bookings, { membershipId: "me", role: "MEMBER" }, { hideSickType: true });
+    const seen = forViewer(bookings, { membershipId: "me", role: "MEMBER" });
     expect(seen.map((b) => [b.type, b.note])).toEqual([
       ["SICK", "flu"],
       ["OTHER", null],
@@ -17,7 +17,15 @@ describe("forViewer", () => {
     ]);
   });
   it("shows admins everything", () =>
-    expect(forViewer(bookings, { membershipId: "me", role: "ADMIN" }, { hideSickType: true })).toEqual(bookings));
-  it("shows everything when the workspace turned it off", () =>
-    expect(forViewer(bookings, { membershipId: "me", role: "MEMBER" }, { hideSickType: false })).toEqual(bookings));
+    expect(forViewer(bookings, { membershipId: "me", role: "ADMIN" })).toEqual(bookings));
+});
+
+describe("forViewer and special leave", () => {
+  const special = [
+    { id: "a", membershipId: "me", type: "SPECIAL" as const, note: null, specialReason: "WEDDING" as const },
+    { id: "b", membershipId: "other", type: "SPECIAL" as const, note: null, specialReason: "BEREAVEMENT" as const },
+  ];
+  it("shows colleagues special leave without the reason", () =>
+    expect(forViewer(special, { membershipId: "me", role: "MEMBER" }).map((b) => b.specialReason)).toEqual(["WEDDING", null]));
+  it("shows admins the reason", () => expect(forViewer(special, { membershipId: "me", role: "ADMIN" })).toEqual(special));
 });

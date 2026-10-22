@@ -286,6 +286,17 @@ enum DayPart {
 enum BookingType {
   VACATION
   SICK
+  // Sonderurlaub: paid leave for a wedding, a birth, a death in the family or a move; doesn't count as vacation.
+  SPECIAL
+  OTHER
+}
+
+// Why someone takes special leave, picked from a list (no free text). Only the person and admins see it.
+enum SpecialReason {
+  WEDDING
+  BIRTH
+  BEREAVEMENT
+  MOVING
   OTHER
 }
 
@@ -308,6 +319,8 @@ model Booking {
   // FULL or AM (ends at lunch).
   endPart       DayPart        @default(FULL)
   type          BookingType    @default(VACATION)
+  // Only for SPECIAL, and optional.
+  specialReason SpecialReason?
   note          String?
   status        BookingStatus
   daysCount     Decimal        @db.Decimal(4, 1)

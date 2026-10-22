@@ -54,6 +54,7 @@ export async function loadBookingFormData(ctx: Ctx) {
     id: b.id,
     membershipId: b.membershipId,
     name: b.membership.user.name ?? b.membership.user.email,
+    vacation: b.type === "VACATION",
   }));
 
   return { settings, isAdmin, today, currentYear, members, team, holidays, memberCount };

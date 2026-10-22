@@ -55,6 +55,7 @@ export default async function EditBookingPage({ params }: PageProps<"/w/[slug]/b
           ownDaysThisYear,
           membershipId: booking.membershipId,
           type: booking.type,
+          specialReason: booking.specialReason,
           start: span.start,
           end: span.end,
           startPart: span.startPart === "PM" ? "PM" : "FULL",

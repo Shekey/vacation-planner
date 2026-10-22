@@ -138,7 +138,7 @@ export default async function ApprovalsPage({
                       {messages.common.days(
                         formatNumber(Number(b.daysCount), locale),
                       )}{" "}
-                      · {typeLabel(b.type, locale)}
+                      · {typeLabel(b.type, locale, b.specialReason)}
                       {half && ` · ${half}`}
                     </div>
                     {b.note && (

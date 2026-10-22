@@ -6,10 +6,15 @@ import { auditCutoff, restoreCutoff } from "@/lib/undo";
 /** Bookings and removed members are kept this long: the time employees can still claim leave in Germany. */
 export const RETENTION_YEARS = 3;
 
+/** Sick days are health data, so they go sooner: once they no longer matter for the current or last year. */
+export const SICK_RETENTION_MONTHS = 12;
+
 /** Deletes data the app no longer needs. Runs from the monthly cron. */
 export async function purgeOldData(now = new Date()) {
   const cutoff = new Date(now);
   cutoff.setUTCFullYear(cutoff.getUTCFullYear() - RETENTION_YEARS);
+  const sickCutoff = new Date(now);
+  sickCutoff.setUTCMonth(sickCutoff.getUTCMonth() - SICK_RETENTION_MONTHS);
   const monthAgo = new Date(now.getTime() - 30 * 86_400_000);
 
   // Workspaces deleted more than RESTORE_DAYS ago go for good. Their sample people's placeholder users
@@ -20,7 +25,7 @@ export async function purgeOldData(now = new Date()) {
   const [workspaces, audit, bookings, members, invitations, sessions, tokens, sampleUsers] = await db.$transaction([
     db.workspace.deleteMany({ where: { id: { in: expired.map((w) => w.id) } } }),
     db.auditEvent.deleteMany({ where: { createdAt: { lt: auditCutoff(now) } } }),
-    db.booking.deleteMany({ where: { endDate: { lt: cutoff } } }),
+    db.booking.deleteMany({ where: { OR: [{ endDate: { lt: cutoff } }, { type: "SICK", endDate: { lt: sickCutoff } }] } }),
     // Their remaining bookings go with them.
     db.membership.deleteMany({ where: { removedAt: { lt: cutoff } } }),
     // Used, revoked or expired invitations only hold an email address.

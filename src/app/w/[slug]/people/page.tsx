@@ -5,7 +5,7 @@ import { addDays, formatDate, formatRange, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { formatNumber } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
-import { requireMembership, settingsOf } from "@/lib/session";
+import { requireMembership } from "@/lib/session";
 import { AloneHint } from "@/components/alone-hint";
 import { PeopleSearch, type PersonRow } from "./people-search";
 import { hasNoEmail } from "@/lib/no-email";
@@ -27,7 +27,7 @@ export default async function PeoplePage({ params }: PageProps<"/w/[slug]/people
       include: { user: { select: { name: true, email: true } } },
     }),
     activeBookingsBetween(workspace.id, today, addDays(today, 365)).then((bs) =>
-      forViewer(bs, { membershipId: membership.id, role: membership.role }, settingsOf(workspace)),
+      forViewer(bs, { membershipId: membership.id, role: membership.role }),
     ),
   ]);
 
@@ -39,7 +39,7 @@ export default async function PeoplePage({ params }: PageProps<"/w/[slug]/people
       if (current) {
         const span = spanOf(current);
         const portion = portionOn(span, today);
-        const kind = typeLabel(current.type, locale);
+        const kind = typeLabel(current.type, locale, current.specialReason);
         todayStatus =
           portion === "AM"
             ? t.offMorning(kind)
@@ -63,7 +63,7 @@ export default async function PeoplePage({ params }: PageProps<"/w/[slug]/people
           return {
             id: b.id,
             label: formatRange(span.start, span.end, locale),
-            detail: `${typeLabel(b.type, locale)} · ${common.days(formatNumber(days, locale))}${half ? ` · ${half}` : ""}`,
+            detail: `${typeLabel(b.type, locale, b.specialReason)} · ${common.days(formatNumber(days, locale))}${half ? ` · ${half}` : ""}`,
             pending: b.status === "PENDING",
             color: typeColor(b.type),
           };

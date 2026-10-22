@@ -28,6 +28,8 @@ export const audit = defineMessages({
           return `${actor} approved the request of ${target}${on}`;
         case "booking.declined":
           return `${actor} declined the request of ${target}${on}`;
+        case "booking.vacation_returned":
+          return `${actor} gave ${target} vacation days back for sick days${on}`;
         case "workspace.deleted":
           return `${actor} deleted the workspace`;
         case "workspace.restored":
@@ -82,6 +84,8 @@ export const audit = defineMessages({
           return `${actor} hat den Antrag von ${target} genehmigt${on}`;
         case "booking.declined":
           return `${actor} hat den Antrag von ${target} abgelehnt${on}`;
+        case "booking.vacation_returned":
+          return `${actor} hat ${target} Urlaubstage für Krankheitstage zurückgegeben${on}`;
         case "workspace.deleted":
           return `${actor} hat den Workspace gelöscht`;
         case "workspace.restored":

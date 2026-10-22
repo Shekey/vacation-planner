@@ -1,17 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
-import type { BookingType } from "@/generated/prisma/enums";
+import type { BookingType, SpecialReason } from "@/generated/prisma/enums";
 import type { BookingSpan } from "@/lib/booking-days";
 import { allowanceSummary, cancelBooking, createBooking, decideBooking, restoreBooking, updateBooking } from "@/lib/bookings";
+import { toISO } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { messagesFor } from "@/lib/i18n";
+import { purgeOldData } from "@/lib/retention";
 import { growTo, makeWorkspace } from "@/test/db";
 
 const errors = messagesFor("en").errors;
 const origin = "https://app.test";
 
 /** Mon 4 – Fri 8 March 2030: five working days. */
-const week: BookingSpan & { type: BookingType; note: null } = {
+const week: BookingSpan & { type: BookingType; note: null; specialReason?: SpecialReason } = {
   type: "VACATION",
   note: null,
   start: "2030-03-04",
@@ -218,5 +220,109 @@ describe("allowanceSummary", () => {
     const starter = await db.membership.update({ where: { id: team.member.id }, data: { employmentStart: new Date("2030-07-01") } });
     // Six full months in 2030: half of 20.
     expect(await allowanceSummary(starter, team.settings, 2030, new Set(), "2030-07-01")).toMatchObject({ carriedOver: 0, allowance: 10 });
+  });
+});
+
+describe("sick days", () => {
+  const sick = (start: string, end: string, startPart: "FULL" | "PM" = "FULL", endPart: "FULL" | "AM" = "FULL") => ({
+    ...week,
+    type: "SICK" as const,
+    start,
+    end,
+    startPart,
+    endPart,
+  });
+  const vacations = (team: Team) =>
+    db.booking.findMany({ where: { membershipId: team.member.id, type: "VACATION" }, orderBy: { startDate: "asc" } });
+
+  it("needs no approval, tells the admins and doesn't count as vacation", async () => {
+    const team = await makeWorkspace({ approvalsEnabled: true });
+    vi.mocked(sendEmail).mockClear();
+    const booking = await book(team, team.member, team.member, sick("2030-04-01", "2030-04-02"));
+    expect(booking.status).toBe("APPROVED");
+    expect(vi.mocked(sendEmail).mock.calls.map(([e]) => e.subject)).toEqual([`Member is off sick`]);
+    expect(await allowanceSummary(team.member, team.settings, 2030, new Set(), "2030-01-15")).toMatchObject({ used: 0, remaining: 20 });
+  });
+
+  it("gives vacation days back when an admin enters sick days during a vacation", async () => {
+    const team = await makeWorkspace({ approvalsEnabled: true });
+    await book(team, team.admin, team.member);
+    await book(team, team.admin, team.member, sick("2030-03-05", "2030-03-06"));
+    expect((await vacations(team)).map((b) => [toISO(b.startDate), toISO(b.endDate), Number(b.daysCount), b.status])).toEqual([
+      ["2030-03-04", "2030-03-04", 1, "APPROVED"],
+      ["2030-03-07", "2030-03-08", 2, "APPROVED"],
+    ]);
+    expect(await allowanceSummary(team.member, team.settings, 2030, new Set(), "2030-01-15")).toMatchObject({ used: 3, remaining: 17 });
+    const audit = await db.auditEvent.findMany({ where: { workspaceId: team.workspace.id, action: "booking.vacation_returned" } });
+    expect(audit.map((a) => a.detail)).toEqual(["2030-03-05/2030-03-06"]);
+  });
+
+  it("splits at lunch and keeps a pending request pending", async () => {
+    const team = await makeWorkspace({ approvalsEnabled: true });
+    await book(team, team.member, team.member);
+    await book(team, team.admin, team.member, sick("2030-03-06", "2030-03-08", "PM"));
+    expect((await vacations(team)).map((b) => [toISO(b.startDate), toISO(b.endDate), b.endPart, Number(b.daysCount), b.status])).toEqual([
+      ["2030-03-04", "2030-03-06", "AM", 2.5, "PENDING"],
+    ]);
+  });
+
+  it("doesn't let a member turn their own vacation into sick days", async () => {
+    const team = await makeWorkspace();
+    await book(team, team.member, team.member);
+    await expect(book(team, team.member, team.member, sick("2030-03-05", "2030-03-05"))).rejects.toThrow(errors.sickInVacation);
+    expect((await vacations(team)).map((b) => Number(b.daysCount))).toEqual([5]);
+  });
+
+  it("cancels a vacation that the sick days cover completely, for good", async () => {
+    const team = await makeWorkspace();
+    const vacation = await book(team, team.admin, team.member);
+    await book(team, team.admin, team.member, sick("2030-03-01", "2030-03-10"));
+    expect((await vacations(team)).map((b) => b.status)).toEqual(["CANCELLED"]);
+    await expect(
+      restoreBooking({ workspace: team.workspace, settings: team.settings, actor: team.admin.actor, bookingId: vacation.id }),
+    ).rejects.toThrow(errors.bookingNotFound);
+  });
+
+  it("gives days back when an admin changes a booking into sick days", async () => {
+    const team = await makeWorkspace();
+    await book(team, team.admin, team.member);
+    const other = await book(team, team.admin, team.member, { ...week, type: "OTHER", start: "2030-03-11", end: "2030-03-11" });
+    await updateBooking({
+      workspace: team.workspace,
+      settings: team.settings,
+      actor: team.admin.actor,
+      bookingId: other.id,
+      input: sick("2030-03-08", "2030-03-11"),
+      origin,
+    });
+    expect((await vacations(team)).map((b) => [toISO(b.endDate), Number(b.daysCount)])).toEqual([["2030-03-07", 4]]);
+  });
+
+  it("deletes sick days a year after they end, long before vacation", async () => {
+    const team = await makeWorkspace();
+    const old = { start: "2025-03-03", end: "2025-03-04" };
+    const [ill, away] = await Promise.all([
+      book(team, team.admin, team.member, sick(old.start, old.end)),
+      book(team, team.admin, team.admin, { ...week, ...old }),
+    ]);
+    await purgeOldData(new Date("2026-06-01T00:00:00Z"));
+    const left = await db.booking.findMany({ where: { id: { in: [ill.id, away.id] } } });
+    expect(left.map((b) => b.id)).toEqual([away.id]);
+  });
+});
+
+describe("special leave", () => {
+  it("needs approval like vacation but doesn't count against it", async () => {
+    const team = await makeWorkspace({ approvalsEnabled: true });
+    const booking = await book(team, team.member, team.member, { ...week, type: "SPECIAL", specialReason: "WEDDING" });
+    expect([booking.status, booking.specialReason]).toEqual(["PENDING", "WEDDING"]);
+    await decideBooking({ workspace: team.workspace, settings: team.settings, actor: team.admin.actor, bookingId: booking.id, approve: true, note: null, origin });
+    expect(await allowanceSummary(team.member, team.settings, 2030, new Set(), "2030-01-15")).toMatchObject({ used: 0, remaining: 20 });
+  });
+
+  it("keeps a reason only on special leave", async () => {
+    const team = await makeWorkspace();
+    const booking = await book(team, team.member, team.member, { ...week, type: "OTHER", specialReason: "WEDDING" });
+    expect(booking.specialReason).toBeNull();
   });
 });

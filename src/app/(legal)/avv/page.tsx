@@ -31,10 +31,13 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
           <li>Data subjects: employees and administrators of the Controller.</li>
           <li>
             Data: name, email address, preferred language, role, vacation allowance, working days, start date, region for public holidays,
-            bookings with period and type (vacation or other absence), who decided on a request and when, and the secret link of a
+            bookings with period and type (vacation, sick or other absence), who decided on a request and when, and the secret link of a
             personal calendar feed if it is turned on.
           </li>
-          <li>Special categories (Art. 9 GDPR): none. The service does not record sick days or free-text notes.</li>
+          <li>
+            Special categories (Art. 9 GDPR): the dates of sick days, without diagnoses or documents. The service does not record free-text
+            notes.
+          </li>
         </ul>
 
         <h2>3. Instructions</h2>
@@ -52,8 +55,8 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
             minutes; invitation links are stored only as a hash.
           </li>
           <li>
-            Strict separation of workspaces, role-based permissions, data minimisation (no sick days, no notes, automatic deletion after
-            three years).
+            Strict separation of workspaces, role-based permissions, data minimisation (sick days without diagnoses or documents, visible as
+            sick only to the person and admins and deleted after twelve months; no notes; other bookings deleted after three years).
           </li>
           <li>
             Staff of the Processor sign in to the operator area with a second factor (authenticator app) in addition to the email link.
@@ -120,10 +123,13 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
         <li>Betroffene: Mitarbeitende und Administratoren des Verantwortlichen.</li>
         <li>
           Daten: Name, E-Mail-Adresse, bevorzugte Sprache, Rolle, Urlaubskontingent, Arbeitstage, Eintrittsdatum, Region für Feiertage,
-          Buchungen mit Zeitraum und Art (Urlaub oder sonstige Abwesenheit), wer wann über einen Antrag entschieden hat, und der geheime
+          Buchungen mit Zeitraum und Art (Urlaub, Krankheit oder sonstige Abwesenheit), wer wann über einen Antrag entschieden hat, und der geheime
           Link eines persönlichen Kalender-Feeds, wenn er eingeschaltet ist.
         </li>
-        <li>Besondere Kategorien (Art. 9 DSGVO): keine. Der Dienst erfasst keine Krankheitstage und keine Freitext-Notizen.</li>
+        <li>
+          Besondere Kategorien (Art. 9 DSGVO): die Tage von Krankheit, ohne Diagnosen oder Dokumente. Der Dienst erfasst keine
+          Freitext-Notizen.
+        </li>
       </ul>
 
       <h2>3. Weisungen</h2>
@@ -143,8 +149,8 @@ export default async function DpaPage({ searchParams }: PageProps<"/avv">) {
           Adresse in zehn Minuten; Einladungslinks werden nur als Hash gespeichert.
         </li>
         <li>
-          Strikte Trennung der Workspaces, Rechte nach Rollen, Datensparsamkeit (keine Krankheitstage, keine Notizen, automatische Löschung
-          nach drei Jahren).
+          Strikte Trennung der Workspaces, Rechte nach Rollen, Datensparsamkeit (Krankheitstage ohne Diagnosen oder Dokumente, als Krankheit
+          nur für die Person und Admins sichtbar und nach zwölf Monaten gelöscht; keine Notizen; übrige Buchungen nach drei Jahren gelöscht).
         </li>
         <li>
           Mitarbeitende des Auftragsverarbeiters melden sich im Betreiberbereich zusätzlich zum E-Mail-Link mit einem zweiten Faktor
