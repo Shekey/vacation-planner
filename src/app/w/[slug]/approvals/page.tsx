@@ -5,9 +5,10 @@ import { Avatar, EmptyState, SampleBadge } from "@/components/ui";
 import { halfDayLabel, portionOn } from "@/lib/booking-days";
 import {
   activeBookingsBetween,
-  allowanceSummary,
+  allowanceSummaries,
   loadHolidays,
   spanOf,
+  withDays,
 } from "@/lib/bookings";
 import { eachDay, formatDate, formatRange, todayIn } from "@/lib/dates";
 import { understaffedDays } from "@/lib/staffing";
@@ -33,7 +34,7 @@ export default async function ApprovalsPage({
   const today = todayIn(workspace.timezone);
   const year = Number(today.slice(0, 4));
 
-  const pending = await db.booking.findMany({
+  const saved = await db.booking.findMany({
     where: {
       workspaceId: workspace.id,
       status: "PENDING",
@@ -47,6 +48,9 @@ export default async function ApprovalsPage({
     orderBy: { startDate: "asc" },
   });
 
+  // Counted like the allowance shown next to it, not the count stored when the request was made.
+  const pending = await withDays(workspace.id, settings, saved);
+
   // Staffing counts use the team's main region; each person's own allowance uses theirs.
   const holidays = await loadHolidays(
     workspace.id,
@@ -55,53 +59,79 @@ export default async function ApprovalsPage({
   const memberCount = await db.membership.count({
     where: { workspaceId: workspace.id, removedAt: null },
   });
-  const rows = await Promise.all(
-    pending.map(async (b) => {
-      const span = spanOf(b);
-      const [summary, others] = await Promise.all([
-        allowanceSummary(
-          b.membership,
-          settings,
-          Number(span.start.slice(0, 4)) || year,
-          undefined,
-          today,
-        ),
-        activeBookingsBetween(workspace.id, span.start, span.end),
-      ]);
-      const days = eachDay(span.start, span.end);
-      const clashes = [
-        ...new Set(
-          others
-            .filter(
-              (o) =>
-                o.membershipId !== b.membershipId &&
-                days.some((d) => portionOn(spanOf(o), d)),
-            )
-            .map((o) => o.membership.user.name ?? o.membership.user.email),
-        ),
-      ];
-      // Approved bookings only: other pending requests may still be declined.
-      const shortDays = understaffedDays({
-        candidate: { ...span, membershipId: b.membershipId },
-        team: others
+  // A few queries for all requests together, not a handful per request: the allowance of everyone asking,
+  // per year a request starts in, and the team's bookings across all requested days.
+  const yearOf = (b: (typeof pending)[number]) =>
+    Number(spanOf(b).start.slice(0, 4)) || year;
+  const years = [...new Set(pending.map(yearOf))];
+  const summaries = new Map(
+    await Promise.all(
+      years.map(async (y) => {
+        const asking = [
+          ...new Map(
+            pending
+              .filter((b) => yearOf(b) === y)
+              .map((b) => [b.membershipId, b.membership]),
+          ).values(),
+        ];
+        return [
+          y,
+          await allowanceSummaries(asking, settings, y, today),
+        ] as const;
+      }),
+    ),
+  );
+  const spans = pending.map(spanOf);
+  const teamBookings =
+    pending.length === 0
+      ? []
+      : await activeBookingsBetween(
+          workspace.id,
+          spans.reduce(
+            (min, x) => (x.start < min ? x.start : min),
+            spans[0].start,
+          ),
+          spans.reduce((max, x) => (x.end > max ? x.end : max), spans[0].end),
+        );
+  const rows = pending.map((b) => {
+    const span = spanOf(b);
+    const summary = summaries.get(yearOf(b))!.get(b.membershipId)!;
+    const others = teamBookings.filter(
+      (o) => spanOf(o).start <= span.end && spanOf(o).end >= span.start,
+    );
+    const days = eachDay(span.start, span.end);
+    const clashes = [
+      ...new Set(
+        others
           .filter(
             (o) =>
-              o.id !== b.id &&
               o.membershipId !== b.membershipId &&
-              o.status === "APPROVED",
+              days.some((d) => portionOn(spanOf(o), d)),
           )
-          .map((o) => ({ ...spanOf(o), membershipId: o.membershipId })),
-        memberCount,
-        minPresent: settings.minPeoplePresent,
-        rules: {
-          countWeekends: settings.countWeekends,
-          workDays: b.membership.workDays,
-          holidays,
-        },
-      });
-      return { b, span, summary, clashes, shortDays };
-    }),
-  );
+          .map((o) => o.membership.user.name ?? o.membership.user.email),
+      ),
+    ];
+    // Approved bookings only: other pending requests may still be declined.
+    const shortDays = understaffedDays({
+      candidate: { ...span, membershipId: b.membershipId },
+      team: others
+        .filter(
+          (o) =>
+            o.id !== b.id &&
+            o.membershipId !== b.membershipId &&
+            o.status === "APPROVED",
+        )
+        .map((o) => ({ ...spanOf(o), membershipId: o.membershipId })),
+      memberCount,
+      minPresent: settings.minPeoplePresent,
+      rules: {
+        countWeekends: settings.countWeekends,
+        workDays: b.membership.workDays,
+        holidays,
+      },
+    });
+    return { b, span, summary, clashes, shortDays };
+  });
 
   if (!settings.approvalsEnabled) {
     return <p className="opacity-70">{t.turnedOff}</p>;
@@ -135,10 +165,8 @@ export default async function ApprovalsPage({
                     </div>
                     <div className="text-sm">
                       {formatRange(span.start, span.end, locale)} ·{" "}
-                      {messages.common.days(
-                        formatNumber(Number(b.daysCount), locale),
-                      )}{" "}
-                      · {typeLabel(b.type, locale, b.specialReason)}
+                      {messages.common.days(formatNumber(b.days, locale))} ·{" "}
+                      {typeLabel(b.type, locale, b.specialReason)}
                       {half && ` · ${half}`}
                     </div>
                     {b.note && (
