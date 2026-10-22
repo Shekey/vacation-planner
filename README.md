@@ -181,7 +181,7 @@ Without `AUTH_RESEND_KEY`, sign-in links are printed to the dev server console i
 
 ## Deploy on Vercel
 
-1. **Import the repo** at vercel.com/new and pick `Shekey/vacation-planner`. The framework is detected; leave build settings as they are. The `vercel-build` script runs database migrations before every build. The first deploy fails with "No database URL is set" because there is no database yet; that is expected. Preview deploys never migrate, because they normally share the production database: a migration in an unmerged pull request must not change it. A preview of a pull request with a new migration runs against the old schema, so pages that need the new columns fail there until it is merged; to try migrations on previews, give Preview its own database (a Neon branch) and set `MIGRATE_ON_PREVIEW=1` for Preview only.
+1. **Import the repo** at vercel.com/new and pick `Shekey/vacation-planner`. The framework is detected; leave build settings as they are. The `vercel-build` script builds the app and then runs database migrations, so a failed build never touches the database. The first deploy fails with "No database URL is set" because there is no database yet; that is expected. Preview deploys never migrate, because they normally share the production database: a migration in an unmerged pull request must not change it. A preview of a pull request with a new migration runs against the old schema, so pages that need the new columns fail there until it is merged; to try migrations on previews, give Preview its own database (a Neon branch) and set `MIGRATE_ON_PREVIEW=1` for Preview only.
 2. **Add a database**: in the Vercel project, open *Storage* → *Create Database* → *Neon* (Postgres) and connect it to the project. Tick all environments (Development, Preview, Production). This sets `DATABASE_URL` and `DATABASE_URL_UNPOOLED` (or `POSTGRES_URL` and `POSTGRES_URL_NON_POOLING`, both work) for you. Leave the custom prefix empty.
 3. **Set environment variables** (*Settings* → *Environment Variables*):
    | Name | Value |
@@ -225,6 +225,19 @@ Without a verified domain, Resend only delivers to the email address of your Res
 | `npm run test:db` | Tests against a real Postgres (`*.db.test.ts`: bookings, approvals, allowance and carry-over, members, invitations, Stripe sync). Needs `DATABASE_URL` pointing at a throwaway database with migrations applied; CI runs them on every PR |
 | `npm run db:migrate` | Create/apply migrations in development |
 | `npm run db:deploy` | Apply migrations in CI/production |
+
+## Database changes
+
+The old deploy keeps serving requests while a new one builds and migrates, and a deploy can be rolled back in Vercel without rolling back the database. So every migration must work with the code before it and after it (expand, then contract):
+
+1. **Expand** (one PR): add the new column or table, nullable or with a default; the code writes both and reads the new one. Copy old data over in the migration if needed.
+2. **Contract** (a later PR, after the first is live): drop or rename the old column or table.
+
+Never rename or drop in the same PR that stops using the column. A rename is an add, a copy and a later drop. Migrations that are already merged are never edited; add a new one.
+
+The *Migrations* check (`scripts/check-migrations.mjs`) fails a PR whose new migrations contain `DROP COLUMN`, `DROP TABLE` or `RENAME`, or that changes or removes an existing migration. For the contract PR, add the label `breaking-migration`.
+
+To try a migration on real-shaped data before it reaches production, give Vercel's Preview environment its own Neon branch and set `MIGRATE_ON_PREVIEW=1` for Preview only (see Deploy above). Backups and restore: [`docs/backups.md`](docs/backups.md).
 
 ## What's in it
 

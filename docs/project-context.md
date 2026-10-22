@@ -84,6 +84,7 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 - Emails reach real people only after a domain is verified in Resend and `EMAIL_FROM` uses it; with `onboarding@resend.dev` Resend delivers only to the Resend account owner (seen 2026-10-03).
 - Never run `prisma migrate reset` against a real database.
 - Backups (#27): nightly `pg_dump` encrypted with `age` to an EU S3-compatible bucket (`.github/workflows/backup.yml`, `scripts/backup/dump.sh`, public key in `.github/backup-recipients.txt`), freshness check at 12:00 UTC, 30-day retention by the bucket's lifecycle rule. Setup, restore drill and recovery steps: `docs/backups.md`.
+- Database changes (#30): `vercel-build` builds first, then migrates. Migrations are expand/contract (README, "Database changes"); the *Migrations* workflow (`scripts/check-migrations.mjs`, `src/lib/migration-check.mjs`) fails a PR with `DROP COLUMN`, `DROP TABLE`, `RENAME` or an edited/removed migration unless it has the label `breaking-migration`.
 
 ## Open items
 
