@@ -55,6 +55,12 @@ What you must do:
 2. In Vercel set `NEXT_PUBLIC_ENABLE_BETA_MODE=false` and redeploy. New workspaces now get the normal 30-day trial; the landing page and prices switch back by themselves.
 3. Open `/admin` and press **"Start the 30-day trial for beta workspaces"** once. Without it, beta workspaces would drop to Free (5 people, no Teams or Slack) the moment you switch beta mode off. It only touches workspaces that don't pay yet, keeps their founder discount, and the usual reminder emails then go out before their trial ends.
 
+### Search engines (off until launch)
+
+Until you launch, search engines are told to stay away: `/robots.txt` says `Disallow: /`, every page carries `noindex, nofollow` (meta tag and `X-Robots-Tag` header) and no sitemap is published. One switch controls all of it (`src/lib/indexing.ts`).
+
+**Turning indexing on at launch:** in Vercel set `ALLOW_INDEXING=true` and redeploy (it is read at build time). robots.txt then allows the public pages (landing, legal pages, sign-in) and still blocks workspaces, invites, the API and the admin pages, which keep their own `noindex` either way. Afterwards add the domain in Google Search Console.
+
 ### After the pricing and import update
 
 Prices are now Free ≤5, **Team €39 ≤25, Business €89 ≤75** (yearly = 10× monthly). Admins can import a whole team from Excel (*Members → Import many people from Excel*): paste cells or open a CSV, see every row checked, then add the people and, as a second step, their booked time off. People are added right away (no invitation to wait for) and optionally get an email saying where to sign in. What you must do:
