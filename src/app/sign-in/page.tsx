@@ -1,9 +1,10 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth, signIn } from "@/auth";
+import { auth } from "@/auth";
 import { SubmitButton } from "@/components/submit-button";
 import { getMessages } from "@/lib/i18n/server";
 import { safeRedirectPath } from "@/lib/security";
-import { tooManySignInLinks } from "@/lib/sign-in-limit";
+import { sendSignInLinkAction } from "./actions";
 
 export async function generateMetadata() {
   return { title: (await getMessages()).signIn.title };
@@ -14,6 +15,9 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
   const { sent, callbackUrl, email, error } = await searchParams;
   const t = (await getMessages()).signIn;
 
+  const redirectTo = safeRedirectPath(callbackUrl);
+  const address = typeof email === "string" ? email : "";
+
   if (sent) {
     return (
       <Shell>
@@ -22,28 +26,34 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
             ✉️
           </div>
           <h1 className="text-xl font-semibold">{t.checkEmail}</h1>
+          {address && (
+            <p>
+              {t.sentTo} <b className="break-words">{address}</b>
+            </p>
+          )}
           <p className="text-muted">{t.sentBody}</p>
         </div>
+        {address && (
+          <form action={sendSignInLinkAction} className="mt-6 space-y-3 border-t border-border pt-4 text-center text-sm">
+            <input type="hidden" name="email" value={address} />
+            <input type="hidden" name="callbackUrl" value={redirectTo} />
+            <p className="text-muted">{t.notArrived}</p>
+            <SubmitButton className="btn-secondary w-full" pending={t.sending}>
+              {t.resend}
+            </SubmitButton>
+            <Link href={`/sign-in?${new URLSearchParams({ callbackUrl: redirectTo })}`} className="inline-block underline">
+              {t.otherEmail}
+            </Link>
+          </form>
+        )}
       </Shell>
     );
   }
 
-  const redirectTo = safeRedirectPath(callbackUrl);
-
   return (
     <Shell>
-      <form
-        className="space-y-4"
-        action={async (formData) => {
-          "use server";
-          const address = String(formData.get("email") ?? "").trim();
-          if (await tooManySignInLinks(address)) {
-            const back = new URLSearchParams({ error: "RateLimited", email: address, callbackUrl: redirectTo });
-            redirect(`/sign-in?${back}`);
-          }
-          await signIn("resend", { email: address, redirectTo });
-        }}
-      >
+      <form className="space-y-4" action={sendSignInLinkAction}>
+        <input type="hidden" name="callbackUrl" value={redirectTo} />
         <div className="space-y-1">
           <h1 className="text-xl font-semibold">{t.heading}</h1>
           <p className="text-muted">{redirectTo.startsWith("/invite/") ? t.inviteIntro : t.intro}</p>
@@ -63,7 +73,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
             required
             maxLength={254}
             placeholder={t.emailPlaceholder}
-            defaultValue={typeof email === "string" ? email : undefined}
+            defaultValue={address || undefined}
           />
         </label>
         <SubmitButton className="btn w-full" pending={t.sending}>

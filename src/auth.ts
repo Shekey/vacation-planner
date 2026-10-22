@@ -7,6 +7,7 @@ import { messagesFor } from "@/lib/i18n";
 import { localeOfEmail, requestLocaleOr } from "@/lib/i18n/server";
 import { isSampleEmail } from "@/lib/sample-team";
 import { MAGIC_LINK_MAX_AGE_SECONDS } from "@/lib/sign-in-limit";
+import { confirmPageUrl } from "@/lib/sign-in-link";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db),
@@ -21,7 +22,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       from: emailFrom(),
       // Our own email instead of Auth.js's, so it comes in the person's language.
       // Without an API key, local development prints the link instead of emailing it.
-      sendVerificationRequest: async ({ identifier, url }) => {
+      sendVerificationRequest: async ({ identifier, url: callbackUrl }) => {
+        const url = confirmPageUrl(callbackUrl);
         if (!process.env.AUTH_RESEND_KEY) {
           if (process.env.NODE_ENV === "production" && !process.env.ALLOW_CONSOLE_EMAIL) {
             throw new Error("AUTH_RESEND_KEY is not set, so sign-in emails can't be sent.");

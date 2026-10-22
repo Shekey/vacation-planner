@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: securityHeaders },
       { source: "/invite/:path*", headers: noIndex },
+      { source: "/sign-in/confirm", headers: noIndex },
       { source: "/api/:path*", headers: noIndex },
       { source: "/w/:path*", headers: noIndex },
     ];

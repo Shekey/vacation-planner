@@ -5,14 +5,28 @@ export const signIn = defineMessages({
     title: "Sign in",
     /** Codes Auth.js puts in ?error= when it sends someone back here, plus our own RateLimited. */
     errors: {
-      Configuration: "Sign-in isn't set up correctly on the server, so no email was sent. Please tell your admin.",
-      Verification: "That sign-in link has expired or was already used. Enter your email to get a new one.",
+      Configuration: "We couldn't send the sign-in email. This is a problem on our side, not with your address. Please try again in a few minutes.",
+      Verification:
+        "That sign-in link has expired or was already used. Links work once, for an hour; some company mail filters open links before you do. Enter your email to get a new one.",
+      EmailSignInError: "We couldn't send an email to that address. Check it for typos, or try again in a few minutes.",
       AccessDenied: "You don't have access.",
       RateLimited: "We've already sent a few links to that address. Check your inbox and spam folder, or try again in 10 minutes.",
     } as Record<string, string>,
     defaultError: "Something went wrong signing you in. Please try again.",
     checkEmail: "Check your email",
-    sentBody: "We sent you a sign-in link. It works once and expires in an hour. You can close this tab.",
+    sentTo: "We sent a sign-in link to",
+    sentBody: "Open it on this device or any other. It works once and expires in an hour. You can close this tab.",
+    notArrived: "Nothing after a few minutes? Check your spam or junk folder, or send a new link.",
+    resend: "Send a new link",
+    otherEmail: "Use a different email",
+    confirm: {
+      title: "Sign in to Vacation Planner",
+      body: "Continue to sign in as",
+      button: "Sign in",
+      why: "This extra step stops company mail filters from using up your link before you click it.",
+      broken: "This sign-in link is incomplete. Copy the whole link from the email, or ask for a new one.",
+      newLink: "Get a new link",
+    },
     heading: "Sign in",
     inviteIntro: "Sign in to accept your invitation. We'll email you a link.",
     intro: "No password needed. We'll email you a link.",
@@ -25,16 +39,30 @@ export const signIn = defineMessages({
     title: "Anmelden",
     errors: {
       Configuration:
-        "Die Anmeldung ist auf dem Server nicht richtig eingerichtet, deshalb wurde keine E-Mail verschickt. Bitte sag deinem Admin Bescheid.",
-      Verification: "Dieser Anmeldelink ist abgelaufen oder wurde schon benutzt. Gib deine E-Mail-Adresse ein, um einen neuen zu bekommen.",
+        "Wir konnten die Anmelde-E-Mail nicht verschicken. Das liegt an uns, nicht an deiner Adresse. Bitte versuch es in ein paar Minuten noch einmal.",
+      Verification:
+        "Dieser Anmeldelink ist abgelaufen oder wurde schon benutzt. Links funktionieren einmal, für eine Stunde; manche Mailfilter in Firmen öffnen Links, bevor du es tust. Gib deine E-Mail-Adresse ein, um einen neuen zu bekommen.",
+      EmailSignInError:
+        "Wir konnten keine E-Mail an diese Adresse schicken. Prüf sie auf Tippfehler oder versuch es in ein paar Minuten noch einmal.",
       AccessDenied: "Du hast keinen Zugriff.",
       RateLimited:
         "Wir haben schon mehrere Links an diese Adresse geschickt. Schau in deinen Posteingang und Spam-Ordner oder versuch es in 10 Minuten noch einmal.",
     },
     defaultError: "Bei der Anmeldung ist etwas schiefgelaufen. Bitte versuch es noch einmal.",
     checkEmail: "Schau in dein Postfach",
-    sentBody:
-      "Wir haben dir einen Anmeldelink geschickt. Er funktioniert einmal und läuft nach einer Stunde ab. Du kannst diesen Tab schließen.",
+    sentTo: "Wir haben einen Anmeldelink geschickt an",
+    sentBody: "Öffne ihn auf diesem oder einem anderen Gerät. Er funktioniert einmal und läuft nach einer Stunde ab. Du kannst diesen Tab schließen.",
+    notArrived: "Nach ein paar Minuten nichts da? Schau in den Spam- oder Junk-Ordner oder lass dir einen neuen Link schicken.",
+    resend: "Neuen Link senden",
+    otherEmail: "Andere E-Mail-Adresse verwenden",
+    confirm: {
+      title: "Bei Vacation Planner anmelden",
+      body: "Weiter, um dich anzumelden als",
+      button: "Anmelden",
+      why: "Dieser Zwischenschritt verhindert, dass Mailfilter in Firmen deinen Link verbrauchen, bevor du klickst.",
+      broken: "Dieser Anmeldelink ist unvollständig. Kopiere den ganzen Link aus der E-Mail oder fordere einen neuen an.",
+      newLink: "Neuen Link anfordern",
+    },
     heading: "Anmelden",
     inviteIntro: "Melde dich an, um deine Einladung anzunehmen. Wir schicken dir einen Link per E-Mail.",
     intro: "Kein Passwort nötig. Wir schicken dir einen Link per E-Mail.",
