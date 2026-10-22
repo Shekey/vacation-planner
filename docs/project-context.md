@@ -85,6 +85,7 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 
 ## Open items
 
+- Execution plan for all open issues (2026-10-22): `docs/issue-plan.md` (waves, dependencies, what runs in parallel, what Ajdin decides). Ajdin approves one wave at a time.
 - Quality backlog (audit 2026-10-22): GitHub issues #23–#37, labelled `area:*` and `priority:P1`–`P3`. Work through them by priority in small PRs that say `Closes #N`. Code-structure work (#36) follows Ajdin's craft plugin (github.com/Shekey/claude-craft) and starts only after the database tests (#25).
 - Follow-up (2026-10-22): #44 contrast and tap sizes (PR #46), #45 MCP server with personal tokens (recommended after Teams one-click approve #33; selling point for office teams, not core buyers), #47 enter last year's leftover days when switching mid-year, #48 people without email. #47 and #48 are what stand between "sign up" and "fully switched from Excel" for practices, care and trades.
 - Accessibility check: axe-core (WCAG 2.2 AA) at 390px in EN/DE, light/dark, run with Playwright against `next dev`. Keep the primary at sky-700 or darker; sky-600 fails with white text.
