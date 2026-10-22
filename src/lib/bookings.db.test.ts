@@ -1,7 +1,8 @@
+import pg from "pg";
 import { describe, expect, it, vi } from "vitest";
 import type { BookingType, SpecialReason } from "@/generated/prisma/enums";
 import type { BookingSpan } from "@/lib/booking-days";
-import { allowanceSummary, cancelBooking, createBooking, decideBooking, restoreBooking, updateBooking } from "@/lib/bookings";
+import { allowanceSummaries, allowanceSummary, cancelBooking, createBooking, decideBooking, restoreBooking, updateBooking } from "@/lib/bookings";
 import { toISO } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
@@ -229,6 +230,34 @@ describe("allowanceSummary", () => {
     const starter = await db.membership.update({ where: { id: team.member.id }, data: { employmentStart: new Date("2030-07-01") } });
     // Six full months in 2030: half of 20.
     expect(await allowanceSummary(starter, team.settings, 2030, new Set(), "2030-07-01")).toMatchObject({ carriedOver: 0, allowance: 10 });
+  });
+});
+
+describe("allowanceSummaries", () => {
+  it("works out a 50-person team in a fixed handful of queries, with the same numbers as one by one", async () => {
+    const team = await makeWorkspace({ maxCarryOverDays: 5, carryOverExpiry: "03-31", plan: "BUSINESS" });
+    await growTo(team.workspace.id, 50);
+    await db.membership.updateMany({ where: { workspaceId: team.workspace.id }, data: { annualAllowanceDays: 20 } });
+    await db.carriedOver.create({ data: { membershipId: team.admin.id, year: 2030, days: 8 } });
+    await db.keepCarriedOver.create({ data: { membershipId: team.member.id, year: 2030 } });
+    await book(team, team.member, team.member, { ...week, start: "2029-01-01", end: "2029-01-23" });
+    await book(team, team.admin, team.member);
+    await book(team, team.admin, team.admin, { ...week, start: "2030-03-04", end: "2030-03-05" });
+    const people = await db.membership.findMany({ where: { workspaceId: team.workspace.id } });
+    expect(people).toHaveLength(50);
+
+    const query = vi.spyOn(pg.Client.prototype, "query");
+    const all = await allowanceSummaries(people, team.settings, 2030, "2030-04-01");
+    const queries = query.mock.calls.length;
+    query.mockRestore();
+    // Holidays, bookings, kept allowances, entered and exempt carry-over; not five per person.
+    expect(queries).toBeGreaterThan(0);
+    expect(queries).toBeLessThanOrEqual(6);
+
+    expect(all.size).toBe(50);
+    for (const p of people) expect(all.get(p.id)).toEqual(await allowanceSummary(p, team.settings, 2030, undefined, "2030-04-01"));
+    expect(all.get(team.member.id)).toMatchObject({ carriedOver: 3, carryOverExpired: 0, used: 5, remaining: 18 });
+    expect(all.get(team.admin.id)).toMatchObject({ carriedOver: 8, carryOverExpired: 6, used: 2, allowance: 22 });
   });
 });
 

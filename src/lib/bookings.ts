@@ -582,29 +582,24 @@ export type AllowanceSummary = {
   remaining: number | null;
 };
 
-/** Vacation days (approved, pending) between two dates; sick and other leave don't count. */
-async function vacationDaysBetween(membershipId: string, rules: DayRules, from: ISODate, to: ISODate) {
-  const bookings = await db.booking.findMany({
-    where: {
-      membershipId,
-      type: "VACATION",
-      status: { in: ACTIVE_STATUSES },
-      startDate: { lte: fromISO(to) },
-      endDate: { gte: fromISO(from) },
-    },
-  });
+type VacationRow = { membershipId: string; status: BookingStatus; startDate: Date; endDate: Date; startPart: string; endPart: string };
+
+/** Vacation days (approved, pending) between two dates, from one person's vacation bookings. */
+function vacationDaysBetween(bookings: readonly VacationRow[], rules: DayRules, from: ISODate, to: ISODate) {
   let used = 0;
   let pending = 0;
   for (const b of bookings) {
-    const days = countDays(spanOf(b), rules, { from, to });
+    const span = spanOf(b);
+    if (span.end < from || span.start > to) continue;
+    const days = countDays(span, rules, { from, to });
     if (b.status === "APPROVED") used += days;
     else pending += days;
   }
   return { used, pending };
 }
 
-function vacationDaysInYear(membershipId: string, rules: DayRules, year: number) {
-  return vacationDaysBetween(membershipId, rules, `${year}-01-01`, `${year}-12-31`);
+function vacationDaysInYear(bookings: readonly VacationRow[], rules: DayRules, year: number) {
+  return vacationDaysBetween(bookings, rules, `${year}-01-01`, `${year}-12-31`);
 }
 
 /**
@@ -626,30 +621,98 @@ export async function keepLastYearsAllowance(
   });
 }
 
+type AllowanceMember = {
+  id: string;
+  workspaceId: string;
+  annualAllowanceDays: Prisma.Decimal | null;
+  holidayRegion?: string | null;
+  workDays?: readonly number[] | null;
+  employmentStart?: Date | null;
+  joinedAt: Date;
+};
+
+/** One person's allowance for `year`; see allowanceSummaries. `holidays` replaces the person's region's holidays. */
 export async function allowanceSummary(
-  membership: {
-    id: string;
-    workspaceId: string;
-    annualAllowanceDays: Prisma.Decimal | null;
-    holidayRegion?: string | null;
-    workDays?: readonly number[] | null;
-    employmentStart?: Date | null;
-    joinedAt: Date;
-  },
+  membership: AllowanceMember,
   settings: Settings,
   year: number,
   holidays?: Set<ISODate>,
   today: ISODate = todayIn("UTC"),
 ): Promise<AllowanceSummary> {
-  const rules = rulesFor(membership, settings, holidays ?? (await loadHolidays(membership.workspaceId, regionOf(membership, settings))));
-  const [{ used, pending }, past, entered, noExpiry] = await Promise.all([
-    vacationDaysInYear(membership.id, rules, year),
-    db.allowanceYear.findMany({ where: { membershipId: membership.id, year: { in: [year - 1, year] } } }),
-    db.carriedOver.findUnique({ where: { membershipId_year: { membershipId: membership.id, year } } }),
-    db.keepCarriedOver.findUnique({ where: { membershipId_year: { membershipId: membership.id, year } } }),
+  const summaries = await allowanceSummaries([membership], settings, year, today, holidays);
+  return summaries.get(membership.id)!;
+}
+
+/**
+ * Allowance for `year` of many people of one workspace at once, keyed by membership id. A fixed number of queries
+ * however many people there are (holidays, vacation bookings, kept allowances, entered and exempt carry-over),
+ * then the same day math as for one person, so a 75-person booking page doesn't use up the database connections.
+ */
+export async function allowanceSummaries(
+  memberships: readonly AllowanceMember[],
+  settings: Settings,
+  year: number,
+  today: ISODate = todayIn("UTC"),
+  holidays?: Set<ISODate>,
+): Promise<Map<string, AllowanceSummary>> {
+  const result = new Map<string, AllowanceSummary>();
+  if (memberships.length === 0) return result;
+  const ids = memberships.map((m) => m.id);
+  const workspaceId = memberships[0].workspaceId;
+  const regions = [...new Set(["", ...memberships.map((m) => regionOf(m, settings))])];
+  const [holidayRows, bookings, past, entered, noExpiry] = await Promise.all([
+    holidays ? [] : db.holiday.findMany({ where: { workspaceId, region: { in: regions } }, select: { date: true, region: true } }),
+    // Last year too, for what carries over.
+    db.booking.findMany({
+      where: {
+        membershipId: { in: ids },
+        type: "VACATION",
+        status: { in: ACTIVE_STATUSES },
+        startDate: { lte: fromISO(`${year}-12-31`) },
+        endDate: { gte: fromISO(`${year - 1}-01-01`) },
+      },
+      select: { membershipId: true, status: true, startDate: true, endDate: true, startPart: true, endPart: true },
+    }),
+    db.allowanceYear.findMany({ where: { membershipId: { in: ids }, year: { in: [year - 1, year] } } }),
+    db.carriedOver.findMany({ where: { membershipId: { in: ids }, year } }),
+    db.keepCarriedOver.findMany({ where: { membershipId: { in: ids }, year }, select: { membershipId: true } }),
   ]);
+  const holidaysOf = (region: string) =>
+    holidays ?? new Set(holidayRows.filter((h) => h.region === "" || h.region === region).map((h) => toISO(h.date)));
+  const byRegion = new Map(regions.map((r) => [r, holidaysOf(r)]));
+  const exempt = new Set(noExpiry.map((k) => k.membershipId));
+  for (const m of memberships) {
+    result.set(
+      m.id,
+      summarize(m, settings, year, today, {
+        rules: rulesFor(m, settings, byRegion.get(regionOf(m, settings))!),
+        bookings: bookings.filter((b) => b.membershipId === m.id),
+        past: past.filter((p) => p.membershipId === m.id),
+        entered: entered.find((e) => e.membershipId === m.id) ?? null,
+        noExpiry: exempt.has(m.id),
+      }),
+    );
+  }
+  return result;
+}
+
+function summarize(
+  membership: AllowanceMember,
+  settings: Settings,
+  year: number,
+  today: ISODate,
+  data: {
+    rules: DayRules;
+    bookings: VacationRow[];
+    past: { year: number; days: Prisma.Decimal | null }[];
+    entered: { days: Prisma.Decimal } | null;
+    noExpiry: boolean;
+  },
+): AllowanceSummary {
+  const { rules, bookings, entered } = data;
+  const { used, pending } = vacationDaysInYear(bookings, rules, year);
   const current = membership.annualAllowanceDays === null ? null : Number(membership.annualAllowanceDays);
-  const kept = past.map((p) => ({ year: p.year, days: p.days === null ? null : Number(p.days) }));
+  const kept = data.past.map((p) => ({ year: p.year, days: p.days === null ? null : Number(p.days) }));
   const yearly = allowanceIn(year, current, kept);
   if (yearly === null) {
     return { year, allowance: null, carriedOver: 0, carriedOverEntered: false, carryOverExpiresOn: null, carryOverLeft: 0, carryOverExpired: 0, used, pending, remaining: null };
@@ -664,15 +727,15 @@ export async function allowanceSummary(
     // Entered by an admin for a team that moved over from Excel: their number counts, without the cap.
     carriedOver = Number(entered.days);
   } else if (settings.maxCarryOverDays && lastYearly !== null && Number(since.slice(0, 4)) < year) {
-    const last = await vacationDaysInYear(membership.id, rules, year - 1);
+    const last = vacationDaysInYear(bookings, rules, year - 1);
     carriedOver = carryOver(proratedAllowance(lastYearly, employmentStart, year - 1), last.used + last.pending, settings.maxCarryOverDays);
   }
   let carryOverExpiresOn: ISODate | null = null;
   let carryOverLeft = 0;
   let carryOverExpired = 0;
-  if (carriedOver > 0 && settings.carryOverExpiry && !noExpiry) {
+  if (carriedOver > 0 && settings.carryOverExpiry && !data.noExpiry) {
     carryOverExpiresOn = `${year}-${settings.carryOverExpiry}`;
-    const byDeadline = await vacationDaysBetween(membership.id, rules, `${year}-01-01`, carryOverExpiresOn);
+    const byDeadline = vacationDaysBetween(bookings, rules, `${year}-01-01`, carryOverExpiresOn);
     const status = carriedOverStatus(carriedOver, byDeadline.used + byDeadline.pending, today > carryOverExpiresOn);
     carryOverLeft = status.left;
     carryOverExpired = status.expired;
