@@ -9,15 +9,16 @@ export function LogoMark({ className = "size-7" }: { className?: string }) {
   );
 }
 
+/* Dark enough for white initials (WCAG AA, 4.5:1). */
 const AVATAR_COLORS = [
-  "bg-sky-500",
-  "bg-emerald-500",
-  "bg-violet-500",
-  "bg-amber-500",
-  "bg-rose-500",
-  "bg-teal-500",
-  "bg-indigo-500",
-  "bg-orange-500",
+  "bg-sky-700",
+  "bg-emerald-700",
+  "bg-violet-600",
+  "bg-amber-700",
+  "bg-rose-600",
+  "bg-teal-700",
+  "bg-indigo-600",
+  "bg-orange-700",
 ];
 
 /** "Ada Lovelace" → "AL", "ada@x.com" → "A", "Marie Schmitt (Empfang)" → "MS". */
@@ -28,7 +29,8 @@ export function initials(label: string): string {
     .split(/[\s._-]+/)
     .filter(Boolean);
   if (words.length === 0) return "?";
-  const letters = words.length === 1 ? words[0][0] : words[0][0] + words[words.length - 1][0];
+  const letters =
+    words.length === 1 ? words[0][0] : words[0][0] + words[words.length - 1][0];
   return letters.toUpperCase();
 }
 
@@ -39,7 +41,15 @@ function colorFor(seed: string) {
   return AVATAR_COLORS[h % AVATAR_COLORS.length];
 }
 
-export function Avatar({ label, seed, className = "size-7 text-xs" }: { label: string; seed?: string; className?: string }) {
+export function Avatar({
+  label,
+  seed,
+  className = "size-7 text-xs",
+}: {
+  label: string;
+  seed?: string;
+  className?: string;
+}) {
   return (
     <span
       aria-hidden
@@ -51,7 +61,13 @@ export function Avatar({ label, seed, className = "size-7 text-xs" }: { label: s
 }
 
 /** A friendly placeholder for lists with nothing in them. */
-export function EmptyState({ icon, children }: { icon: string; children: React.ReactNode }) {
+export function EmptyState({
+  icon,
+  children,
+}: {
+  icon: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex items-center gap-3 rounded-lg bg-black/[0.025] px-3 py-3 text-sm text-muted dark:bg-white/[0.03]">
       <span className="text-lg" aria-hidden>
@@ -63,9 +79,17 @@ export function EmptyState({ icon, children }: { icon: string; children: React.R
 }
 
 /** Marks a made-up person from "Fill with a sample team". */
-export function SampleBadge({ label, className = "ml-1.5" }: { label: string; className?: string }) {
+export function SampleBadge({
+  label,
+  className = "ml-1.5",
+}: {
+  label: string;
+  className?: string;
+}) {
   return (
-    <span className={`${className} inline-block rounded bg-amber-100 px-1.5 py-px align-middle text-[10px] font-semibold tracking-wide text-amber-900 uppercase dark:bg-amber-900/40 dark:text-amber-200`}>
+    <span
+      className={`${className} inline-block rounded bg-amber-100 px-1.5 py-px align-middle text-[10px] font-semibold tracking-wide text-amber-900 uppercase dark:bg-amber-900/40 dark:text-amber-200`}
+    >
       {label}
     </span>
   );

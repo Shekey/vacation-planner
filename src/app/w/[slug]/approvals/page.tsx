@@ -3,7 +3,12 @@ import { ActionForm } from "@/components/action-form";
 import { TypeDot, typeLabel } from "@/components/badges";
 import { Avatar, EmptyState, SampleBadge } from "@/components/ui";
 import { halfDayLabel, portionOn } from "@/lib/booking-days";
-import { activeBookingsBetween, allowanceSummary, loadHolidays, spanOf } from "@/lib/bookings";
+import {
+  activeBookingsBetween,
+  allowanceSummary,
+  loadHolidays,
+  spanOf,
+} from "@/lib/bookings";
 import { eachDay, formatDate, formatRange, todayIn } from "@/lib/dates";
 import { understaffedDays } from "@/lib/staffing";
 import { db } from "@/lib/db";
@@ -16,7 +21,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getMessages()).approvals.title };
 }
 
-export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/approvals">) {
+export default async function ApprovalsPage({
+  params,
+}: PageProps<"/w/[slug]/approvals">) {
   const { slug } = await params;
   const { workspace } = await requireAdmin(slug);
   const settings = settingsOf(workspace);
@@ -27,26 +34,49 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
   const year = Number(today.slice(0, 4));
 
   const pending = await db.booking.findMany({
-    where: { workspaceId: workspace.id, status: "PENDING", membership: { removedAt: null } },
-    include: { membership: { include: { user: { select: { name: true, email: true } } } } },
+    where: {
+      workspaceId: workspace.id,
+      status: "PENDING",
+      membership: { removedAt: null },
+    },
+    include: {
+      membership: {
+        include: { user: { select: { name: true, email: true } } },
+      },
+    },
     orderBy: { startDate: "asc" },
   });
 
   // Staffing counts use the team's main region; each person's own allowance uses theirs.
-  const holidays = await loadHolidays(workspace.id, settings.holidayRegion ?? "");
-  const memberCount = await db.membership.count({ where: { workspaceId: workspace.id, removedAt: null } });
+  const holidays = await loadHolidays(
+    workspace.id,
+    settings.holidayRegion ?? "",
+  );
+  const memberCount = await db.membership.count({
+    where: { workspaceId: workspace.id, removedAt: null },
+  });
   const rows = await Promise.all(
     pending.map(async (b) => {
       const span = spanOf(b);
       const [summary, others] = await Promise.all([
-        allowanceSummary(b.membership, settings, Number(span.start.slice(0, 4)) || year, undefined, today),
+        allowanceSummary(
+          b.membership,
+          settings,
+          Number(span.start.slice(0, 4)) || year,
+          undefined,
+          today,
+        ),
         activeBookingsBetween(workspace.id, span.start, span.end),
       ]);
       const days = eachDay(span.start, span.end);
       const clashes = [
         ...new Set(
           others
-            .filter((o) => o.membershipId !== b.membershipId && days.some((d) => portionOn(spanOf(o), d)))
+            .filter(
+              (o) =>
+                o.membershipId !== b.membershipId &&
+                days.some((d) => portionOn(spanOf(o), d)),
+            )
             .map((o) => o.membership.user.name ?? o.membership.user.email),
         ),
       ];
@@ -54,11 +84,20 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
       const shortDays = understaffedDays({
         candidate: { ...span, membershipId: b.membershipId },
         team: others
-          .filter((o) => o.id !== b.id && o.membershipId !== b.membershipId && o.status === "APPROVED")
+          .filter(
+            (o) =>
+              o.id !== b.id &&
+              o.membershipId !== b.membershipId &&
+              o.status === "APPROVED",
+          )
           .map((o) => ({ ...spanOf(o), membershipId: o.membershipId })),
         memberCount,
         minPresent: settings.minPeoplePresent,
-        rules: { countWeekends: settings.countWeekends, workDays: b.membership.workDays, holidays },
+        rules: {
+          countWeekends: settings.countWeekends,
+          workDays: b.membership.workDays,
+          holidays,
+        },
       });
       return { b, span, summary, clashes, shortDays };
     }),
@@ -82,25 +121,41 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2 font-medium">
-                      <Avatar label={b.membership.user.name ?? b.membership.user.email} seed={b.membership.user.email} />
+                      <Avatar
+                        label={
+                          b.membership.user.name ?? b.membership.user.email
+                        }
+                        seed={b.membership.user.email}
+                      />
                       {b.membership.user.name ?? b.membership.user.email}
-                      {b.membership.isSample && <SampleBadge label={messages.common.sample} />}
+                      {b.membership.isSample && (
+                        <SampleBadge label={messages.common.sample} />
+                      )}
                       <TypeDot type={b.type} locale={locale} />
                     </div>
                     <div className="text-sm">
-                      {formatRange(span.start, span.end, locale)} · {messages.common.days(formatNumber(Number(b.daysCount), locale))} ·{" "}
-                      {typeLabel(b.type, locale)}
+                      {formatRange(span.start, span.end, locale)} ·{" "}
+                      {messages.common.days(
+                        formatNumber(Number(b.daysCount), locale),
+                      )}{" "}
+                      · {typeLabel(b.type, locale)}
                       {half && ` · ${half}`}
                     </div>
-                    {b.note && <div className="text-sm opacity-70">“{b.note}”</div>}
+                    {b.note && (
+                      <div className="text-sm opacity-70">“{b.note}”</div>
+                    )}
                   </div>
                   <div className="text-right text-xs opacity-70">
                     {summary.remaining !== null &&
-                      t.daysLeft(formatNumber(summary.remaining, locale), formatNumber(summary.allowance ?? 0, locale), summary.year)}
+                      t.daysLeft(
+                        formatNumber(summary.remaining, locale),
+                        formatNumber(summary.allowance ?? 0, locale),
+                        summary.year,
+                      )}
                   </div>
                 </div>
                 {shortDays.length > 0 && (
-                  <p className="text-sm text-red-600">
+                  <p className="text-sm text-red-600 dark:text-red-400">
                     {t.understaffed(
                       shortDays[0].present,
                       memberCount,
@@ -113,16 +168,32 @@ export default async function ApprovalsPage({ params }: PageProps<"/w/[slug]/app
                     )}
                   </p>
                 )}
-                {clashes.length > 0 && <p className="text-sm text-amber-700 dark:text-amber-400">{t.alsoOff(clashes.join(", "))}</p>}
-                <ActionForm action={decideAction.bind(null, slug, b.id)} className="flex flex-wrap items-center gap-2">
-                  <input name="note" className="input min-w-48 flex-1 py-1.5 text-sm" placeholder={t.note} aria-label={t.note} />
-                  <button name="decision" value="approve" className="btn py-1.5">
+                {clashes.length > 0 && (
+                  <p className="text-sm text-amber-700 dark:text-amber-400">
+                    {t.alsoOff(clashes.join(", "))}
+                  </p>
+                )}
+                <ActionForm
+                  action={decideAction.bind(null, slug, b.id)}
+                  className="flex flex-wrap items-center gap-2"
+                >
+                  <input
+                    name="note"
+                    className="input min-w-48 flex-1 py-1.5 text-sm"
+                    placeholder={t.note}
+                    aria-label={t.note}
+                  />
+                  <button
+                    name="decision"
+                    value="approve"
+                    className="btn py-1.5"
+                  >
                     {t.approve}
                   </button>
                   <button
                     name="decision"
                     value="reject"
-                    className="rounded-lg border border-red-600/60 px-4 py-1.5 font-medium text-red-600 transition-colors hover:bg-red-500/10"
+                    className="rounded-lg border border-red-600/60 px-4 py-1.5 font-medium text-red-600 dark:text-red-400 transition-colors hover:bg-red-500/10"
                   >
                     {t.decline}
                   </button>

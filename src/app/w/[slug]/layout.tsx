@@ -6,16 +6,25 @@ import { getMessages } from "@/lib/i18n/server";
 import { accessOf, isOverLimit, PLANS } from "@/lib/plans";
 import { requireMembership, settingsOf } from "@/lib/session";
 
-export default async function WorkspaceLayout({ children, params }: LayoutProps<"/w/[slug]">) {
+export default async function WorkspaceLayout({
+  children,
+  params,
+}: LayoutProps<"/w/[slug]">) {
   const { slug } = await params;
   const { workspace, membership } = await requireMembership(slug);
   const settings = settingsOf(workspace);
   const isAdmin = membership.role === "ADMIN";
   const pendingCount =
-    isAdmin && settings.approvalsEnabled ? await db.booking.count({ where: { workspaceId: workspace.id, status: "PENDING" } }) : 0;
+    isAdmin && settings.approvalsEnabled
+      ? await db.booking.count({
+          where: { workspaceId: workspace.id, status: "PENDING" },
+        })
+      : 0;
   const base = `/w/${slug}`;
   const access = accessOf(workspace);
-  const memberCount = await db.membership.count({ where: { workspaceId: workspace.id, removedAt: null, isSample: false } });
+  const memberCount = await db.membership.count({
+    where: { workspaceId: workspace.id, removedAt: null, isSample: false },
+  });
   const overLimit = isOverLimit(access, memberCount);
   const trialEnding = access.kind === "trial" && access.trialDaysLeft <= 7;
   const { common, workspace: t } = await getMessages();
@@ -31,19 +40,27 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
             {workspace.name.trim()[0]?.toUpperCase()}
           </span>
           <div className="min-w-0">
-            <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">{workspace.name}</h1>
-            <Link href="/" className="text-sm text-muted hover:text-foreground hover:underline">
+            <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
+              {workspace.name}
+            </h1>
+            <Link
+              href="/"
+              className="inline-block py-1 text-sm text-muted hover:text-foreground hover:underline"
+            >
               {isAdmin ? common.admin : common.member} · {t.switchWorkspace}
             </Link>
           </div>
         </div>
-        <Link href={`${base}/book`} className="btn hidden shrink-0 whitespace-nowrap sm:inline-flex">
+        <Link
+          href={`${base}/book`}
+          className="btn hidden shrink-0 whitespace-nowrap sm:inline-flex"
+        >
           <span aria-hidden>+</span> {t.bookTimeOff}
         </Link>
       </div>
       <nav
         aria-label={t.navLabel}
-        className="-mx-4 flex items-center gap-1 overflow-x-auto whitespace-nowrap border-b border-border px-3 pb-2 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0"
+        className="flex flex-wrap items-center gap-1 whitespace-nowrap border-b border-border pb-2"
       >
         {/* Everyday pages; on phones the first four live in the bottom bar instead. */}
         <span className="hidden sm:contents">
@@ -57,8 +74,13 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
         <NavLink href={`${base}/holidays`}>{t.nav.holidays}</NavLink>
         {isAdmin && (
           <>
-            <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-border sm:ml-auto sm:mr-1" />
-            <span className="px-1 text-[11px] font-semibold tracking-wide text-muted uppercase">{t.nav.admin}</span>
+            <span
+              aria-hidden
+              className="mx-1 h-5 w-px shrink-0 bg-border sm:ml-auto sm:mr-1"
+            />
+            <span className="px-1 text-[11px] font-semibold tracking-wide text-muted uppercase">
+              {t.nav.admin}
+            </span>
             {settings.approvalsEnabled && (
               <NavLink href={`${base}/approvals`}>
                 {t.nav.approvals}
@@ -81,10 +103,16 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
         )}
       </nav>
       {overLimit && (
-        <p role="status" className="card border-red-500/40 bg-red-50 text-sm dark:bg-red-900/20">
+        <p
+          role="status"
+          className="card border-red-500/40 bg-red-50 text-sm dark:bg-red-900/20"
+        >
           {t.overLimit(access.name, access.maxMembers, memberCount)}{" "}
           {isAdmin ? (
-            <Link href={`${base}/billing`} className="font-medium text-primary hover:underline">
+            <Link
+              href={`${base}/billing`}
+              className="font-medium text-primary hover:underline"
+            >
               {t.choosePlan}
             </Link>
           ) : (
@@ -93,9 +121,18 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
         </p>
       )}
       {isAdmin && !overLimit && trialEnding && (
-        <p role="status" className="card border-amber-400/60 bg-amber-50 text-sm dark:bg-amber-900/20">
-          {t.trialEnds(access.trialDaysLeft)} {memberCount > PLANS.FREE.maxMembers ? t.trialAfterPaid : t.trialAfterFree}{" "}
-          <Link href={`${base}/billing`} className="font-medium text-primary hover:underline">
+        <p
+          role="status"
+          className="card border-amber-400/60 bg-amber-50 text-sm dark:bg-amber-900/20"
+        >
+          {t.trialEnds(access.trialDaysLeft)}{" "}
+          {memberCount > PLANS.FREE.maxMembers
+            ? t.trialAfterPaid
+            : t.trialAfterFree}{" "}
+          <Link
+            href={`${base}/billing`}
+            className="font-medium text-primary hover:underline"
+          >
             {t.seePlans}
           </Link>
         </p>
@@ -104,9 +141,24 @@ export default async function WorkspaceLayout({ children, params }: LayoutProps<
       <BottomNav
         label={t.nav.mobileLabel}
         items={[
-          { href: base, label: t.nav.short.overview, icon: "home", exact: true },
-          { href: `${base}/calendar`, label: t.nav.short.calendar, icon: "calendar" },
-          { href: `${base}/book`, label: t.nav.short.book, icon: "plus", primary: true, exact: true },
+          {
+            href: base,
+            label: t.nav.short.overview,
+            icon: "home",
+            exact: true,
+          },
+          {
+            href: `${base}/calendar`,
+            label: t.nav.short.calendar,
+            icon: "calendar",
+          },
+          {
+            href: `${base}/book`,
+            label: t.nav.short.book,
+            icon: "plus",
+            primary: true,
+            exact: true,
+          },
           { href: `${base}/people`, label: t.nav.short.people, icon: "people" },
           { href: `${base}/me`, label: t.nav.short.me, icon: "me" },
         ]}
