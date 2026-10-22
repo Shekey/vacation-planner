@@ -94,7 +94,7 @@ The database change runs by itself on the next deploy. What it needs from you:
 1. Make sure `CRON_SECRET` is set in Vercel. Without it the emails to admins before their trial ends (7 days and 1–2 days before) don't go out. They also need email turned on (step 3.1).
 2. In Stripe, turn on failed-payment retries and emails (step 3.5). The terms now say Stripe retries and then the workspace moves to Free.
 3. Set the new optional legal variables `LEGAL_REPRESENTATIVE`, `LEGAL_REGISTER` and `LEGAL_SUPERVISORY_AUTHORITY` (step 2, table below).
-4. Decide whether you refund the rest of the period when a paying customer deletes their workspace. The app now cancels the subscription at once and Stripe refunds nothing by default (step 2, last row of the table).
+4. Decide whether you refund the rest of the period when a paying customer deletes their workspace. The app stops the renewal at once (the plan runs to the end of the paid period, so a restore within the 30 days brings it back) and cancels the subscription when the workspace is deleted for good; Stripe refunds nothing by default (step 2, last row of the table).
 5. Try it: create a test workspace, click "Fill with a sample team" on the overview, look at the calendar, then "Remove sample team".
 
 ### 1. Move hosting to Frankfurt (blocks selling)
@@ -132,7 +132,7 @@ The privacy policy, the DPA (`/avv`) and the landing page already say data is st
 | AVV (Art. 28) | The technical and organisational measures (TOMs) are a short list | Write the TOM annex (step 5.1 below) and have it attached to the AVV |
 | AVV | Liability, place of processing for support access from the USA, and who signs | Ask the lawyer; bigger customers may want a signed AVV |
 | AGB | "Stripe retries a failed payment" | In Stripe's Billing settings (*Revenue recovery*), turn on retries and the customer emails about failed payments, and set "if all retries fail" to cancel the subscription |
-| AGB | Refunds when a workspace is deleted mid-period (the app cancels the subscription at once, Stripe refunds nothing by default) | Decide, then ask the lawyer to add it |
+| AGB | Refunds when a workspace is deleted mid-period (the app stops the renewal at once and cancels when the workspace is purged after 30 days; Stripe refunds nothing by default) | Decide, then ask the lawyer to add it |
 
 ### 3. Turn on email and payments (blocks selling)
 

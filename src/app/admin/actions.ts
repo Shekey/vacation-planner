@@ -8,6 +8,7 @@ import { isBetaMode } from "@/lib/beta";
 import { db } from "@/lib/db";
 import { formatDateTime } from "@/lib/dates";
 import { getLocale, getMessages } from "@/lib/i18n/server";
+import { resumeSubscription } from "@/lib/stripe";
 import { requireSuperAdmin } from "@/lib/superadmin-session";
 import { extendedTrialEnd, parseExtendDays } from "@/lib/superadmin";
 import { TRIAL_DAYS } from "@/lib/plans";
@@ -35,13 +36,14 @@ export async function extendTrialAction(workspaceId: string, _prev: ActionResult
 export async function restoreWorkspaceAsOperatorAction(workspaceId: string): Promise<ActionResult> {
   const operator = await requireSuperAdmin();
   const t = (await getMessages()).superadmin.detail;
-  const ws = await db.workspace.findUnique({ where: { id: workspaceId }, select: { id: true, deletedAt: true } });
+  const ws = await db.workspace.findUnique({ where: { id: workspaceId }, select: { id: true, deletedAt: true, stripeSubscriptionId: true } });
   if (!ws || !canRestore(ws.deletedAt)) return { error: t.notFound };
   await db.workspace.update({ where: { id: ws.id }, data: { deletedAt: null } });
+  const paid = await resumeSubscription(ws.stripeSubscriptionId);
   await recordAudit({ workspaceId: ws.id, actorId: operator.id, action: "support.workspace_restored" });
   revalidatePath(`/admin/workspaces/${ws.id}`);
   revalidatePath("/admin");
-  return { ok: t.restored };
+  return { ok: ws.stripeSubscriptionId && paid === false ? t.restoredPlanEnded : t.restored };
 }
 
 /**
