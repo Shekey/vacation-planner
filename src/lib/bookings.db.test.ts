@@ -53,7 +53,7 @@ describe("who may book", () => {
     const team = await makeWorkspace();
     const huge = { ...week, start: "2030-01-01", end: "9999-12-31" };
     await expect(book(team, team.member, team.member, huge)).rejects.toThrow(errors.outOfRange);
-    const long = { ...week, start: "2030-01-01", end: "2032-01-01" };
+    const long = { ...week, start: "2029-01-01", end: "2030-01-02" };
     await expect(book(team, team.member, team.member, long)).rejects.toThrow(errors.tooLong);
     expect(await db.booking.count({ where: { workspaceId: team.workspace.id } })).toBe(0);
   });

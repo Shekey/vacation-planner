@@ -65,16 +65,18 @@ describe("validateSpan", () => {
   it("rejects half days when disabled", () =>
     expect(validateSpan(span("2026-10-05", "2026-10-05", "FULL", "AM"), { allowHalfDays: false })).not.toBeNull());
   it("allows up to 366 days and refuses more", () => {
-    expect(validateSpan(span("2026-01-01", "2026-12-31"), opts)).toBeNull();
-    expect(validateSpan(span("2028-01-01", "2028-12-31"), opts)).toBeNull(); // leap year: 366 days
-    expect(validateSpan(span("2026-01-01", "2027-01-01"), opts)).toBe("tooLong");
-    expect(validateSpan(span("2026-01-01", "2100-12-31"), opts)).toBe("tooLong");
+    const now = new Date("2026-10-22T12:00:00Z");
+    expect(validateSpan(span("2026-01-01", "2026-12-31"), opts, now)).toBeNull();
+    expect(validateSpan(span("2028-01-01", "2028-12-31"), opts, now)).toBeNull(); // leap year: 366 days
+    expect(validateSpan(span("2026-01-01", "2027-01-02"), opts, now)).toBe("tooLong");
+    expect(validateSpan(span("2026-01-01", "2029-12-31"), opts, now)).toBe("tooLong");
   });
-  it("refuses years outside 2000 to 2100", () => {
-    expect(validateSpan(span("0001-01-01", "0001-01-02"), opts)).toBe("outOfRange");
-    expect(validateSpan(span("2026-01-01", "9999-12-31"), opts)).toBe("outOfRange");
-    expect(validateSpan(span("2100-12-30", "2100-12-31"), opts)).toBeNull();
-    expect(validateSpan(span("2101-01-04", "2101-01-05"), opts)).toBe("outOfRange");
+  it("refuses years before 2000 and more than three years ahead", () => {
+    const now = new Date("2026-10-22T12:00:00Z");
+    expect(validateSpan(span("0001-01-01", "0001-01-02"), opts, now)).toBe("outOfRange");
+    expect(validateSpan(span("2026-01-01", "9999-12-31"), opts, now)).toBe("outOfRange");
+    expect(validateSpan(span("2029-12-30", "2029-12-31"), opts, now)).toBeNull();
+    expect(validateSpan(span("2030-01-01", "2030-01-02"), opts, now)).toBe("outOfRange");
   });
 });
 

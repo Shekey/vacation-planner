@@ -64,14 +64,14 @@ export type SpanProblem = "endBeforeStart" | "invalidHalfDay" | "halfDaysOff" | 
 /** One booking covers at most this many calendar days; it also keeps the stored day count within its column. */
 export const MAX_BOOKING_DAYS = 366;
 
-/** Bookable years: wide enough for history and long-range planning, narrow enough to rule out typos like 0202. */
+/** Bookable dates run from this year to this many years ahead, which rules out typos like 0202 or 9999. */
 export const FIRST_BOOKING_YEAR = 2000;
-export const LAST_BOOKING_YEAR = 2100;
+export const BOOKING_YEARS_AHEAD = 3;
 
 /** Returns what's wrong (a key into the `errors` messages), or null when the span is valid. */
-export function validateSpan(span: BookingSpan, opts: { allowHalfDays: boolean }): SpanProblem | null {
+export function validateSpan(span: BookingSpan, opts: { allowHalfDays: boolean }, now = new Date()): SpanProblem | null {
   if (span.end < span.start) return "endBeforeStart";
-  if (span.start < `${FIRST_BOOKING_YEAR}-01-01` || span.end > `${LAST_BOOKING_YEAR}-12-31`) return "outOfRange";
+  if (span.start < `${FIRST_BOOKING_YEAR}-01-01` || span.end > `${now.getUTCFullYear() + BOOKING_YEARS_AHEAD}-12-31`) return "outOfRange";
   if (Math.round((Date.parse(span.end) - Date.parse(span.start)) / 86_400_000) >= MAX_BOOKING_DAYS) return "tooLong";
   if (span.startPart === "AM" || span.endPart === "PM") return "invalidHalfDay";
   if (!opts.allowHalfDays && (span.startPart !== "FULL" || span.endPart !== "FULL")) {
