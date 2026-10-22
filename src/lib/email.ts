@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { messagesFor } from "@/lib/i18n";
 import { requestLocaleOr } from "@/lib/i18n/server";
-import { isSampleEmail } from "@/lib/sample-team";
+import { isPlaceholderEmail } from "@/lib/no-email";
 
 type Email = { to: string | string[]; subject: string; text: string };
 
@@ -24,8 +24,8 @@ export function usingTestSender(): boolean {
 
 /** Sends through Resend when AUTH_RESEND_KEY is set; otherwise logs to the console (development). */
 export async function sendEmail({ to, subject, text }: Email): Promise<SendResult> {
-  // Sample people are made up; their .invalid addresses are dropped so nothing is ever sent for them.
-  const recipients = (Array.isArray(to) ? to : [to]).filter((r) => !isSampleEmail(r));
+  // Sample people and people without email have .invalid placeholder addresses; nothing is ever sent to them.
+  const recipients = (Array.isArray(to) ? to : [to]).filter((r) => !isPlaceholderEmail(r));
   if (recipients.length === 0) return { ok: true };
 
   const apiKey = process.env.AUTH_RESEND_KEY;

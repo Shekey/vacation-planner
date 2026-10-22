@@ -2,10 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 import { createBooking } from "@/lib/bookings";
 import { todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
+import { sendEmail } from "@/lib/email";
+import { hasNoEmail } from "@/lib/no-email";
 import { messagesFor } from "@/lib/i18n";
 import { requireAdmin } from "@/lib/session";
-import { makeWorkspace } from "@/test/db";
-import { removeMemberAction, restoreMemberAction, updateMemberAction } from "./actions";
+import { growTo, makeUser, makeWorkspace } from "@/test/db";
+import { addWithoutEmailAction, removeMemberAction, restoreMemberAction, updateMemberAction } from "./actions";
 
 vi.mock("@/lib/session", async (original) => ({ ...(await original<typeof import("@/lib/session")>()), requireAdmin: vi.fn() }));
 
@@ -79,6 +81,80 @@ describe("allowance changes", () => {
     expect(await updateMemberAction(team.workspace.slug, team.member.id, {}, form({ role: "MEMBER", allowance: "20.3" }))).toEqual({
       error: t.errors.allowance,
     });
+  });
+});
+
+describe("people without an email address", () => {
+  async function addMaria(team: Team) {
+    expect(await addWithoutEmailAction(team.workspace.slug, {}, form({ name: "Maria Schulz" }))).toEqual({ ok: t.noEmail.added("Maria Schulz") });
+    return db.membership.findFirstOrThrow({ where: { workspaceId: team.workspace.id, user: { name: "Maria Schulz" } }, include: { user: true } });
+  }
+
+  it("are added by name, with the default allowance, and admins book for them", async () => {
+    const team = await makeWorkspace();
+    await signedInAsAdmin(team);
+    const maria = await addMaria(team);
+    expect(hasNoEmail(maria.user.email)).toBe(true);
+    expect(maria).toMatchObject({ role: "MEMBER", isSample: false });
+    expect(Number(maria.annualAllowanceDays)).toBe(20);
+
+    const booking = await createBooking({
+      workspace: team.workspace,
+      settings: team.settings,
+      actor: team.admin.actor,
+      membershipId: maria.id,
+      input: { type: "VACATION", note: null, start: "2030-03-04", end: "2030-03-08", startPart: "FULL", endPart: "FULL" },
+      origin: "https://app.test",
+    });
+    expect(booking.status).toBe("APPROVED");
+  });
+
+  it("count toward the plan", async () => {
+    const team = await makeWorkspace({ plan: "FREE", billingStatus: null });
+    await growTo(team.workspace.id, 5);
+    await signedInAsAdmin(team);
+    expect(await addWithoutEmailAction(team.workspace.slug, {}, form({ name: "Maria Schulz" }))).toHaveProperty("error");
+  });
+
+  it("can sign in once an admin adds their address, and get told where", async () => {
+    const team = await makeWorkspace();
+    await signedInAsAdmin(team);
+    const maria = await addMaria(team);
+    vi.mocked(sendEmail).mockClear();
+
+    const email = `maria-${maria.id}@praxis.test`;
+    expect(await updateMemberAction(team.workspace.slug, maria.id, {}, form({ role: "MEMBER", allowance: "20", email }))).toEqual({
+      ok: t.noEmail.emailAdded(email),
+    });
+    expect((await db.user.findUniqueOrThrow({ where: { id: maria.userId } })).email).toBe(email);
+    expect(sendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: email }));
+  });
+
+  it("move onto an account that already exists elsewhere, keeping their bookings", async () => {
+    const team = await makeWorkspace();
+    await signedInAsAdmin(team);
+    const maria = await addMaria(team);
+    await db.booking.create({
+      data: { workspaceId: team.workspace.id, membershipId: maria.id, createdById: team.admin.user.id, type: "VACATION", status: "APPROVED", startDate: new Date("2030-03-04"), endDate: new Date("2030-03-04"), daysCount: 1 },
+    });
+    const elsewhere = await makeUser("Maria");
+
+    await updateMemberAction(team.workspace.slug, maria.id, {}, form({ role: "MEMBER", allowance: "20", email: elsewhere.email }));
+    const moved = await db.membership.findUniqueOrThrow({ where: { id: maria.id }, include: { bookings: true } });
+    expect(moved.userId).toBe(elsewhere.id);
+    expect(moved.bookings).toHaveLength(1);
+    expect(await db.user.findUnique({ where: { id: maria.userId } })).toBeNull();
+  });
+
+  it("can't take the address of someone already in the team", async () => {
+    const team = await makeWorkspace();
+    await signedInAsAdmin(team);
+    const maria = await addMaria(team);
+    const email = team.member.user.email;
+    expect(await updateMemberAction(team.workspace.slug, maria.id, {}, form({ role: "MEMBER", allowance: "20", email }))).toEqual({
+      error: t.noEmail.errors.inUse(email),
+    });
+    expect(hasNoEmail((await db.user.findUniqueOrThrow({ where: { id: maria.userId } })).email)).toBe(true);
   });
 });
 
