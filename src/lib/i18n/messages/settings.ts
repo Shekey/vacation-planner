@@ -13,7 +13,8 @@ export const settings = defineMessages({
     applyToAll: "Also set it for everyone already in the workspace, you included",
     carryOver: "Carry over unused days (max)",
     carryOverPlaceholder: "none",
-    carryOverHint: "Unused vacation days, up to this many, are added to the next year.",
+    carryOverHint:
+      "Unused vacation days, up to this many, are added to the next year. Moving over from Excel? Enter each person's days left from last year under Members, or as a “Left over” column in the import.",
     expiry: {
       legend: "Carried-over days must be taken by",
       day: "Day",
@@ -101,7 +102,8 @@ export const settings = defineMessages({
     applyToAll: "Auch für alle setzen, die schon im Workspace sind, dich eingeschlossen",
     carryOver: "Übertrag ungenutzter Tage (max.)",
     carryOverPlaceholder: "keiner",
-    carryOverHint: "Ungenutzte Urlaubstage werden bis zu dieser Anzahl ins nächste Jahr übertragen.",
+    carryOverHint:
+      "Ungenutzte Urlaubstage werden bis zu dieser Anzahl ins nächste Jahr übertragen. Du kommst von Excel? Trag den Resturlaub pro Person unter Mitglieder ein, oder als Spalte „Resturlaub“ im Import.",
     expiry: {
       legend: "Übertragene Tage müssen genommen werden bis",
       day: "Tag",

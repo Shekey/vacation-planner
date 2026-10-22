@@ -9,12 +9,12 @@ export const importer = defineMessages({
     tabs: { people: "1. People", timeOff: "2. Time off" },
     backToMembers: "← Back to Members",
     peopleHelp:
-      "One row per person, with a header row. Columns can be in any order: Name (or First name and Last name), Email, Vacation days, Work days, Start date, State, Role. Each row needs an email or a name; someone with only a name is added without email and you book their time off. Work days like Mo-Fr or Mo, We, Fr; dates like 01.03.2024 or 2024-03-01; role Admin or Member. Without a header row, the email, name and days are recognised by their content.",
+      "One row per person, with a header row. Columns can be in any order: Name (or First name and Last name), Email, Vacation days, Left over (days still open from last year), Work days, Start date, State, Role. Each row needs an email or a name; someone with only a name is added without email and you book their time off. Work days like Mo-Fr or Mo, We, Fr; dates like 01.03.2024 or 2024-03-01; role Admin or Member. Without a header row, the email, name and days are recognised by their content.",
     timeOffHelp:
       "One row per absence, with a header row: Email (or Name, for someone without email), From, To, Type, Half day. “To” can stay empty for a single day. Type is Vacation (the default) or Other. Half day is morning or afternoon and works for a single day. The people must already be in the workspace, so import them first. Sick leave isn't imported because Vacation Planner doesn't store it.",
     templateLink: "Download a template",
     templatePeople:
-      "Name,Email,Vacation days,Work days,Start date,State,Role\nAnna Schmidt,anna@example.com,28,Mo-Fr,01.03.2024,Berlin,Admin\nBen Meyer,ben@example.com,30,Mo-Th,2025-01-15,,",
+      "Name,Email,Vacation days,Left over,Work days,Start date,State,Role\nAnna Schmidt,anna@example.com,28,5,Mo-Fr,01.03.2024,Berlin,Admin\nBen Meyer,ben@example.com,30,,Mo-Th,2025-01-15,,",
     templateTimeOff:
       "Email,From,To,Type,Half day\nanna@example.com,2026-12-21,2026-12-31,Vacation,\nben@example.com,2026-11-13,,Vacation,afternoon",
     pasteLabel: "Paste the cells from Excel here",
@@ -27,6 +27,7 @@ export const importer = defineMessages({
       "People are added right away and see the team calendar when they sign in with their email address. Untick this if you'd rather tell them yourself first.",
     columns: { row: "Row", person: "Person", details: "Details", result: "Result" },
     withoutEmail: "No email address: you book their time off",
+    leftOver: (days: string) => `${days} left over`,
     status: {
       new: "New",
       exists: "Already in, skipped",
@@ -66,6 +67,7 @@ export const importer = defineMessages({
       sampleEmail: () => "Sample addresses can't be imported",
       duplicate: () => "Listed twice, the first one counts",
       allowance: (v?: string) => `Vacation days “${v}”: use a number like 28 or 28,5`,
+      carriedOver: (v?: string) => `Left over from last year “${v}”: use a number like 5 or 2,5`,
       workDays: (v?: string) => `Work days “${v}”: use for example Mo-Fr or Mo, We, Fr`,
       date: (v?: string) => `Date “${v}”: use 31.12.2026 or 2026-12-31`,
       dateAmbiguous: (v?: string) => `Date “${v}” could be day/month or month/day: use 31.12.2026 or 2026-12-31`,
@@ -96,12 +98,12 @@ export const importer = defineMessages({
     tabs: { people: "1. Personen", timeOff: "2. Urlaub" },
     backToMembers: "← Zurück zu Mitglieder",
     peopleHelp:
-      "Eine Zeile pro Person, mit Kopfzeile. Die Spalten können in beliebiger Reihenfolge stehen: Name (oder Vorname und Nachname), E-Mail, Urlaubstage, Arbeitstage, Eintritt, Bundesland, Rolle. Jede Zeile braucht eine E-Mail oder einen Namen; wer nur einen Namen hat, wird ohne E-Mail angelegt und du buchst den Urlaub für die Person. Arbeitstage wie Mo-Fr oder Mo, Mi, Fr; Datum wie 01.03.2024 oder 2024-03-01; Rolle Admin oder Mitglied. Ohne Kopfzeile werden E-Mail, Name und Tage am Inhalt erkannt.",
+      "Eine Zeile pro Person, mit Kopfzeile. Die Spalten können in beliebiger Reihenfolge stehen: Name (oder Vorname und Nachname), E-Mail, Urlaubstage, Resturlaub (noch offene Tage aus dem Vorjahr), Arbeitstage, Eintritt, Bundesland, Rolle. Jede Zeile braucht eine E-Mail oder einen Namen; wer nur einen Namen hat, wird ohne E-Mail angelegt und du buchst den Urlaub für die Person. Arbeitstage wie Mo-Fr oder Mo, Mi, Fr; Datum wie 01.03.2024 oder 2024-03-01; Rolle Admin oder Mitglied. Ohne Kopfzeile werden E-Mail, Name und Tage am Inhalt erkannt.",
     timeOffHelp:
       "Eine Zeile pro Abwesenheit, mit Kopfzeile: E-Mail (oder Name, bei Personen ohne E-Mail), Von, Bis, Art, Halbtag. „Bis“ kann bei einem einzelnen Tag leer bleiben. Art ist Urlaub (Standard) oder Sonstiges. Halbtag ist vormittags oder nachmittags und geht bei einem einzelnen Tag. Die Personen müssen schon im Workspace sein, importiere sie also zuerst. Krankheit wird nicht importiert, weil der Vacation Planner sie nicht speichert.",
     templateLink: "Vorlage herunterladen",
     templatePeople:
-      "Name;E-Mail;Urlaubstage;Arbeitstage;Eintritt;Bundesland;Rolle\nAnna Schmidt;anna@beispiel.de;28;Mo-Fr;01.03.2024;Berlin;Admin\nBen Meyer;ben@beispiel.de;30;Mo-Do;15.01.2025;;",
+      "Name;E-Mail;Urlaubstage;Resturlaub;Arbeitstage;Eintritt;Bundesland;Rolle\nAnna Schmidt;anna@beispiel.de;28;5;Mo-Fr;01.03.2024;Berlin;Admin\nBen Meyer;ben@beispiel.de;30;;Mo-Do;15.01.2025;;",
     templateTimeOff:
       "E-Mail;Von;Bis;Art;Halbtag\nanna@beispiel.de;21.12.2026;31.12.2026;Urlaub;\nben@beispiel.de;13.11.2026;;Urlaub;nachmittags",
     pasteLabel: "Füge die Zellen aus Excel hier ein",
@@ -114,6 +116,7 @@ export const importer = defineMessages({
       "Die Personen werden sofort angelegt und sehen den Teamkalender, sobald sie sich mit ihrer E-Mail-Adresse anmelden. Nimm den Haken raus, wenn du es ihnen lieber erst selbst sagst.",
     columns: { row: "Zeile", person: "Person", details: "Angaben", result: "Ergebnis" },
     withoutEmail: "Keine E-Mail-Adresse: du buchst den Urlaub",
+    leftOver: (days: string) => `${days} Resturlaub`,
     status: {
       new: "Neu",
       exists: "Schon dabei, übersprungen",
@@ -153,6 +156,7 @@ export const importer = defineMessages({
       sampleEmail: () => "Beispiel-Adressen lassen sich nicht importieren",
       duplicate: () => "Doppelt aufgeführt, die erste zählt",
       allowance: (v?: string) => `Urlaubstage „${v}“: nimm eine Zahl wie 28 oder 28,5`,
+      carriedOver: (v?: string) => `Resturlaub „${v}“: nimm eine Zahl wie 5 oder 2,5`,
       workDays: (v?: string) => `Arbeitstage „${v}“: nimm zum Beispiel Mo-Fr oder Mo, Mi, Fr`,
       date: (v?: string) => `Datum „${v}“: nimm 31.12.2026 oder 2026-12-31`,
       dateAmbiguous: (v?: string) => `Datum „${v}“ kann Tag/Monat oder Monat/Tag sein: nimm 31.12.2026 oder 2026-12-31`,

@@ -102,6 +102,7 @@ export async function applyPeople(
   if (fresh.length === 0) return { error: "nothing" };
 
   const defaultAllowance = workspace.settings?.defaultAllowanceDays == null ? null : Number(workspace.settings.defaultAllowanceDays);
+  const year = Number(todayIn(workspace.timezone).slice(0, 4));
   const users = await db.$transaction(async (tx) => {
     const made: { email: string; name: string | null; locale: string | null }[] = [];
     for (const r of fresh) {
@@ -114,7 +115,7 @@ export async function applyPeople(
         select: { id: true, name: true, locale: true },
       });
       if (!user.name && r.name) await tx.user.update({ where: { id: user.id }, data: { name: r.name } });
-      await tx.membership.upsert({
+      const membership = await tx.membership.upsert({
         where: { workspaceId_userId: { workspaceId: workspace.id, userId: user.id } },
         create: {
           workspaceId: workspace.id,
@@ -128,6 +129,13 @@ export async function applyPeople(
         },
         update: {},
       });
+      if (r.carriedOver !== null) {
+        await tx.carriedOver.upsert({
+          where: { membershipId_year: { membershipId: membership.id, year } },
+          create: { membershipId: membership.id, year, days: r.carriedOver },
+          update: { days: r.carriedOver },
+        });
+      }
       // People without email get nothing sent; they're counted in "created" all the same.
       if (r.email) made.push({ email: r.email, name: r.name ?? user.name, locale: user.locale });
     }

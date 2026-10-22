@@ -84,6 +84,12 @@ describe("cells", () => {
 });
 
 describe("parsePeople", () => {
+  it("reads days left over from last year", () => {
+    const rows = parsePeople("E-Mail;Urlaubstage;Resturlaub\nanna@praxis.de;28;4,5\nben@praxis.de;30;\ncem@praxis.de;30;viel\n", opts);
+    expect(rows.map((r) => r.carriedOver)).toEqual([4.5, null, null]);
+    expect(rows[2].error).toEqual({ code: "carriedOver", value: "viel" });
+  });
+
   it("reads a German Excel export with header", () => {
     const rows = parsePeople(
       "Vorname;Nachname;E-Mail;Urlaubstage;Arbeitstage;Eintritt;Bundesland;Rolle\n" +

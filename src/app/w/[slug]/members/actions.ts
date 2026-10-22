@@ -170,7 +170,26 @@ export async function updateMemberAction(
   const rawEmail = String(formData.get("email") ?? "").trim().toLowerCase();
   if (rawEmail && (!isEmail(rawEmail) || isPlaceholderEmail(rawEmail))) return { error: t.errors.invalidEmail(rawEmail) };
 
-  await keepLastYearsAllowance([member], allowance, Number(todayIn(ctx.workspace.timezone).slice(0, 4)));
+  // Only sent from the "Work days · start date" section; empty means "calculate from bookings".
+  const rawCarried = formData.get("carriedOver");
+  let carried: number | null | undefined;
+  if (typeof rawCarried === "string") {
+    carried = rawCarried.trim() === "" ? null : Number(rawCarried.replace(",", "."));
+    if (carried !== null && (!Number.isFinite(carried) || carried < 0 || carried > 365 || (carried * 2) % 1 !== 0)) {
+      return { error: t.errors.carriedOver };
+    }
+  }
+
+  const year = Number(todayIn(ctx.workspace.timezone).slice(0, 4));
+  await keepLastYearsAllowance([member], allowance, year);
+  if (carried === null) await db.carriedOver.deleteMany({ where: { membershipId: member.id, year } });
+  else if (carried !== undefined) {
+    await db.carriedOver.upsert({
+      where: { membershipId_year: { membershipId: member.id, year } },
+      create: { membershipId: member.id, year, days: carried },
+      update: { days: carried },
+    });
+  }
   await db.membership.update({
     where: { id: member.id },
     data: { role, annualAllowanceDays: allowance, holidayRegion, workDays, employmentStart },

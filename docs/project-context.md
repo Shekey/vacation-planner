@@ -86,5 +86,5 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 - Selling it: `docs/sales-plan.md` (current), README "Before you sell" for Ajdin's steps; older plan in the Claude Doc "Vacation Planner: plan for selling it" (pricing, billing, GDPR, launch).
 - Selling readiness and next rounds: Claude Doc "Vacation Planner: ready to sell? Next plan" (https://claude.ai/code/artifact/9d88c5b7-44ae-4c4a-9f0c-58e448840141). Round 1 is PR #9.
 - EU hosting (Neon and Vercel functions in Frankfurt): Ajdin will do this last; build as if it is done.
-- Carry-over for someone who joined the app mid-year but was employed earlier comes from their app bookings only; set their start date and adjust the allowance if needed.
+- Carry-over is calculated from last year's app bookings, unless an admin entered the days left over from before the app (Members → "Left over from …", or a "Resturlaub" column in the import; `CarriedOver` table, per person and year). An entered number isn't capped by the workspace maximum; the expiry deadline still applies.
 - Ideas not built yet: undo after cancel, day-before reminder, admin view of who has the most days left, calendar filter, range selection on the calendar.
