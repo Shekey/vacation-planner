@@ -21,6 +21,7 @@ import { accessOf, isOverLimit } from "@/lib/plans";
 import { recordAudit, bookingDetail } from "@/lib/audit";
 import { isSampleEmail } from "@/lib/sample-team";
 import { canRestore } from "@/lib/undo";
+import { afterResponse } from "@/lib/background";
 
 export const ACTIVE_STATUSES: BookingStatus[] = ["PENDING", "APPROVED"];
 
@@ -253,9 +254,12 @@ export async function createBooking(opts: {
   );
 
   if (returned > 0) await recordVacationReturned(workspace.id, actor, target.user, input);
-  if (status === "PENDING") await notifyAdminsOfRequest(workspace, settings, target.user, booking, opts.origin);
-  if (input.type === "SICK" && actor.role !== "ADMIN") await notifyAdminsOfSickDays(workspace, settings, target.user, booking, opts.origin);
-  await announce(workspace.id, settings, target.user, booking, status === "PENDING" ? "requested" : "off", `${opts.origin}/w/${workspace.slug}/calendar`);
+  // The booking is saved: emails and chat posts go out after the response, so a slow provider doesn't hold the person up.
+  await afterResponse(async () => {
+    if (status === "PENDING") await notifyAdminsOfRequest(workspace, settings, target.user, booking, opts.origin);
+    if (input.type === "SICK" && actor.role !== "ADMIN") await notifyAdminsOfSickDays(workspace, settings, target.user, booking, opts.origin);
+    await announce(workspace.id, settings, target.user, booking, status === "PENDING" ? "requested" : "off", `${opts.origin}/w/${workspace.slug}/calendar`);
+  });
   return booking;
 }
 
@@ -326,15 +330,17 @@ export async function updateBooking(opts: {
     }),
   );
   if (returned > 0) await recordVacationReturned(workspace.id, actor, existing.membership.user, input);
-  if (status === "PENDING") await notifyAdminsOfRequest(workspace, settings, existing.membership.user, booking, opts.origin);
-  await announce(
-    workspace.id,
-    settings,
-    existing.membership.user,
-    booking,
-    status === "PENDING" ? "changedRequest" : "changed",
-    `${opts.origin}/w/${workspace.slug}/calendar`,
-  );
+  await afterResponse(async () => {
+    if (status === "PENDING") await notifyAdminsOfRequest(workspace, settings, existing.membership.user, booking, opts.origin);
+    await announce(
+      workspace.id,
+      settings,
+      existing.membership.user,
+      booking,
+      status === "PENDING" ? "changedRequest" : "changed",
+      `${opts.origin}/w/${workspace.slug}/calendar`,
+    );
+  });
   return booking;
 }
 
@@ -442,18 +448,20 @@ export async function decideBooking(opts: {
   });
   const locale = recipientLocale(booking.membership.user, opts.settings);
   const t2 = messagesFor(locale).email.decision;
-  await sendEmail({
-    to: booking.membership.user.email,
-    subject: t2.subject(opts.approve),
-    text: [
-      t2.text(formatRange(span.start, span.end, locale), opts.workspace.name, opts.approve),
-      ...(opts.note ? [t2.note(opts.note)] : []),
-      `${opts.origin}/w/${opts.workspace.slug}/me`,
-    ].join("\n\n"),
+  await afterResponse(async () => {
+    await sendEmail({
+      to: booking.membership.user.email,
+      subject: t2.subject(opts.approve),
+      text: [
+        t2.text(formatRange(span.start, span.end, locale), opts.workspace.name, opts.approve),
+        ...(opts.note ? [t2.note(opts.note)] : []),
+        `${opts.origin}/w/${opts.workspace.slug}/me`,
+      ].join("\n\n"),
+    });
+    if (opts.approve) {
+      await announce(opts.workspace.id, opts.settings, booking.membership.user, booking, "off", `${opts.origin}/w/${opts.workspace.slug}/calendar`);
+    }
   });
-  if (opts.approve) {
-    await announce(opts.workspace.id, opts.settings, booking.membership.user, booking, "off", `${opts.origin}/w/${opts.workspace.slug}/calendar`);
-  }
 }
 
 /** Approves everything still pending, used when approvals are switched off. */
