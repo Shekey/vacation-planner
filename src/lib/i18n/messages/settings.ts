@@ -56,7 +56,7 @@ export const settings = defineMessages({
               ? `${channel} didn't answer in time. Usually temporary; send a test to check.`
               : `${channel} answered with error ${error}. Send a test; if it fails again, set the webhook up again.`,
     sendTest: (channel: string) => `Send test to ${channel}`,
-    testText: (workspace: string) => `Test from Vacation Planner: time-off posts for ${workspace} will appear in this channel.`,
+    testText: (workspace: string) => `Test from Urlaubflow: time-off posts for ${workspace} will appear in this channel.`,
     testSent: (channel: string) => `Test sent. Check the ${channel} channel.`,
     testFailed: (channel: string) => `The test didn't reach ${channel}.`,
     supportHeading: "Support access",
@@ -146,7 +146,7 @@ export const settings = defineMessages({
               ? `${channel} hat nicht rechtzeitig geantwortet. Meist nur vorübergehend; schick einen Test, um es zu prüfen.`
               : `${channel} hat mit Fehler ${error} geantwortet. Schick einen Test; wenn er wieder fehlschlägt, richte den Webhook neu ein.`,
     sendTest: (channel: string) => `Test an ${channel} senden`,
-    testText: (workspace: string) => `Test von Vacation Planner: Abwesenheiten von ${workspace} erscheinen in diesem Kanal.`,
+    testText: (workspace: string) => `Test von Urlaubflow: Abwesenheiten von ${workspace} erscheinen in diesem Kanal.`,
     testSent: (channel: string) => `Test gesendet. Schau in den ${channel}-Kanal.`,
     testFailed: (channel: string) => `Der Test ist nicht bei ${channel} angekommen.`,
     supportHeading: "Support-Zugriff",

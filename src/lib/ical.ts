@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import { addDays, type ISODate } from "@/lib/dates";
 
 export type CalendarEvent = {
@@ -39,7 +40,7 @@ export function buildCalendar(name: string, events: CalendarEvent[], now = new D
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Vacation Planner//EN",
+    `PRODID:-//${BRAND.name}//EN`,
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     `X-WR-CALNAME:${esc(name)}`,
@@ -47,6 +48,7 @@ export function buildCalendar(name: string, events: CalendarEvent[], now = new D
   for (const e of events) {
     lines.push(
       "BEGIN:VEVENT",
+      // Kept from the old name: a new suffix would make subscribed calendars show every absence twice.
       `UID:${e.uid}@vacation-planner`,
       `DTSTAMP:${stamp}`,
       `DTSTART;VALUE=DATE:${compact(e.start)}`,

@@ -70,7 +70,7 @@ describe("verifyTotp", () => {
 describe("otpauthUri", () => {
   it("puts the issuer, account and secret where apps look for them", () => {
     const uri = otpauthUri("ABC234", "ops@x.de");
-    expect(uri).toBe("otpauth://totp/Vacation%20Planner:ops%40x.de?secret=ABC234&issuer=Vacation%20Planner&algorithm=SHA1&digits=6&period=30");
+    expect(uri).toBe("otpauth://totp/Urlaubflow:ops%40x.de?secret=ABC234&issuer=Urlaubflow&algorithm=SHA1&digits=6&period=30");
   });
 });
 

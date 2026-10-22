@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { BRAND } from "@/lib/brand";
 import { messagesFor } from "@/lib/i18n";
 import { requestLocaleOr } from "@/lib/i18n/server";
 import { isPlaceholderEmail } from "@/lib/no-email";
@@ -9,7 +10,7 @@ export type SendResult = { ok: true } | { ok: false; error: string };
 
 const SEND_TIMEOUT_MS = 8000;
 
-const TEST_SENDER = "Vacation Planner <onboarding@resend.dev>";
+const TEST_SENDER = `${BRAND.name} <onboarding@resend.dev>`;
 
 /** The From address for every email, including Auth.js magic links. */
 export function emailFrom(): string {

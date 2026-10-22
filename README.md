@@ -1,4 +1,4 @@
-# Vacation Planner
+# Urlaubflow
 
 Book and plan vacations inside invite-only workspaces. See the v1 plan for scope: workspaces with admins and members, invite-only membership, vacation bookings with half days and yearly allowances, and an optional approval workflow behind a per-workspace flag.
 
@@ -146,7 +146,7 @@ The privacy policy, the DPA (`/avv`) and the landing page already say data is st
 
 ### 3. Turn on email and payments (blocks selling)
 
-1. **Resend**: add your domain (*Domains* → *Add domain*), put the DNS records it shows at your domain provider, wait for "Verified", then set `EMAIL_FROM` to an address on that domain (e.g. `Vacation Planner <hallo@your-domain.de>`).
+1. **Resend**: add your domain (*Domains* → *Add domain*), put the DNS records it shows at your domain provider, wait for "Verified", then set `EMAIL_FROM` to an address on that domain (e.g. `Urlaubflow <hallo@urlaubflow.de>`).
 2. **Stripe**: activate your account (company details, bank account), then follow [Payments (Stripe)](#payments-stripe) below with the **new prices** (Team €39 / €390, Business €89 / €890).
 3. In Stripe → *Settings* → *Payment methods* turn on **SEPA Direct Debit** (the landing page promises it; practices and trades often don't pay by card). Optionally turn on *Invoices* (pay by bank transfer) for bigger customers.
 4. In Stripe → *Tax* set up Stripe Tax with your German address and VAT number, then set `STRIPE_AUTOMATIC_TAX=1`.
@@ -194,9 +194,8 @@ Without `AUTH_RESEND_KEY`, sign-in links are printed to the dev server console i
    |---|---|
    | `AUTH_SECRET` | output of `npx auth secret` (or any long random string) |
    | `AUTH_RESEND_KEY` | API key from resend.com |
-   | `EMAIL_FROM` | e.g. `Vacation Planner <vacations@yourdomain.com>` (a domain verified in Resend) |
-   | `CRON_SECRET` | any long random string (enables the daily clean-up promised in the privacy policy, the weekday Teams/Slack digest and the emails to admins before their trial ends) |
-   | `CRON_HEARTBEAT_HOUSEKEEPING`, `CRON_HEARTBEAT_HOLIDAYS`, `CRON_HEARTBEAT_DAILY_DIGEST` | optional: a ping URL per cron job from Healthchecks.io or Better Stack (one daily check each, 1 hour grace). A run that is cut short or fails pings `…/fail`, a missing run sends nothing, and either way the monitor alerts you |
+   | `EMAIL_FROM` | e.g. `Urlaubflow <hallo@urlaubflow.de>` (a domain verified in Resend) |
+   | `CRON_SECRET` | any long random string (enables the weekday Teams/Slack digest and the emails to admins before their trial ends) |
    Don't set `AUTH_URL` on Vercel unless you add a custom domain; then set it to exactly that address (e.g. `https://vacations.yourcompany.com`). A wrong `AUTH_URL` sends sign-in links and redirects to another site.
 4. **Redeploy** so the variables apply. Open the site, sign in with your email and create your workspace.
 
