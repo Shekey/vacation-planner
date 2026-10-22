@@ -1,17 +1,20 @@
 import { portionOn } from "@/lib/booking-days";
 import { activeBookingsBetween, spanOf } from "@/lib/bookings";
 import { formatDate, fromISO, isWeekend, todayIn } from "@/lib/dates";
+import { forEachWithin, reportCronRun } from "@/lib/cron";
 import { db } from "@/lib/db";
 import { isCronRequest } from "@/lib/security";
 import { messagesFor } from "@/lib/i18n";
 import { postToChannels } from "@/lib/notify";
 import { settingsOf } from "@/lib/session";
-import { sendTrialReminders } from "@/lib/trial-reminders";
 import { appOrigin } from "@/lib/url";
 
+// Must be a literal: Next.js reads it at build time. Allowed on every Vercel plan.
+export const maxDuration = 60;
+
 /**
- * Morning "who's out today" post for every workspace with a Teams or Slack webhook (weekdays only),
- * and the trial reminder emails to admins (every day, so a weekend doesn't swallow one).
+ * Morning "who's out today" post for every workspace with a Teams or Slack webhook (weekdays only).
+ * Posts go out a few at a time within a time budget; what didn't fit is reported, not silently dropped.
  * Vercel Cron calls this daily (see vercel.json) with the CRON_SECRET bearer token.
  */
 export async function GET(req: Request) {
@@ -24,15 +27,15 @@ export async function GET(req: Request) {
   });
 
   let posted = 0;
-  for (const ws of workspaces) {
+  const run = await forEachWithin(workspaces, async (ws) => {
     const channels = settingsOf(ws);
-    if (!channels.teamsWebhookUrl && !channels.slackWebhookUrl) continue; // plan without chat
+    if (!channels.teamsWebhookUrl && !channels.slackWebhookUrl) return; // plan without chat
     const today = todayIn(ws.timezone);
-    if (isWeekend(today)) continue;
+    if (isWeekend(today)) return;
     const holiday = await db.holiday.findFirst({
       where: { workspaceId: ws.id, date: fromISO(today), region: { in: [...new Set(["", ws.settings?.holidayRegion ?? ""])] } },
     });
-    if (holiday) continue;
+    if (holiday) return;
 
     const t = messagesFor(channels.locale ?? "en").chat;
     const out = (await activeBookingsBetween(ws.id, today, today))
@@ -51,7 +54,7 @@ export async function GET(req: Request) {
                 : t.digest.until(formatDate(span.end, undefined, channels.locale));
         return `• ${who} (${when})`;
       });
-    if (out.length === 0) continue;
+    if (out.length === 0) return;
 
     await postToChannels(
       channels,
@@ -60,7 +63,11 @@ export async function GET(req: Request) {
       ws.id,
     );
     posted++;
-  }
-  const trialReminders = await sendTrialReminders(origin);
-  return Response.json({ posted, trialReminders });
+  });
+  const problems = [
+    ...(run.skipped > 0 ? [`${run.skipped} of ${workspaces.length} workspaces skipped: out of time`] : []),
+    ...(run.failed > 0 ? [`${run.failed} workspaces failed`] : []),
+  ];
+  await reportCronRun("daily-digest", problems);
+  return Response.json({ posted, ...run });
 }

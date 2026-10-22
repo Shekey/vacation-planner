@@ -9,7 +9,7 @@ export const RETENTION_YEARS = 3;
 /** Sick days are health data, so they go sooner: once they no longer matter for the current or last year. */
 export const SICK_RETENTION_MONTHS = 12;
 
-/** Deletes data the app no longer needs. Runs from the monthly cron. */
+/** Deletes data the app no longer needs. Runs from the daily housekeeping cron. */
 export async function purgeOldData(now = new Date()) {
   const cutoff = new Date(now);
   cutoff.setUTCFullYear(cutoff.getUTCFullYear() - RETENTION_YEARS);

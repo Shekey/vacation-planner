@@ -121,7 +121,7 @@ export async function deleteWorkspaceAction(slug: string, _prev: ActionResult, f
   if (String(formData.get("confirmName") ?? "").trim() !== ctx.workspace.name) {
     return { error: (await getMessages()).settings.errors.confirmName };
   }
-  // Hidden, not deleted: admins can restore it for RESTORE_DAYS, then the monthly purge deletes it (src/lib/retention.ts).
+  // Hidden, not deleted: admins can restore it for RESTORE_DAYS, then the daily purge deletes it (src/lib/retention.ts).
   await cancelSubscriptionNow(ctx.workspace.stripeSubscriptionId);
   await db.workspace.update({ where: { id: ctx.workspace.id }, data: { deletedAt: new Date() } });
   await recordAudit({ workspaceId: ctx.workspace.id, actorId: ctx.user.id, action: "workspace.deleted" });

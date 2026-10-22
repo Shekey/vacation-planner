@@ -185,7 +185,8 @@ Without `AUTH_RESEND_KEY`, sign-in links are printed to the dev server console i
    | `AUTH_SECRET` | output of `npx auth secret` (or any long random string) |
    | `AUTH_RESEND_KEY` | API key from resend.com |
    | `EMAIL_FROM` | e.g. `Vacation Planner <vacations@yourdomain.com>` (a domain verified in Resend) |
-   | `CRON_SECRET` | any long random string (enables the weekday Teams/Slack digest and the emails to admins before their trial ends) |
+   | `CRON_SECRET` | any long random string (enables the daily clean-up promised in the privacy policy, the weekday Teams/Slack digest and the emails to admins before their trial ends) |
+   | `CRON_HEARTBEAT_HOUSEKEEPING`, `CRON_HEARTBEAT_HOLIDAYS`, `CRON_HEARTBEAT_DAILY_DIGEST` | optional: a ping URL per cron job from Healthchecks.io or Better Stack (one daily check each, 1 hour grace). A run that is cut short or fails pings `…/fail`, a missing run sends nothing, and either way the monitor alerts you |
    Don't set `AUTH_URL` on Vercel unless you add a custom domain; then set it to exactly that address (e.g. `https://vacations.yourcompany.com`). A wrong `AUTH_URL` sends sign-in links and redirects to another site.
 4. **Redeploy** so the variables apply. Open the site, sign in with your email and create your workspace.
 

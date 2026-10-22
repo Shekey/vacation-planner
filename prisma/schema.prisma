@@ -168,6 +168,8 @@ model WorkspaceSettings {
   holidayCountry        String?
   // Default ISO 3166-2 region for members' regional holidays, e.g. "DE-BE"; null means nationwide only.
   holidayRegion         String?
+  // When the holidays cron last refreshed this workspace's holidays; null means never.
+  holidaysRefreshedAt   DateTime?
   // Microsoft Teams webhook (Workflows or connector) for booking notifications.
   teamsWebhookUrl       String?
   // Colleagues see sick leave as "Other" without its note; admins and the person still see it as sick.
