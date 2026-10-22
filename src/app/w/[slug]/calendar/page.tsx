@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AloneHint } from "@/components/alone-hint";
 import { Legend, typeColor, typeLabel } from "@/components/badges";
+import { TeamWeeks, ViewToggle } from "./weeks";
 import { ScrollToToday } from "@/components/scroll-to-today";
 import { Avatar, SampleBadge } from "@/components/ui";
 import { portionOn } from "@/lib/booking-days";
@@ -37,6 +38,7 @@ export default async function CalendarPage({
 }: PageProps<"/w/[slug]/calendar">) {
   const { slug } = await params;
   const query = await searchParams;
+  if (query.view !== "month") return <TeamWeeks slug={slug} query={query} />;
   const { workspace, membership } = await requireMembership(slug);
   const locale = await getLocale();
   const { common, calendar: t } = await getMessages();
@@ -94,7 +96,7 @@ export default async function CalendarPage({
     year: "numeric",
     timeZone: "UTC",
   }).format(fromISO(start));
-  const nav = (m: string) => `/w/${slug}/calendar?month=${m}`;
+  const nav = (m: string) => `/w/${slug}/calendar?view=month&month=${m}`;
 
   return (
     <div className="space-y-4">
@@ -127,8 +129,9 @@ export default async function CalendarPage({
             </Link>
           )}
         </div>
-        <Legend locale={locale} withSick={membership.role === "ADMIN"} />
+        <ViewToggle slug={slug} view="month" month={month} labels={{ group: t.viewLabel, weeks: t.twoWeeks, month: t.month }} />
       </div>
+      <Legend locale={locale} withSick={membership.role === "ADMIN"} />
 
       <ScrollToToday className="overflow-x-auto overscroll-x-contain rounded-[18px] border border-border bg-surface">
         <table className="w-full border-collapse text-xs">
