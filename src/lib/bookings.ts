@@ -82,6 +82,26 @@ export async function loadHolidays(workspaceId: string, region = ""): Promise<Se
   return new Set(rows.map((h) => toISO(h.date)));
 }
 
+/** Holiday dates per region for several regions at once (each with the nationwide ones), in one query. */
+export async function loadHolidaysByRegion(workspaceId: string, regions: Iterable<string>): Promise<Map<string, Set<ISODate>>> {
+  const wanted = [...new Set(["", ...regions])];
+  const rows = await db.holiday.findMany({ where: { workspaceId, region: { in: wanted } }, select: { date: true, region: true } });
+  return new Map(wanted.map((r) => [r, new Set(rows.filter((h) => h.region === "" || h.region === r).map((h) => toISO(h.date)))]));
+}
+
+/**
+ * Each booking with `days` counted under the holidays and work days that apply now, the same way the allowance
+ * counts them. A booking's stored `daysCount` is what it was when saved; lists show this instead, so a holiday
+ * imported or a work-day change later can't make a list say 5 days while "days left" counts 4.
+ */
+export async function withDays<
+  T extends { startDate: Date; endDate: Date; startPart: string; endPart: string; membership: { holidayRegion?: string | null; workDays?: readonly number[] | null } },
+>(workspaceId: string, settings: Settings, bookings: readonly T[]): Promise<(T & { days: number })[]> {
+  if (bookings.length === 0) return [];
+  const holidays = await loadHolidaysByRegion(workspaceId, bookings.map((b) => regionOf(b.membership, settings)));
+  return bookings.map((b) => ({ ...b, days: countDays(spanOf(b), rulesFor(b.membership, settings, holidays.get(regionOf(b.membership, settings))!)) }));
+}
+
 export class BookingError extends Error {}
 
 /** New and changed bookings stop when the team has more people than its plan allows. */
@@ -168,7 +188,8 @@ async function giveBackVacation(
     const parts = spanWithout(spanOf(b), opts.sick)
       .map((span) => ({ span, daysCount: countDays(span, opts.rules) }))
       .filter((p) => p.daysCount > 0);
-    returned += Number(b.daysCount) - parts.reduce((sum, p) => sum + p.daysCount, 0);
+    // Counted now, like the allowance does, not the count stored when the vacation was booked.
+    returned += countDays(spanOf(b), opts.rules) - parts.reduce((sum, p) => sum + p.daysCount, 0);
     if (parts.length === 0) {
       // Not restorable on its own: the sick days are in the way, and the vacation was never taken.
       await tx.booking.update({
@@ -659,9 +680,8 @@ export async function allowanceSummaries(
   if (memberships.length === 0) return result;
   const ids = memberships.map((m) => m.id);
   const workspaceId = memberships[0].workspaceId;
-  const regions = [...new Set(["", ...memberships.map((m) => regionOf(m, settings))])];
-  const [holidayRows, bookings, past, entered, noExpiry] = await Promise.all([
-    holidays ? [] : db.holiday.findMany({ where: { workspaceId, region: { in: regions } }, select: { date: true, region: true } }),
+  const [byRegion, bookings, past, entered, noExpiry] = await Promise.all([
+    holidays ? null : loadHolidaysByRegion(workspaceId, memberships.map((m) => regionOf(m, settings))),
     // Last year too, for what carries over.
     db.booking.findMany({
       where: {
@@ -677,15 +697,12 @@ export async function allowanceSummaries(
     db.carriedOver.findMany({ where: { membershipId: { in: ids }, year } }),
     db.keepCarriedOver.findMany({ where: { membershipId: { in: ids }, year }, select: { membershipId: true } }),
   ]);
-  const holidaysOf = (region: string) =>
-    holidays ?? new Set(holidayRows.filter((h) => h.region === "" || h.region === region).map((h) => toISO(h.date)));
-  const byRegion = new Map(regions.map((r) => [r, holidaysOf(r)]));
   const exempt = new Set(noExpiry.map((k) => k.membershipId));
   for (const m of memberships) {
     result.set(
       m.id,
       summarize(m, settings, year, today, {
-        rules: rulesFor(m, settings, byRegion.get(regionOf(m, settings))!),
+        rules: rulesFor(m, settings, holidays ?? byRegion!.get(regionOf(m, settings))!),
         bookings: bookings.filter((b) => b.membershipId === m.id),
         past: past.filter((p) => p.membershipId === m.id),
         entered: entered.find((e) => e.membershipId === m.id) ?? null,

@@ -10,8 +10,8 @@ import { getLocale, getMessages } from "@/lib/i18n/server";
 import { requireAdmin, requireMembership } from "@/lib/session";
 
 /**
- * Bookings already saved keep their stored day count; holiday changes apply
- * to new and changed bookings, and allowances are recounted live.
+ * Holiday changes need no booking updates: lists and allowances count days
+ * live with the holidays as they are now (`withDays`, `allowanceSummary`).
  */
 function refresh(slug: string) {
   revalidatePath(`/w/${slug}`, "layout");
