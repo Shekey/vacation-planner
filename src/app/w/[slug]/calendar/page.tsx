@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AloneHint } from "@/components/alone-hint";
 import { Legend, typeColor, typeLabel } from "@/components/badges";
 import { ScrollToToday } from "@/components/scroll-to-today";
 import { Avatar, SampleBadge } from "@/components/ui";
@@ -59,6 +60,7 @@ export default async function CalendarPage({ params, searchParams }: PageProps<"
 
   return (
     <div className="space-y-4">
+      {members.length === 1 && <AloneHint slug={slug} isAdmin={isAdmin} />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Link href={nav(shiftMonth(month, -1))} className="btn-secondary px-2.5 py-1" aria-label={t.previousMonth}>

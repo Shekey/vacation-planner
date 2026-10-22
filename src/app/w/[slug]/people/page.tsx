@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { formatNumber } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { requireMembership, settingsOf } from "@/lib/session";
+import { AloneHint } from "@/components/alone-hint";
 import { PeopleSearch, type PersonRow } from "./people-search";
 
 export async function generateMetadata() {
@@ -70,5 +71,10 @@ export default async function PeoplePage({ params }: PageProps<"/w/[slug]/people
     // People who are off come first, then alphabetical.
     .sort((a, b) => Number(Boolean(b.todayStatus)) - Number(Boolean(a.todayStatus)) || a.name.localeCompare(b.name));
 
-  return <PeopleSearch people={people} />;
+  return (
+    <div className="space-y-4">
+      {members.length === 1 && <AloneHint slug={slug} isAdmin={membership.role === "ADMIN"} />}
+      <PeopleSearch people={people} />
+    </div>
+  );
 }
