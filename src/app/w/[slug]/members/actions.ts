@@ -13,7 +13,7 @@ import { isEmail } from "@/lib/import";
 import { sendEmail } from "@/lib/email";
 import { isPlaceholderEmail } from "@/lib/no-email";
 import { addWithoutEmail, attachEmail } from "@/lib/no-email-members";
-import { inviteMembers, parseEmailList, resendInvitation } from "@/lib/invitations";
+import { inviteMembers, invitePlaceholder, parseEmailList, resendInvitation } from "@/lib/invitations";
 import { recordAudit } from "@/lib/audit";
 import { coldMailLeft, MailLimitError, recordColdMail } from "@/lib/mail-limits";
 import { accessOf } from "@/lib/plans";
@@ -43,12 +43,20 @@ export async function inviteAction(slug: string, _prev: ActionResult, formData: 
   if (valid.length === 0) return { error: t.errors.noEmail };
   if (valid.length > 50) return { error: t.errors.tooMany };
 
-  // People already in, plus invitations still open, plus these must fit the plan.
+  // People already in, plus invitations still open, plus these must fit the plan. An invitation for someone added
+  // without email doesn't count twice: they are already a member.
   const access = accessOf(invite.workspace);
   const [members, open] = await Promise.all([
     db.membership.count({ where: { workspaceId: invite.workspace.id, removedAt: null, isSample: false } }),
     db.invitation.count({
-      where: { workspaceId: invite.workspace.id, acceptedAt: null, revokedAt: null, expiresAt: { gt: new Date() }, email: { notIn: valid } },
+      where: {
+        workspaceId: invite.workspace.id,
+        acceptedAt: null,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+        email: { notIn: valid },
+        membershipId: null,
+      },
     }),
   ]);
   if (members + open + valid.length > access.maxMembers) {
@@ -134,7 +142,7 @@ export async function updateMemberAction(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const { ctx } = await inviteContext(slug);
+  const { ctx, invite } = await inviteContext(slug);
   const t = (await getMessages()).members;
   const member = await db.membership.findFirst({
     where: { id: membershipId, workspaceId: ctx.workspace.id, removedAt: null },
@@ -228,6 +236,18 @@ export async function updateMemberAction(
   if (rawEmail) {
     const attached = await attachEmail(member, rawEmail, ctx.user.id);
     if ("error" in attached) return { error: t.noEmail.errors.inUse(rawEmail) };
+    if ("invite" in attached) {
+      // They already have an account: they get an invitation and join only once they accept it.
+      let sent;
+      try {
+        sent = await invitePlaceholder({ id: member.id, role }, rawEmail, invite);
+      } catch (e) {
+        if (e instanceof MailLimitError) return { error: t.errors.mailLimit(e.left, e.limit) };
+        throw e;
+      }
+      revalidatePath(`/w/${slug}`, "layout");
+      return sent.ok ? { ok: t.noEmail.invitedExisting(rawEmail) } : { error: t.errors.emailFailedTo(rawEmail, sent.error) };
+    }
     // Tell them where to sign in, in their language if they already use the app, else the workspace's.
     const user = await db.user.findUniqueOrThrow({ where: { email: rawEmail }, select: { locale: true } });
     const locale = isLocale(user.locale) ? user.locale : isLocale(ctx.workspace.settings?.locale) ? ctx.workspace.settings.locale : "en";
@@ -264,6 +284,8 @@ export async function removeMemberAction(slug: string, membershipId: string): Pr
   const now = new Date();
   await db.$transaction([
     db.membership.update({ where: { id: member.id }, data: { removedAt: now } }),
+    // An open invitation to take over someone added without email can't be accepted once they're gone.
+    db.invitation.updateMany({ where: { membershipId: member.id, acceptedAt: null, revokedAt: null }, data: { revokedAt: now } }),
     // Their future plans no longer apply; history stays. They are marked so "Restore" brings them back as they were.
     ...(["PENDING", "APPROVED"] as const).map((status) =>
       db.booking.updateMany({

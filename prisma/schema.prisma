@@ -216,6 +216,7 @@ model Membership {
   pastAllowances AllowanceYear[]
   carriedOver    CarriedOver[]
   keepCarried    KeepCarriedOver[]
+  invitations    Invitation[]
 
   @@unique([workspaceId, userId])
 }
@@ -271,9 +272,13 @@ model Invitation {
   acceptedAt  DateTime?
   revokedAt   DateTime?
   createdAt   DateTime  @default(now())
+  // Someone added without email whose address belongs to an existing account: accepting moves this
+  // placeholder membership, with its bookings, onto that account. Null for a plain invitation.
+  membershipId String?
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  invitedBy User?     @relation("InvitationSender", fields: [invitedById], references: [id], onDelete: SetNull)
+  workspace  Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedBy  User?       @relation("InvitationSender", fields: [invitedById], references: [id], onDelete: SetNull)
+  membership Membership? @relation(fields: [membershipId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, email])
 }
@@ -377,4 +382,20 @@ model ColdMail {
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, createdAt])
+}
+
+// One row per request for a sign-in link (src/lib/sign-in-limit.ts). Address and network are kept only as keyed hashes,
+// for two days, to limit how many links one address gets, one network asks for and all of us send.
+model SignInAttempt {
+  id        String   @id @default(cuid())
+  emailHash String
+  // Null when the request came without a client address (local development).
+  ipHash    String?
+  // False when the address already had enough links and none was sent.
+  sent      Boolean
+  createdAt DateTime @default(now())
+
+  @@index([emailHash, createdAt])
+  @@index([ipHash, createdAt])
+  @@index([createdAt])
 }

@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { SAMPLE_EMAIL_DOMAIN } from "@/lib/sample-team";
 import { removeSampleTeam } from "@/lib/sample-team-db";
+import { SIGN_IN_ATTEMPT_DAYS } from "@/lib/sign-in-limit";
 import { auditCutoff, restoreCutoff } from "@/lib/undo";
 
 /** Bookings and removed members are kept this long: the time employees can still claim leave in Germany. */
@@ -22,7 +23,7 @@ export async function purgeOldData(now = new Date()) {
   const expired = await db.workspace.findMany({ where: { deletedAt: { lt: restoreCutoff(now) } }, select: { id: true } });
   await removeSampleTeam(expired.map((w) => w.id));
 
-  const [workspaces, audit, bookings, members, invitations, sessions, tokens, sampleUsers, coldMails] = await db.$transaction([
+  const [workspaces, audit, bookings, members, invitations, sessions, tokens, sampleUsers, coldMails, signInAttempts] = await db.$transaction([
     db.workspace.deleteMany({ where: { id: { in: expired.map((w) => w.id) } } }),
     db.auditEvent.deleteMany({ where: { createdAt: { lt: auditCutoff(now) } } }),
     db.booking.deleteMany({ where: { OR: [{ endDate: { lt: cutoff } }, { type: "SICK", endDate: { lt: sickCutoff } }] } }),
@@ -38,6 +39,7 @@ export async function purgeOldData(now = new Date()) {
     db.user.deleteMany({ where: { email: { endsWith: `@${SAMPLE_EMAIL_DOMAIN}` }, memberships: { none: {} } } }),
     // Only the last day's count matters for the daily email limit (src/lib/mail-limits.ts).
     db.coldMail.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 7 * 86_400_000) } } }),
+    db.signInAttempt.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - SIGN_IN_ATTEMPT_DAYS * 86_400_000) } } }),
   ]);
   return {
     workspaces: workspaces.count,
@@ -49,5 +51,6 @@ export async function purgeOldData(now = new Date()) {
     tokens: tokens.count,
     sampleUsers: sampleUsers.count,
     coldMails: coldMails.count,
+    signInAttempts: signInAttempts.count,
   };
 }

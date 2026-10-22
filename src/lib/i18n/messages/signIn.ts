@@ -10,12 +10,14 @@ export const signIn = defineMessages({
         "That sign-in link has expired or was already used. Links work once, for an hour; some company mail filters open links before you do. Enter your email to get a new one.",
       EmailSignInError: "We couldn't send an email to that address. Check it for typos, or try again in a few minutes.",
       AccessDenied: "You don't have access.",
-      RateLimited: "We've already sent a few links to that address. Check your inbox and spam folder, or try again in 10 minutes.",
+      RateLimited: "Too many sign-in links were requested from your network. Please try again in an hour.",
     } as Record<string, string>,
     defaultError: "Something went wrong signing you in. Please try again.",
     checkEmail: "Check your email",
     sentTo: "We sent a sign-in link to",
     sentBody: "Open it on this device or any other. It works once and expires in an hour. You can close this tab.",
+    alreadySent:
+      "We've sent several links to this address in the last few minutes, so we didn't send another. Use the newest one; each works for an hour. You can ask for a new one again in 10 minutes.",
     notArrived: "Nothing after a few minutes? Check your spam or junk folder, or send a new link.",
     resend: "Send a new link",
     otherEmail: "Use a different email",
@@ -45,13 +47,14 @@ export const signIn = defineMessages({
       EmailSignInError:
         "Wir konnten keine E-Mail an diese Adresse schicken. Prüf sie auf Tippfehler oder versuch es in ein paar Minuten noch einmal.",
       AccessDenied: "Du hast keinen Zugriff.",
-      RateLimited:
-        "Wir haben schon mehrere Links an diese Adresse geschickt. Schau in deinen Posteingang und Spam-Ordner oder versuch es in 10 Minuten noch einmal.",
+      RateLimited: "Aus deinem Netzwerk wurden zu viele Anmeldelinks angefordert. Bitte versuch es in einer Stunde noch einmal.",
     },
     defaultError: "Bei der Anmeldung ist etwas schiefgelaufen. Bitte versuch es noch einmal.",
     checkEmail: "Schau in dein Postfach",
     sentTo: "Wir haben einen Anmeldelink geschickt an",
     sentBody: "Öffne ihn auf diesem oder einem anderen Gerät. Er funktioniert einmal und läuft nach einer Stunde ab. Du kannst diesen Tab schließen.",
+    alreadySent:
+      "Wir haben in den letzten Minuten schon mehrere Links an diese Adresse geschickt, deshalb kam kein weiterer. Nimm den neuesten; jeder gilt eine Stunde. In 10 Minuten kannst du wieder einen neuen anfordern.",
     notArrived: "Nach ein paar Minuten nichts da? Schau in den Spam- oder Junk-Ordner oder lass dir einen neuen Link schicken.",
     resend: "Neuen Link senden",
     otherEmail: "Andere E-Mail-Adresse verwenden",
