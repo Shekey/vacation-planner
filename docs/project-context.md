@@ -81,6 +81,8 @@ A multi-tenant web app where people book vacation inside a workspace (a team). A
 ## Open items
 
 - Quality backlog (audit 2026-10-22): GitHub issues #23–#37, labelled `area:*` and `priority:P1`–`P3`. Work through them by priority in small PRs that say `Closes #N`. Code-structure work (#36) follows Ajdin's craft plugin (github.com/Shekey/claude-craft) and starts only after the database tests (#25).
+- Follow-up (2026-10-22): #44 contrast and tap sizes (PR #46), #45 MCP server with personal tokens (recommended after Teams one-click approve #33; selling point for office teams, not core buyers), #47 enter last year's leftover days when switching mid-year, #48 people without email. #47 and #48 are what stand between "sign up" and "fully switched from Excel" for practices, care and trades.
+- Accessibility check: axe-core (WCAG 2.2 AA) at 390px in EN/DE, light/dark, run with Playwright against `next dev`. Keep the primary at sky-700 or darker; sky-600 fails with white text.
 - Selling it: `docs/sales-plan.md` (current), README "Before you sell" for Ajdin's steps; older plan in the Claude Doc "Vacation Planner: plan for selling it" (pricing, billing, GDPR, launch).
 - Selling readiness and next rounds: Claude Doc "Vacation Planner: ready to sell? Next plan" (https://claude.ai/code/artifact/9d88c5b7-44ae-4c4a-9f0c-58e448840141). Round 1 is PR #9.
 - EU hosting (Neon and Vercel functions in Frankfurt): Ajdin will do this last; build as if it is done.
