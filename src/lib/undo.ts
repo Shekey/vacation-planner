@@ -21,7 +21,7 @@ export function restoreDaysLeft(at: Date, now = new Date()): number {
   return Math.max(0, Math.ceil((restorableUntil(at).getTime() - now.getTime()) / DAY));
 }
 
-/** Everything that happened before this is past its window: what the monthly purge deletes. */
+/** Everything that happened before this is past its window: what the daily purge deletes. */
 export function restoreCutoff(now = new Date()): Date {
   return new Date(now.getTime() - RESTORE_DAYS * DAY);
 }

@@ -116,7 +116,48 @@ export async function syncSubscription(sub: Stripe.Subscription) {
   });
 }
 
-/** Ends a workspace's subscription right away, before the workspace is deleted, so the customer isn't charged again. */
+/** Set on a subscription that stops because its workspace was deleted, so a restore resumes only those, not one the customer cancelled. */
+const DELETED_FLAG = "endsWithDeletedWorkspace";
+
+/**
+ * When a workspace is deleted: the subscription runs out at the end of the period already paid and is never renewed,
+ * but stays alive for a restore within that period (see `resumeSubscription`). The purge cancels it when the restore window ends.
+ */
+export async function stopRenewal(subscriptionId: string | null) {
+  const s = stripe();
+  if (!s || !subscriptionId) return;
+  try {
+    const sub = await s.subscriptions.retrieve(subscriptionId);
+    if (sub.status === "canceled" || sub.status === "incomplete_expired" || sub.cancel_at_period_end || sub.cancel_at) return;
+    await s.subscriptions.update(subscriptionId, { cancel_at_period_end: true, metadata: { [DELETED_FLAG]: "1" } });
+  } catch (e) {
+    if (!(e instanceof Stripe.errors.StripeInvalidRequestError)) throw e;
+  }
+}
+
+/**
+ * When a deleted workspace is restored: renews its subscription again if deleting it stopped the renewal and the
+ * period hasn't run out. Returns whether the workspace still has a paid plan, or null when billing isn't set up.
+ */
+export async function resumeSubscription(subscriptionId: string | null): Promise<boolean | null> {
+  const s = stripe();
+  if (!s) return null;
+  if (!subscriptionId) return false;
+  let sub: Stripe.Subscription;
+  try {
+    sub = await s.subscriptions.retrieve(subscriptionId);
+    if (sub.status !== "canceled" && sub.status !== "incomplete_expired" && sub.metadata?.[DELETED_FLAG]) {
+      sub = await s.subscriptions.update(subscriptionId, { cancel_at_period_end: false, metadata: { [DELETED_FLAG]: "" } });
+    }
+  } catch (e) {
+    if (e instanceof Stripe.errors.StripeInvalidRequestError) return false;
+    throw e;
+  }
+  await syncSubscription(sub);
+  return sub.status !== "canceled" && sub.status !== "incomplete_expired" && sub.status !== "unpaid";
+}
+
+/** Ends a workspace's subscription right away, before the workspace is deleted for good, so the customer isn't charged again. */
 export async function cancelSubscriptionNow(subscriptionId: string | null) {
   const s = stripe();
   if (!s || !subscriptionId) return;
