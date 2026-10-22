@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createBooking } from "@/lib/bookings";
+import { todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { messagesFor } from "@/lib/i18n";
 import { requireAdmin } from "@/lib/session";
@@ -78,5 +79,23 @@ describe("allowance changes", () => {
     expect(await updateMemberAction(team.workspace.slug, team.member.id, {}, form({ role: "MEMBER", allowance: "20.3" }))).toEqual({
       error: t.errors.allowance,
     });
+  });
+});
+
+describe("days left over from last year", () => {
+  it("are saved for this year, cleared when emptied, and refused when not a number", async () => {
+    const team = await makeWorkspace();
+    await signedInAsAdmin(team);
+    const year = Number(todayIn(team.workspace.timezone).slice(0, 4));
+    const save = (carriedOver: string) =>
+      updateMemberAction(team.workspace.slug, team.member.id, {}, form({ role: "MEMBER", allowance: "20", carriedOver }));
+    const stored = () => db.carriedOver.findUnique({ where: { membershipId_year: { membershipId: team.member.id, year } } });
+
+    expect(await save("2,5")).toEqual({ ok: t.saved });
+    expect(Number((await stored())?.days)).toBe(2.5);
+    expect(await save("abc")).toEqual({ error: t.errors.carriedOver });
+    expect(Number((await stored())?.days)).toBe(2.5);
+    expect(await save("")).toEqual({ ok: t.saved });
+    expect(await stored()).toBeNull();
   });
 });

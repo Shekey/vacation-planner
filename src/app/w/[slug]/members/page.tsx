@@ -1,7 +1,7 @@
 import { ActionForm } from "@/components/action-form";
 import { Avatar, SampleBadge } from "@/components/ui";
 import { defaultWorkDays } from "@/lib/booking-days";
-import { formatDate, toISO } from "@/lib/dates";
+import { formatDate, todayIn, toISO } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { usingTestSender } from "@/lib/email";
 import { regionsOf } from "@/lib/holiday-regions";
@@ -45,10 +45,14 @@ export default async function MembersPage({
   const { members: t, common, importer } = await getMessages();
   const WEEKDAYS = t.weekdays;
 
+  const year = Number(todayIn(workspace.timezone).slice(0, 4));
   const [members, invites, samples, removed] = await Promise.all([
     db.membership.findMany({
       where: { workspaceId: workspace.id, removedAt: null },
-      include: { user: { select: { name: true, email: true } } },
+      include: {
+        user: { select: { name: true, email: true } },
+        carriedOver: { where: { year } },
+      },
       orderBy: { joinedAt: "asc" },
     }),
     db.invitation.findMany({
@@ -178,6 +182,7 @@ export default async function MembersPage({
             const partTime = workDaysLabel(m.workDays, WEEKDAYS);
             const started = m.employmentStart ? toISO(m.employmentStart) : "";
             const workDays = m.workDays.length ? m.workDays : teamWorkDays;
+            const carried = m.carriedOver[0] ? Number(m.carriedOver[0].days) : null;
             return (
               <li
                 key={m.id}
@@ -281,7 +286,10 @@ export default async function MembersPage({
                                 ),
                               )
                             : t.startDate,
-                        ].join(" · ")}
+                          carried !== null ? t.carriedSummary(carried, year - 1) : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </summary>
                       <div className="mt-2 space-y-2">
                         <fieldset className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -314,6 +322,21 @@ export default async function MembersPage({
                           />
                         </label>
                         <p className="text-xs opacity-60">{t.workDaysHint}</p>
+                        <label className="flex flex-wrap items-center gap-2">
+                          <span className="opacity-60">{t.carriedLabel(year - 1)}</span>
+                          <input
+                            name="carriedOver"
+                            type="number"
+                            min={0}
+                            max={365}
+                            step={0.5}
+                            defaultValue={carried ?? ""}
+                            placeholder={t.carriedAuto}
+                            className="input w-28 py-1"
+                            aria-label={t.carriedFor(who, year - 1)}
+                          />
+                        </label>
+                        <p className="text-xs opacity-60">{t.carriedHint}</p>
                       </div>
                     </details>
                   </ActionForm>

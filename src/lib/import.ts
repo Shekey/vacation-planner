@@ -53,6 +53,7 @@ const HEADERS = {
   firstName: ["firstname", "vorname", "given name"].map(norm),
   lastName: ["lastname", "nachname", "familienname", "surname"].map(norm),
   allowance: ["allowance", "yearlyallowance", "vacationdays", "days", "urlaubstage", "urlaubsanspruch", "anspruch", "tage", "jahresurlaub", "urlaub"].map(norm),
+  carriedOver: ["carriedover", "carryover", "leftover", "leftoverdays", "daysleftlastyear", "resturlaub", "restvorjahr", "resturlaubvorjahr", "ubertrag", "übertrag", "urlaubsubertrag"].map(norm),
   workDays: ["workdays", "workingdays", "arbeitstage", "arbeitstag", "wochentage"].map(norm),
   employmentStart: ["employmentstart", "startdate", "start", "eintritt", "eintrittsdatum", "beschaftigtseit", "beschäftigtseit", "firstday", "joined"].map(norm),
   region: ["region", "state", "bundesland", "land"].map(norm),
@@ -179,6 +180,7 @@ export type ImportErrorCode =
   | "sampleEmail"
   | "duplicate"
   | "allowance"
+  | "carriedOver"
   | "workDays"
   | "date"
   | "dateAmbiguous"
@@ -207,6 +209,8 @@ export type PersonRow = {
   email: string;
   name: string | null;
   allowance: number | null;
+  /** Days left over from last year (Resturlaub), when the sheet has that column. */
+  carriedOver: number | null;
   /** [] means the workspace default; null means not given. */
   workDays: number[] | null;
   employmentStart: ISODate | null;
@@ -226,7 +230,7 @@ export function matchRegion(cell: string, regions: RegionNames): string | null {
 }
 
 /**
- * Reads a pasted team list. With a header row (Name, E-Mail, Urlaubstage, Arbeitstage, Eintritt, Bundesland, Rolle, in
+ * Reads a pasted team list. With a header row (Name, E-Mail, Urlaubstage, Resturlaub, Arbeitstage, Eintritt, Bundesland, Rolle, in
  * any order, English or German) columns are matched by name; without one, the email is the cell with an @, the name the
  * first other text and the allowance the first number.
  */
@@ -236,7 +240,7 @@ export function parsePeople(
 ): PersonRow[] {
   const table = parseTable(text);
   if (table.length === 0) return [];
-  const fields = ["email", "name", "firstName", "lastName", "allowance", "workDays", "employmentStart", "region", "role"] as const;
+  const fields = ["email", "name", "firstName", "lastName", "allowance", "carriedOver", "workDays", "employmentStart", "region", "role"] as const;
   const header = mapHeader(table[0], fields);
   const body = header ? table.slice(1) : table;
   const firstLine = header ? 2 : 1;
@@ -263,6 +267,7 @@ export function parsePeople(
       email,
       name: name || null,
       allowance: null,
+      carriedOver: null,
       workDays: null,
       employmentStart: null,
       region: null,
@@ -284,6 +289,10 @@ export function parsePeople(
     row.allowance = allowance;
 
     if (header) {
+      const carriedOver = parseAllowance(get("carriedOver"));
+      if (carriedOver === "bad") return fail("carriedOver", get("carriedOver"));
+      row.carriedOver = carriedOver;
+
       const workDays = parseWorkDays(get("workDays"), opts.countWeekends);
       if (workDays === "bad") return fail("workDays", get("workDays"));
       row.workDays = get("workDays") === "" ? null : workDays;

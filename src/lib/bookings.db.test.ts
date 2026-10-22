@@ -189,6 +189,22 @@ describe("allowanceSummary", () => {
     expect(await summary(team, "2030-01-15")).toMatchObject({ carriedOver: 5, allowance: 25 });
   });
 
+  it("uses the left-over days an admin entered instead of calculating them, and they still expire", async () => {
+    // Moved over from Excel: no 2029 bookings in the app, but 8 days still open (more than the cap of 5).
+    const team = await makeWorkspace({ maxCarryOverDays: 5, carryOverExpiry: "03-31" });
+    await db.carriedOver.create({ data: { membershipId: team.member.id, year: 2030, days: 8 } });
+    await book(team, team.member, team.member, { ...week, start: "2030-03-04", end: "2030-03-05" });
+
+    expect(await summary(team, "2030-03-01")).toMatchObject({ carriedOver: 8, carriedOverEntered: true, carryOverLeft: 6, allowance: 28 });
+    expect(await summary(team, "2030-04-01")).toMatchObject({ carriedOver: 8, carryOverExpired: 6, allowance: 22, remaining: 20 });
+  });
+
+  it("counts entered left-over days even when the workspace doesn't carry days over", async () => {
+    const team = await makeWorkspace();
+    await db.carriedOver.create({ data: { membershipId: team.member.id, year: 2030, days: 2.5 } });
+    expect(await summary(team, "2030-06-01")).toMatchObject({ carriedOver: 2.5, allowance: 22.5 });
+  });
+
   it("carries nothing over from before someone started, and pro-rates their first year", async () => {
     const team = await makeWorkspace({ maxCarryOverDays: 5 });
     const starter = await db.membership.update({ where: { id: team.member.id }, data: { employmentStart: new Date("2030-07-01") } });
