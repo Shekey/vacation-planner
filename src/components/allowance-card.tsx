@@ -61,9 +61,9 @@ export function AllowanceCard({
             className="flex h-2.5 overflow-hidden rounded-full bg-black/10 dark:bg-white/15"
             aria-hidden
           >
-            <div className="bg-sky-500" style={{ width: `${pct(used)}%` }} />
+            <div className="bg-success" style={{ width: `${pct(used)}%` }} />
             <div
-              className="pending-stripes bg-sky-500/70"
+              className="pending-stripes bg-success/70"
               style={{ width: `${pct(pending)}%` }}
             />
           </div>

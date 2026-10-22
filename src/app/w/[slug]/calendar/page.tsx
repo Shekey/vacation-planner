@@ -71,7 +71,7 @@ export default async function CalendarPage({
   };
   const offDayClass = (d: string, region = "") =>
     holidayOn(d, region)
-      ? "bg-rose-500/10"
+      ? "bg-danger-soft"
       : isWeekend(d)
         ? "bg-black/5 dark:bg-white/5"
         : "";
@@ -130,7 +130,7 @@ export default async function CalendarPage({
         <Legend locale={locale} withSick={membership.role === "ADMIN"} />
       </div>
 
-      <ScrollToToday className="overflow-x-auto overscroll-x-contain rounded-xl border border-border bg-surface shadow-sm">
+      <ScrollToToday className="overflow-x-auto overscroll-x-contain rounded-[18px] border border-border bg-surface">
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr>
@@ -149,7 +149,7 @@ export default async function CalendarPage({
                   title={holidayOn(d, "")}
                   className={`min-w-6 p-1 text-center font-normal ${offDayClass(d)} ${
                     d === today
-                      ? "font-bold text-primary-ink"
+                      ? "bg-primary-soft font-bold text-primary-ink"
                       : "text-muted"
                   }`}
                 >
@@ -176,7 +176,7 @@ export default async function CalendarPage({
               return (
                 <tr
                   key={m.id}
-                  className="border-t border-black/5 dark:border-white/10"
+                  className="border-t border-border"
                 >
                   <th
                     scope="row"
@@ -218,7 +218,7 @@ export default async function CalendarPage({
                     const weekendClass = offDayClass(d, region);
                     const holiday = holidayOn(d, region);
                     const todayClass =
-                      d === today && !weekendClass ? "bg-primary/[0.07]" : "";
+                      d === today && !weekendClass ? "bg-primary-soft" : "";
                     const title = hits
                       .map(
                         ({ b, portion }) =>
@@ -237,7 +237,7 @@ export default async function CalendarPage({
                         {hits.length === 0 && canBook && (
                           <Link
                             href={`/w/${slug}/book?start=${d}${m.id !== membership.id ? `&member=${m.id}` : ""}`}
-                            className="block h-8 hover:bg-sky-500/10"
+                            className="block h-8 hover:bg-primary-soft"
                             aria-label={t.bookDay(d, label(m))}
                           />
                         )}
@@ -245,9 +245,9 @@ export default async function CalendarPage({
                         {hits.map(({ b, portion }) => {
                           const block = (
                             <div
-                              className={`absolute top-1.5 h-5 ${typeColor(b.type)} ${
+                              className={`absolute inset-y-1.5 rounded-md ${typeColor(b.type)} ${
                                 b.status === "PENDING"
-                                  ? "pending-stripes opacity-70"
+                                  ? "pending-stripes opacity-70 ring-1 ring-warning/50"
                                   : ""
                               } ${portion === "AM" ? "left-0 right-1/2" : portion === "PM" ? "left-1/2 right-0" : "inset-x-0"}`}
                             />

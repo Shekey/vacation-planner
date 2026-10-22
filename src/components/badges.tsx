@@ -3,9 +3,9 @@ import type { SpecialReason } from "@/generated/prisma/enums";
 import { messagesFor, type Locale } from "@/lib/i18n";
 
 const typeStyles = {
-  VACATION: { className: "bg-sky-500" },
+  VACATION: { className: "bg-success" },
   SICK: { className: "bg-amber-500" },
-  SPECIAL: { className: "bg-emerald-500" },
+  SPECIAL: { className: "bg-accent" },
   OTHER: { className: "bg-violet-500" },
 } as const;
 
@@ -62,7 +62,7 @@ export function Legend({ locale, withSick }: { locale: Locale; withSick?: boolea
         </span>
       ))}
       <span className="flex items-center gap-1.5">
-        <span className="pending-stripes inline-block h-2.5 w-4 rounded-sm bg-sky-500" /> {t.legend.pending}
+        <span className="pending-stripes inline-block h-2.5 w-4 rounded-sm bg-success" /> {t.legend.pending}
       </span>
       <span className="flex items-center gap-1.5">
         <span className="inline-block h-2.5 w-4 rounded-sm bg-rose-500/20" /> {t.legend.holiday}

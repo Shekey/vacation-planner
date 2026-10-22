@@ -92,9 +92,19 @@ label:has(> input[type="radio"]) {
   cursor: pointer;
 }
 
-/* The phone's bottom bar is fixed; room under the footer keeps the legal links clear of it. */
-@media (width < 40rem) {
-  body:has(.bottom-nav) footer {
+/* Workspace pages bring their own sidebar, top bar and footer (src/app/w/[slug]/layout.tsx), so the site header, footer and page padding step aside. */
+body:has(.app-shell) > header,
+body:has(.app-shell) > footer {
+  display: none;
+}
+body:has(.app-shell) > main {
+  max-width: none;
+  padding: 0;
+}
+
+/* The bottom bar is fixed below the sidebar breakpoint; room under the footer keeps the legal links clear of it. */
+@media (width < 64rem) {
+  .app-shell footer {
     padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));
   }
 }
