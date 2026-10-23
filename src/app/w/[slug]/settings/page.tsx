@@ -66,6 +66,7 @@ export default async function SettingsPage({
   const { workspace } = await requireAdmin(slug);
   const settings = settingsOf(workspace);
   const t = (await getMessages()).settings;
+  const leaveTypesText = (await getMessages()).leaveTypes;
   const locale = workspace.settings?.locale;
   const [expiryMonth, expiryDay] = settings.carryOverExpiry
     ? settings.carryOverExpiry.split("-")
@@ -334,6 +335,13 @@ export default async function SettingsPage({
       </ActionForm>
 
       <div className="max-w-2xl space-y-6">
+      <Link href={`/w/${slug}/leave-types`} className="card flex items-center justify-between gap-4 hover:border-primary/50">
+        <span className="space-y-1">
+          <span className="block font-medium">{leaveTypesText.settingsLink}</span>
+          <span className="block text-sm text-muted">{leaveTypesText.settingsHint}</span>
+        </span>
+        <ChevronRight aria-hidden className="size-5 shrink-0 text-muted" />
+      </Link>
       {chat && (teamsWebhookUrl || slackWebhookUrl) && (
         <section className="card space-y-3">
           <h2 className="font-medium">{t.chatCheckHeading}</h2>

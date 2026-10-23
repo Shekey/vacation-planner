@@ -1,4 +1,4 @@
-import { activeBookingsBetween, allowanceSummaries, regionOf, spanOf } from "@/lib/bookings";
+import { activeBookingsBetween, allowanceSummaries, leaveTypeUsage, pickableLeaveTypes, regionOf, spanOf } from "@/lib/bookings";
 import { addDays, fromISO, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { getLocale, getMessages } from "@/lib/i18n/server";
@@ -10,8 +10,11 @@ import { notFound } from "next/navigation";
 
 type Ctx = Awaited<ReturnType<typeof requireMembership>>;
 
-/** Everything the booking form needs: members (with allowance), team bookings for clash hints. */
-export async function loadBookingFormData(ctx: Ctx) {
+/**
+ * Everything the booking form needs: members (with allowance), team bookings for clash hints, and the admin's own leave
+ * types with what each person used of them. `keepLeaveType` keeps an archived type on the booking being edited.
+ */
+export async function loadBookingFormData(ctx: Ctx, keepLeaveType?: string | null) {
   const { workspace, membership } = ctx;
   const settings = settingsOf(workspace);
   // Admins and approvers book for others (#77); sick days for others stay with admins; viewers don't book.
@@ -67,5 +70,10 @@ export async function loadBookingFormData(ctx: Ctx) {
     vacation: b.type === "VACATION",
   }));
 
-  return { settings, forOthers, roles, today, currentYear, members, team, holidays, memberCount };
+  const [leaveTypes, leaveTypeUsed] = await Promise.all([
+    pickableLeaveTypes(workspace.id, keepLeaveType),
+    leaveTypeUsage(workspace.id, currentYear, forOthers ? undefined : [membership.id]),
+  ]);
+
+  return { settings, forOthers, roles, today, currentYear, members, team, holidays, memberCount, leaveTypes, leaveTypeUsed };
 }
