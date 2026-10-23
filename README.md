@@ -59,6 +59,11 @@ Register `https://urlaubflow.de` as the site in both. Until the domain is live, 
 
 Redeploy, then try both buttons with an account that is already in a workspace. You should land in that workspace and not get a new, empty account.
 
+**Outlook calendar (#35)** uses the same Microsoft app. Once `AUTH_MICROSOFT_ENTRA_ID_ID` and `_SECRET` are set, everyone gets an *Outlook calendar* section on their Account page: approved time off goes into their own calendar as an all-day "Out of office" event, and, if they tick it, their automatic reply is scheduled for the next time off. In the app registration:
+1. Add a second *Web* redirect URI: `https://urlaubflow.de/api/outlook/callback` (and the Vercel and localhost ones while testing).
+2. Under *API permissions* → *Microsoft Graph* → *Delegated*, add `offline_access`, `User.Read`, `Calendars.ReadWrite` and `MailboxSettings.ReadWrite`. None needs an admin; each person approves for themselves. Some companies only allow apps their admin approved, so their admin may have to approve it once.
+3. Changes arrive right after each approval, change or cancellation; the nightly housekeeping run catches the rest (for example automatic approvals). The refresh token is stored encrypted with a key derived from `AUTH_SECRET`, so changing `AUTH_SECRET` means everyone connects Outlook again.
+
 ### Beta mode (free beta) and how to end it
 
 The app starts in **beta mode**: `NEXT_PUBLIC_ENABLE_BETA_MODE` is unset or anything except `false`. In beta mode:

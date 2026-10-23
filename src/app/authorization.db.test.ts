@@ -95,6 +95,9 @@ async function makeWorld() {
 const matrix: Record<string, Entry> = {
   "account/actions.ts#saveNameAction": { allowed: "self", call: () => account.saveNameAction({}, form({ name: "Changed" })) },
   "account/actions.ts#deleteAccountAction": { allowed: "self", call: () => account.deleteAccountAction({}, form({ confirmEmail: "nobody@test.invalid" })) },
+  "account/actions.ts#connectOutlookAction": { allowed: "self", call: () => account.connectOutlookAction({}, form({ autoReply: "on" })) },
+  "account/actions.ts#stopAutoReplyAction": { allowed: "self", call: () => account.stopAutoReplyAction() },
+  "account/actions.ts#disconnectOutlookAction": { allowed: "self", call: () => account.disconnectOutlookAction() },
 
   "admin/actions.ts#extendTrialAction": { allowed: "operator", call: (w) => operator.extendTrialAction(w.ours.workspace.id, {}, form({ days: "30" })) },
   "admin/actions.ts#restoreWorkspaceAsOperatorAction": { allowed: "operator", call: (w) => operator.restoreWorkspaceAsOperatorAction(w.ours.workspace.id) },

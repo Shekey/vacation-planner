@@ -31,6 +31,12 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
             photo. During the sign-in, three short-lived cookies protect it against misuse.
           </li>
           <li>
+            Outlook calendar, only if you connect it on your account page: we store the address of your Microsoft account and an encrypted
+            access key, so we can put your approved time off into your own calendar as “Out of office” (without the kind of time off) and,
+            if you choose it, schedule your automatic reply. If you named a stand-in, the reply to people in your organisation names them.
+            We only change entries and replies we made, and remove our upcoming entries when you disconnect.
+          </li>
+          <li>
             Cookies: only technically necessary ones (§ 25(2) no. 2 TDDDG): the session cookie that keeps you signed in, two cookies that
             protect the sign-in form (CSRF protection and return address), and a cookie with your chosen language.
           </li>
@@ -84,6 +90,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
         <h2>3. Purposes and legal bases</h2>
         <ul>
           <li>Providing the service and sign-in via email link, Microsoft or Google: Art. 6(1)(b) GDPR (contract).</li>
+          <li>Your time off in your Outlook calendar and the automatic reply: Art. 6(1)(a) GDPR (consent, withdrawn by disconnecting).</li>
           <li>Billing and retention of invoices: Art. 6(1)(c) GDPR (legal obligations under the HGB and AO).</li>
           <li>Security, abuse prevention and troubleshooting: Art. 6(1)(f) GDPR (legitimate interest).</li>
           <li>
@@ -144,6 +151,13 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
           und kein Profilbild. Während der Anmeldung schützen drei kurzlebige Cookies sie vor Missbrauch.
         </li>
         <li>
+          Outlook-Kalender, nur wenn Sie ihn in Ihrem Konto verbinden: Wir speichern die Adresse Ihres Microsoft-Kontos und einen
+          verschlüsselten Zugangsschlüssel, um Ihre genehmigte Abwesenheit als „Abwesend“ in Ihren eigenen Kalender einzutragen (ohne die Art
+          der Abwesenheit) und, wenn Sie es wählen, Ihre automatische Antwort zu planen. Haben Sie eine Vertretung angegeben, nennt die
+          Antwort an Personen Ihrer Organisation diese. Wir ändern nur Einträge und Antworten, die wir angelegt haben, und entfernen unsere
+          kommenden Einträge, wenn Sie die Verbindung trennen.
+        </li>
+        <li>
           Cookies: nur technisch notwendige (§ 25 Abs. 2 Nr. 2 TDDDG): das Sitzungs-Cookie, das Sie angemeldet hält, zwei Cookies, die das
           Anmeldeformular schützen (CSRF-Schutz und Rücksprungadresse), und ein Cookie mit der gewählten Sprache.
         </li>
@@ -202,6 +216,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
       <h2>3. Zwecke und Rechtsgrundlagen</h2>
       <ul>
         <li>Bereitstellung des Dienstes und Anmeldung per E-Mail-Link, Microsoft oder Google: Art. 6 Abs. 1 lit. b DSGVO (Vertrag).</li>
+        <li>Ihre Abwesenheit im Outlook-Kalender und die automatische Antwort: Art. 6 Abs. 1 lit. a DSGVO (Einwilligung, widerrufen durch Trennen).</li>
         <li>Abrechnung und Aufbewahrung von Rechnungen: Art. 6 Abs. 1 lit. c DSGVO (gesetzliche Pflichten nach HGB und AO).</li>
         <li>Sicherheit, Missbrauchsschutz und Fehlersuche: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse).</li>
         <li>

@@ -6,6 +6,7 @@ import { getLocale, getMessages } from "@/lib/i18n/server";
 import { setLanguage } from "../language/actions";
 import { requireUser } from "@/lib/session";
 import { deleteAccountAction, saveNameAction } from "./actions";
+import { OutlookSection } from "./outlook-section";
 
 export async function generateMetadata() {
   return { title: (await getMessages()).account.title };
@@ -15,7 +16,7 @@ export default async function AccountPage({
   searchParams,
 }: PageProps<"/account">) {
   const { id } = await requireUser();
-  const { next } = await searchParams;
+  const { next, outlook } = await searchParams;
   const [user, plan] = await Promise.all([
     db.user.findUniqueOrThrow({
       where: { id },
@@ -87,6 +88,8 @@ export default async function AccountPage({
 
       {user.name && (
         <>
+          <OutlookSection userId={id} locale={locale} outcome={typeof outlook === "string" ? outlook : undefined} />
+
           <section className="card space-y-2">
             <h2 className="font-medium">{t.yourData}</h2>
             <p className="text-sm text-muted">{t.yourDataBody}</p>

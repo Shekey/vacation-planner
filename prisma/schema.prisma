@@ -37,6 +37,7 @@ model User {
   createdBookings   Booking[]    @relation("BookingCreator")
   decidedBookings   Booking[]    @relation("BookingDecider")
   auditEvents       AuditEvent[]
+  outlook           OutlookConnection?
 }
 
 model Account {
@@ -455,4 +456,46 @@ model SignInAttempt {
   @@index([emailHash, createdAt])
   @@index([ipHash, createdAt])
   @@index([createdAt])
+}
+
+/// A person's own Outlook calendar (#35), connected on Account. Approved time off becomes an "Out of office" event there,
+/// and with `autoReply` the automatic reply is scheduled for it. The refresh token is stored encrypted (src/lib/outlook.ts).
+model OutlookConnection {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  // The Microsoft account it writes to, shown on Account; it can differ from the sign-in address.
+  accountEmail   String
+  refreshToken   String
+  // Also schedule the automatic reply (needs MailboxSettings.ReadWrite, asked for only when chosen).
+  autoReply      Boolean   @default(false)
+  // The automatic reply this app last scheduled, so one the person set themselves is never overwritten or switched off.
+  autoReplyStart DateTime?
+  autoReplyEnd   DateTime?
+  // Set when Microsoft stopped accepting the token (password change, access removed); syncing waits for a reconnect.
+  brokenAt       DateTime?
+  // One sync at a time per person; a sync asked for meanwhile runs right after.
+  syncingUntil   DateTime?
+  syncAskedAt    DateTime?
+  lastSyncedAt   DateTime?
+  createdAt      DateTime  @default(now())
+
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events OutlookEvent[]
+}
+
+/// An event this app made in someone's Outlook calendar for one booking. No foreign key to the booking: when the booking
+/// goes away, the row is what tells the next sync to delete the event.
+model OutlookEvent {
+  connectionId String
+  bookingId    String
+  // Microsoft's id of the event.
+  eventId      String
+  // Hash of what was sent, so an unchanged booking isn't written again.
+  hash         String
+  // Last day of the booking: events of time off that is over stay in the calendar and are only forgotten here.
+  endDate      DateTime @db.Date
+
+  connection OutlookConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@id([connectionId, bookingId])
 }
