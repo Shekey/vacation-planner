@@ -64,10 +64,13 @@ export type BookingFormProps = {
   leaveTypes: { id: string; name: string; color: string; countsAsVacation: boolean; allowanceDays: number | null; needsApproval: boolean }[];
   /** Days used this year of each leave type with its own allowance, by membership id and leave type id. */
   leaveTypeUsed: Record<string, Record<string, number>>;
+  /** Everyone in the workspace, to pick a stand-in from (#34). */
+  colleagues: { id: string; name: string }[];
   initial: {
     membershipId: string;
     type: TypeChoice;
     specialReason?: SpecialReason | null;
+    standInId?: string | null;
     start: ISODate;
     end: ISODate;
     startPart: "FULL" | "PM";
@@ -93,6 +96,7 @@ export function BookingForm(props: BookingFormProps) {
   const [type, setType] = useState<TypeChoice>(initial.type);
   const leaveType = type.startsWith("lt:") ? props.leaveTypes.find((l) => `lt:${l.id}` === type) : undefined;
   const countsAsVacation = type === "VACATION" || !!leaveType?.countsAsVacation;
+  const [standInId, setStandInId] = useState(initial.standInId ?? "");
   const [start, setStart] = useState(initial.start);
   const [end, setEnd] = useState(initial.end);
   const [startsPm, setStartsPm] = useState(initial.startPart === "PM");
@@ -175,6 +179,14 @@ export function BookingForm(props: BookingFormProps) {
         ((props.leaveTypeUsed[membershipId]?.[leaveType.id] ?? 0) - (initial.ownTypeDaysThisYear ?? 0)) -
         days
       : null;
+
+  // The stand-in is off on some of these days themselves.
+  const standInAway = useMemo(() => {
+    if (!standInId || !start || !end || end < start || eachDay(start, end).length > 366) return false;
+    const days = eachDay(start, end);
+    return props.team.some((b) => b.membershipId === standInId && b.id !== initial.bookingId && days.some((d) => portionOn(b, d)));
+  }, [standInId, start, end, props.team, initial.bookingId]);
+  const standInName = props.colleagues.find((c) => c.id === standInId)?.name;
 
   const sick = type === "SICK";
   const forSomeoneElse = membershipId !== props.roles.selfId;
@@ -378,6 +390,24 @@ export function BookingForm(props: BookingFormProps) {
           </div>
         ))}
 
+      {/* Optional, for teams where someone must cover (#34); there's nobody to pick in a team of one. */}
+      {props.colleagues.length > 1 && (
+        <label className="block space-y-1">
+          <span className="text-sm font-medium">{t.standIn}</span>
+          <select className="input" name="standInId" value={standInId} onChange={(e) => setStandInId(e.target.value)}>
+            <option value="">{t.noStandIn}</option>
+            {props.colleagues
+              .filter((c) => c.id !== membershipId)
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+          </select>
+          <span className="block text-xs text-muted">{t.standInHint}</span>
+        </label>
+      )}
+
       <div
         className="space-y-1 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm"
         aria-live="polite"
@@ -450,6 +480,9 @@ export function BookingForm(props: BookingFormProps) {
               <p className="text-amber-700 dark:text-amber-400">
                 {t.alsoOff(overlapping.join(", "))}
               </p>
+            )}
+            {standInAway && standInName && (
+              <p className="text-amber-700 dark:text-amber-400">{t.standInAway(standInName)}</p>
             )}
             {willBePending && <p className="text-muted">{t.needsApproval}</p>}
             {sick && vacationReturned > 0 && (

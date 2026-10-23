@@ -32,12 +32,16 @@ export default async function MyTimeOffPage({
   const today = todayIn(workspace.timezone);
   const year = Number(today.slice(0, 4));
 
-  const [summary, nextYear, saved, typeUsed, ownAllowanceTypes] = await Promise.all([
+  const [summary, nextYear, saved, typeUsed, ownAllowanceTypes, covering] = await Promise.all([
     allowanceSummary(membership, settings, year, undefined, today),
     allowanceSummary(membership, settings, year + 1, undefined, today),
     db.booking.findMany({
       where: { membershipId: membership.id },
-      include: { decidedBy: { select: { name: true, email: true } }, leaveType: { select: { name: true, color: true } } },
+      include: {
+        decidedBy: { select: { name: true, email: true } },
+        leaveType: { select: { name: true, color: true } },
+        standIn: { select: { user: { select: { name: true, email: true } } } },
+      },
       // Same-day half days: afternoon sorts first here, so the reversed upcoming list shows morning first.
       orderBy: [{ startDate: "desc" }, { startPart: "desc" }],
       take: 100,
@@ -45,6 +49,13 @@ export default async function MyTimeOffPage({
     leaveTypeUsage(workspace.id, year, [membership.id]),
     // Leave types with their own days per year (#34).
     db.leaveType.findMany({ where: { workspaceId: workspace.id, allowanceDays: { not: null }, archivedAt: null }, orderBy: { createdAt: "asc" } }),
+    // Colleagues' approved time off where this person is the stand-in (#34), from today on.
+    db.booking.findMany({
+      where: { standInId: membership.id, status: "APPROVED", endDate: { gte: fromISO(today) }, membership: { removedAt: null } },
+      select: { id: true, startDate: true, endDate: true, membership: { select: { user: { select: { name: true, email: true } } } } },
+      orderBy: { startDate: "asc" },
+      take: 20,
+    }),
   ]);
   // Counted like the allowance card above, so the list and "days left" agree.
   const bookings = await withDays(
@@ -82,6 +93,7 @@ export default async function MyTimeOffPage({
             {typeLabel(b.type, locale, b.specialReason, b.leaveType)} ·{" "}
             {common.days(formatNumber(b.days, locale))}
             {half && ` · ${half}`}
+            {b.standIn && ` · ${common.standIn(b.standIn.user.name ?? b.standIn.user.email)}`}
             {b.note && ` · ${b.note}`}
             {b.decisionNote && ` · ${t.adminNote(b.decisionNote)}`}
           </div>
@@ -171,6 +183,20 @@ export default async function MyTimeOffPage({
           </ul>
         )}
       </section>
+
+      {covering.length > 0 && (
+        <section className="card space-y-2">
+          <h2 className="font-medium">{t.covering}</h2>
+          <ul className="divide-y divide-border text-sm">
+            {covering.map((c) => (
+              <li key={c.id} className="flex flex-wrap justify-between gap-2 py-2">
+                <span className="font-medium">{c.membership.user.name ?? c.membership.user.email}</span>
+                <span className="text-muted">{formatRange(toISO(c.startDate), toISO(c.endDate), locale)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="card space-y-3">
         <h2 className="font-medium">{t.feedTitle}</h2>

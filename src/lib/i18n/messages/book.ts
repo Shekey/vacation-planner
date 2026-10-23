@@ -25,6 +25,10 @@ export const book = defineMessages({
     weekendsNotCounted: " (weekends not counted)",
     holidaysNotCounted: " (holidays not counted)",
     overAllowance: (n: string, year: number) => `This is ${n} ${n === "1" ? "day" : "days"} over the ${year} allowance.`,
+    standIn: "Stand-in (optional)",
+    noStandIn: "No stand-in",
+    standInHint: "Who covers during this time off. They get an email once it's approved, without the reason.",
+    standInAway: (name: string) => `${name} is off on some of these days too.`,
     daysLeftAfter: (n: string, year: number) => `${n} vacation ${n === "1" ? "day" : "days"} left in ${year} after this.`,
     typeDaysLeftAfter: (type: string, n: string, year: number) => `${n} ${n === "1" ? "day" : "days"} of ${type} left in ${year} after this.`,
     overTypeAllowance: (type: string, n: string, year: number) => `This is ${n} ${n === "1" ? "day" : "days"} over the ${year} allowance for ${type}.`,
@@ -69,6 +73,10 @@ export const book = defineMessages({
     holidaysNotCounted: " (Feiertage nicht gezählt)",
     overAllowance: (n: string, year: number) =>
       `Damit liegst du ${n} ${n === "1" ? "Tag" : "Tage"} über deinem Urlaubsanspruch für ${year}.`,
+    standIn: "Vertretung (optional)",
+    noStandIn: "Keine Vertretung",
+    standInHint: "Wer in dieser Zeit vertritt. Die Vertretung bekommt eine E-Mail, sobald es genehmigt ist, ohne den Grund.",
+    standInAway: (name: string) => `${name} ist an einigen dieser Tage auch nicht da.`,
     daysLeftAfter: (n: string, year: number) =>
       n === "1" ? `Danach bleibt dir 1 Urlaubstag für ${year}.` : `Danach bleiben dir ${n} Urlaubstage für ${year}.`,
     typeDaysLeftAfter: (type: string, n: string, year: number) => `Danach ${n === "1" ? "bleibt" : "bleiben"} ${year} noch ${n} ${n === "1" ? "Tag" : "Tage"} ${type}.`,

@@ -255,7 +255,10 @@ export async function TeamWeeks({ slug, query }: { slug: string; query: Record<s
                           const vacation = b.type === "VACATION";
                           const style = { left: `calc(${left * 100}% + 3px)`, width: `calc(${width * 100}% - 6px)` };
                           const name = typeLabel(b.type, locale, b.specialReason, b.leaveType);
-                          const title = t.booking(label(m), name, null, pending) + (b.note ? ` – ${b.note}` : "");
+                          const title =
+                            t.booking(label(m), name, null, pending) +
+                            (b.standIn ? ` · ${common.standIn(b.standIn.user.name ?? b.standIn.user.email)}` : "") +
+                            (b.note ? ` – ${b.note}` : "");
                           const body: ReactNode = (
                             <>
                               {pending ? (

@@ -75,5 +75,14 @@ export async function loadBookingFormData(ctx: Ctx, keepLeaveType?: string | nul
     leaveTypeUsage(workspace.id, currentYear, forOthers ? undefined : [membership.id]),
   ]);
 
-  return { settings, forOthers, roles, today, currentYear, members, team, holidays, memberCount, leaveTypes, leaveTypeUsed };
+  // Anyone in the team can be a stand-in (#34), whoever is booking.
+  const colleagues = (
+    await db.membership.findMany({
+      where: { workspaceId: workspace.id, removedAt: null },
+      select: { id: true, user: { select: { name: true, email: true } } },
+      orderBy: { user: { email: "asc" } },
+    })
+  ).map((m) => ({ id: m.id, name: m.user.name ?? m.user.email }));
+
+  return { settings, forOthers, roles, today, currentYear, members, team, holidays, memberCount, leaveTypes, leaveTypeUsed, colleagues };
 }
