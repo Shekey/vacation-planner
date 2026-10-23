@@ -12,6 +12,36 @@ export async function generateMetadata() {
   return { title: (await getMessages()).signIn.title };
 }
 
+/** The Google and Microsoft sign-in buttons from the design. Inactive until the providers are wired up: pass an `action` to enable one. */
+function ProviderButtons({ google, microsoft, orEmail }: { google: string; microsoft: string; orEmail: string }) {
+  const base =
+    "flex h-[52px] w-full items-center justify-center gap-3 rounded-[12px] border border-border bg-surface text-[15px] font-semibold disabled:cursor-not-allowed disabled:opacity-60";
+  return (
+    <div className="space-y-3">
+      <button type="button" disabled className={base}>
+        <span aria-hidden className="text-[21px] font-bold text-primary">
+          G
+        </span>
+        {google}
+      </button>
+      <button type="button" disabled className={base}>
+        <span aria-hidden className="grid grid-cols-2 gap-0.5">
+          <span className="size-2 bg-[#f25022]" />
+          <span className="size-2 bg-[#7fba00]" />
+          <span className="size-2 bg-[#00a4ef]" />
+          <span className="size-2 bg-[#ffb900]" />
+        </span>
+        {microsoft}
+      </button>
+      <div className="flex items-center gap-3 py-2 text-xs text-muted">
+        <hr className="flex-1 border-border" />
+        {orEmail}
+        <hr className="flex-1 border-border" />
+      </div>
+    </div>
+  );
+}
+
 const action = "min-h-[50px] w-full gap-[9px] rounded-[12px] px-[18px] py-3 text-[15px]";
 
 export default async function SignInPage({ searchParams }: PageProps<"/sign-in">) {
@@ -86,6 +116,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
           </h1>
           <p className="text-[15px] text-muted">{redirectTo.startsWith("/invite/") ? t.inviteIntro : t.intro}</p>
         </div>
+        <ProviderButtons google={t.google} microsoft={t.microsoft} orEmail={t.orEmail} />
         {typeof error === "string" && (
           <p role="alert" className="rounded-[12px] bg-danger-soft p-3 text-sm text-danger">
             {(Object.hasOwn(t.errors, error) ? t.errors[error] : undefined) ?? t.defaultError}
