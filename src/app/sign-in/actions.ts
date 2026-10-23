@@ -3,7 +3,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
-import { signIn } from "@/auth";
+import { auth, signIn } from "@/auth";
+import { enabledOAuthProviders, isOAuthProvider } from "@/lib/oauth";
 import { safeRedirectPath } from "@/lib/security";
 import { checkSignInAttempt, clientIp } from "@/lib/sign-in-limit";
 
@@ -28,4 +29,14 @@ export async function sendSignInLinkAction(formData: FormData) {
   // Auth.js answers with its verify-request page when the email went out, else with ?error=… for the form to show.
   if (next.pathname.endsWith("/verify-request")) redirect(`/sign-in?${new URLSearchParams({ sent: "1", email: address, callbackUrl })}`);
   redirect(`${next.pathname}${next.search}`);
+}
+
+/** Starts signing in with Google or Microsoft, when that provider's keys are set. */
+export async function signInWithProviderAction(formData: FormData) {
+  const provider = formData.get("provider");
+  const requested = safeRedirectPath(formData.get("callbackUrl"));
+  if (!isOAuthProvider(provider) || !enabledOAuthProviders().includes(provider)) redirect("/sign-in");
+  // Signed in already, Auth.js would add this login to the current account instead of signing in.
+  if ((await auth())?.user) redirect(requested);
+  await signIn(provider, { redirectTo: requested === "/" ? "/welcome" : requested });
 }
