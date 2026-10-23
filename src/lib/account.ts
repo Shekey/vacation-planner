@@ -1,6 +1,7 @@
 import { toISO } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { getMessages } from "@/lib/i18n/server";
+import { disconnectOutlook } from "@/lib/outlook-db";
 import { removeSampleTeam } from "@/lib/sample-team-db";
 import { cancelSubscriptionNow } from "@/lib/stripe";
 
@@ -47,6 +48,8 @@ export async function deleteAccount(userId: string) {
   if (blocked.length) throw new Error((await getMessages()).errors.makeSomeoneAdmin);
   for (const w of alone) await cancelSubscriptionNow(w.stripeSubscriptionId);
   await removeSampleTeam(alone.map((w) => w.id));
+  // Upcoming "Out of office" events and the automatic reply would otherwise stay in their Outlook for good.
+  await disconnectOutlook(userId);
   await db.$transaction([
     db.workspace.deleteMany({ where: { id: { in: alone.map((w) => w.id) } } }),
     // Memberships, bookings, sessions and sign-in accounts cascade; links to them from others' records are cleared.
@@ -62,6 +65,7 @@ export async function exportAccount(userId: string) {
       name: true,
       email: true,
       createdAt: true,
+      outlook: { select: { accountEmail: true, autoReply: true, createdAt: true } },
       memberships: {
         include: {
           workspace: { select: { name: true } },
@@ -76,6 +80,10 @@ export async function exportAccount(userId: string) {
     name: user.name,
     email: user.email,
     accountCreatedAt: user.createdAt.toISOString(),
+    // The token itself is a credential, not data about the person, so it isn't exported.
+    outlookCalendar: user.outlook
+      ? { account: user.outlook.accountEmail, automaticReply: user.outlook.autoReply, connectedAt: user.outlook.createdAt.toISOString() }
+      : null,
     workspaces: user.memberships.map((m) => ({
       workspace: m.workspace.name,
       role: m.role,

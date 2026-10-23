@@ -21,6 +21,7 @@ import { legal } from "./messages/legal";
 import { me } from "./messages/me";
 import { members } from "./messages/members";
 import { newWorkspace } from "./messages/newWorkspace";
+import { outlook } from "./messages/outlook";
 import { overview } from "./messages/overview";
 import { people } from "./messages/people";
 import { settings } from "./messages/settings";
@@ -54,6 +55,7 @@ const NAMESPACES = {
   me,
   members,
   newWorkspace,
+  outlook,
   overview,
   people,
   settings,

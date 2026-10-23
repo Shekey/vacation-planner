@@ -31,6 +31,12 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
             photo. During the sign-in, three short-lived cookies protect it against misuse.
           </li>
           <li>
+            Outlook calendar, only if you connect it on your account page: we store the address of your Microsoft account and an encrypted
+            access key, so we can put your approved time off into your own calendar as “Out of office” (without the kind of time off) and,
+            if you choose it, schedule your automatic reply. If you named a stand-in, the reply to people in your organisation names them.
+            We only change entries and replies we made, and remove our upcoming entries when you disconnect.
+          </li>
+          <li>
             Microsoft 365 directory, only if an admin of your workspace connects your company&apos;s Microsoft 365: we read the names and email
             addresses of your organisation (or of one group) when an admin loads them and once a night, to suggest who should be added or
             removed. We store your organisation&apos;s tenant id and the chosen group; people only become members when an admin adds them.
@@ -93,6 +99,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
             Reading a company&apos;s Microsoft 365 directory to add people and suggest leavers: Art. 6(1)(b) GDPR for the workspace that
             connects it, and Art. 6(1)(f) GDPR (its legitimate interest in an up-to-date team list) for the people in it.
           </li>
+          <li>Your time off in your Outlook calendar and the automatic reply: Art. 6(1)(a) GDPR (consent, withdrawn by disconnecting).</li>
           <li>Billing and retention of invoices: Art. 6(1)(c) GDPR (legal obligations under the HGB and AO).</li>
           <li>Security, abuse prevention and troubleshooting: Art. 6(1)(f) GDPR (legitimate interest).</li>
           <li>
@@ -151,6 +158,13 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
           Anmeldung mit Microsoft oder Google, nur wenn Sie sie wählen: Der Anbieter übermittelt uns Ihren Namen, Ihre E-Mail-Adresse und eine
           Kennung Ihres Kontos dort, die wir speichern, um Sie wiederzuerkennen. Wir erhalten keinen Zugriff auf Ihr Microsoft- oder Google-Konto
           und kein Profilbild. Während der Anmeldung schützen drei kurzlebige Cookies sie vor Missbrauch.
+        </li>
+        <li>
+          Outlook-Kalender, nur wenn Sie ihn in Ihrem Konto verbinden: Wir speichern die Adresse Ihres Microsoft-Kontos und einen
+          verschlüsselten Zugangsschlüssel, um Ihre genehmigte Abwesenheit als „Abwesend“ in Ihren eigenen Kalender einzutragen (ohne die Art
+          der Abwesenheit) und, wenn Sie es wählen, Ihre automatische Antwort zu planen. Haben Sie eine Vertretung angegeben, nennt die
+          Antwort an Personen Ihrer Organisation diese. Wir ändern nur Einträge und Antworten, die wir angelegt haben, und entfernen unsere
+          kommenden Einträge, wenn Sie die Verbindung trennen.
         </li>
         <li>
           Microsoft-365-Verzeichnis, nur wenn ein Admin Ihres Workspaces das Microsoft 365 Ihrer Firma verbindet: Wir lesen Namen und
@@ -222,6 +236,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
           den Workspace, der es verbindet, und Art. 6 Abs. 1 lit. f DSGVO (sein berechtigtes Interesse an einer aktuellen Teamliste) für die
           Personen darin.
         </li>
+        <li>Ihre Abwesenheit im Outlook-Kalender und die automatische Antwort: Art. 6 Abs. 1 lit. a DSGVO (Einwilligung, widerrufen durch Trennen).</li>
         <li>Abrechnung und Aufbewahrung von Rechnungen: Art. 6 Abs. 1 lit. c DSGVO (gesetzliche Pflichten nach HGB und AO).</li>
         <li>Sicherheit, Missbrauchsschutz und Fehlersuche: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse).</li>
         <li>

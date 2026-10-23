@@ -7,8 +7,11 @@ import type { ActionResult } from "@/components/action-form";
 import { accountDeletionPlan, deleteAccount } from "@/lib/account";
 import { db } from "@/lib/db";
 import { getMessages } from "@/lib/i18n/server";
+import { authorizeUrl, connectState, outlookAvailable } from "@/lib/outlook";
+import { disconnectOutlook, stopAutoReply } from "@/lib/outlook-db";
 import { safeRedirectPath } from "@/lib/security";
 import { requireUser } from "@/lib/session";
+import { appOrigin } from "@/lib/url";
 
 export async function saveNameAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const user = await requireUser();
@@ -40,4 +43,26 @@ export async function deleteAccountAction(_prev: ActionResult, formData: FormDat
   const jar = await cookies();
   for (const name of ["authjs.session-token", "__Secure-authjs.session-token"]) jar.delete(name);
   redirect("/");
+}
+
+/** Sends the person to Microsoft to allow access to their own calendar, and to their automatic reply if they ticked it (#35). */
+export async function connectOutlookAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!outlookAvailable()) return { error: (await getMessages()).outlook.unavailable };
+  const autoReply = formData.get("autoReply") === "on";
+  redirect(authorizeUrl(await appOrigin(), connectState({ userId: user.id, autoReply }), autoReply));
+}
+
+export async function stopAutoReplyAction(): Promise<ActionResult> {
+  const user = await requireUser();
+  await stopAutoReply(user.id);
+  revalidatePath("/account");
+  return { ok: (await getMessages()).outlook.autoReplyStopped };
+}
+
+export async function disconnectOutlookAction(): Promise<ActionResult> {
+  const user = await requireUser();
+  await disconnectOutlook(user.id);
+  revalidatePath("/account");
+  return { ok: (await getMessages()).outlook.disconnected };
 }
