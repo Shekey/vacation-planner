@@ -9,6 +9,7 @@ import { tokensOfUser } from "@/lib/personal-tokens";
 import { appOrigin } from "@/lib/url";
 import { deleteAccountAction, revokeAssistantTokenAction, saveNameAction } from "./actions";
 import { AssistantTokenForm } from "./assistant-token-form";
+import { OutlookSection } from "./outlook-section";
 
 export async function generateMetadata() {
   return { title: (await getMessages()).account.title };
@@ -18,7 +19,7 @@ export default async function AccountPage({
   searchParams,
 }: PageProps<"/account">) {
   const { id } = await requireUser();
-  const { next } = await searchParams;
+  const { next, outlook } = await searchParams;
   const [user, plan, memberships, tokens, origin] = await Promise.all([
     db.user.findUniqueOrThrow({
       where: { id },
@@ -102,6 +103,8 @@ export default async function AccountPage({
 
       {user.name && (
         <>
+          <OutlookSection userId={id} locale={locale} outcome={typeof outlook === "string" ? outlook : undefined} />
+
           {memberships.length > 0 && (
             <section className="card space-y-3" aria-labelledby="assistant-title">
               <h2 id="assistant-title" className="font-medium">

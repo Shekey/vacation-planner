@@ -93,24 +93,27 @@ export function otpauthUri(secret: string, account: string, issuer = BRAND.name)
   return `otpauth://totp/${label}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=${DIGITS}&period=${STEP_SECONDS}`;
 }
 
-/** The secret as stored: encrypted with a key derived from AUTH_SECRET (AES-256-GCM), so a database leak alone doesn't give the codes. */
-export function encryptSecret(secret: string, key: string): string {
+/**
+ * The secret as stored: encrypted with a key derived from AUTH_SECRET (AES-256-GCM), so a database leak alone doesn't give
+ * the codes. `purpose` gives each kind of secret its own key (the Outlook refresh tokens use "outlook").
+ */
+export function encryptSecret(secret: string, key: string, purpose = "two-factor"): string {
   const iv = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", deriveKey(key), iv);
+  const cipher = createCipheriv("aes-256-gcm", deriveKey(key, purpose), iv);
   const data = Buffer.concat([cipher.update(secret, "utf8"), cipher.final()]);
   return [iv, cipher.getAuthTag(), data].map((b) => b.toString("base64url")).join(".");
 }
 
-export function decryptSecret(stored: string, key: string): string {
+export function decryptSecret(stored: string, key: string, purpose = "two-factor"): string {
   const [iv, tag, data] = stored.split(".").map((p) => Buffer.from(p, "base64url"));
-  const decipher = createDecipheriv("aes-256-gcm", deriveKey(key), iv);
+  const decipher = createDecipheriv("aes-256-gcm", deriveKey(key, purpose), iv);
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(data), decipher.final()]).toString("utf8");
 }
 
-function deriveKey(secret: string): Buffer {
+function deriveKey(secret: string, purpose: string): Buffer {
   if (!secret) throw new Error("AUTH_SECRET is not set");
-  return createHash("sha256").update(`two-factor:${secret}`).digest();
+  return createHash("sha256").update(`${purpose}:${secret}`).digest();
 }
 
 /** Recovery codes like "k3mf-9xqa-7tpw": one-time, for a lost phone. Shown once, stored only as hashes. */

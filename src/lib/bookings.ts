@@ -24,6 +24,7 @@ import { canRestore } from "@/lib/undo";
 import { afterResponse } from "@/lib/background";
 import { can } from "@/lib/permissions";
 import { approveLinkUrl } from "@/lib/approve-link";
+import { syncOutlookSoon } from "@/lib/outlook-db";
 
 export const ACTIVE_STATUSES: BookingStatus[] = ["PENDING", "APPROVED"];
 
@@ -405,6 +406,7 @@ export async function createBooking(opts: {
   );
 
   if (returned > 0) await recordVacationReturned(workspace.id, actor, target.user, input);
+  if (status === "APPROVED") await syncOutlookSoon(membershipId);
   // The booking is saved: emails and chat posts go out after the response, so a slow provider doesn't hold the person up.
   await afterResponse(async () => {
     if (status === "PENDING") await notifyAdminsOfRequest(workspace, settings, target.user, booking, opts.origin);
@@ -516,6 +518,7 @@ export async function updateBooking(opts: {
     }),
   );
   if (returned > 0) await recordVacationReturned(workspace.id, actor, existing.membership.user, input);
+  if (status === "APPROVED" || existing.status === "APPROVED") await syncOutlookSoon(existing.membershipId);
   // Changing time off that has already ended is rare and changes a balance: Activity shows it (#82).
   if (toISO(existing.endDate) < today) {
     await recordAudit({
@@ -564,6 +567,7 @@ export async function cancelBooking(opts: { workspaceId: string; actor: Actor; b
     data: { status: "CANCELLED", cancelledAt: new Date(), cancelledFrom: booking.status, cancelReason: null },
   });
   if (count === 0) throw new BookingError(t.bookingNotFound);
+  if (booking.status === "APPROVED") await syncOutlookSoon(booking.membershipId);
   await recordAudit({
     workspaceId: opts.workspaceId,
     actorId: opts.actor.userId,
@@ -604,6 +608,7 @@ export async function restoreBooking(opts: {
     }),
   );
   if (count === 0) throw new BookingError(t.bookingNotFound);
+  await syncOutlookSoon(booking.membershipId);
   await recordAudit({
     workspaceId: opts.workspace.id,
     actorId: opts.actor.userId,
@@ -645,6 +650,7 @@ export async function decideBooking(opts: {
     },
   });
   if (count === 0) throw new BookingError(t.alreadyHandled);
+  if (opts.approve) await syncOutlookSoon(booking.membershipId);
 
   const span = spanOf(booking);
   await recordAudit({
