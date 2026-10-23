@@ -5,7 +5,12 @@ export const approvals = defineMessages({
   en: {
     title: "Approvals",
     turnedOff: "Approvals are turned off for this workspace. Bookings are confirmed right away.",
-    heading: "Waiting for approval",
+    heading: "Approvals",
+    eyebrow: "Workspace administration",
+    subtitle: "Review time off with the whole team's coverage in view.",
+    pendingCount: (n: number) => `Pending · ${n}`,
+    openCalendar: "Open team calendar",
+    advisory: "Coverage advisory",
     empty: "You're all caught up. Nothing is waiting for you.",
     daysLeft: (left: string, total: string, year: number) => `${left} of ${total} days left in ${year} incl. this`,
     understaffed: (present: number, total: number, days: string, more: number, min: number | null) =>
@@ -18,7 +23,12 @@ export const approvals = defineMessages({
   de: {
     title: "Freigaben",
     turnedOff: "Freigaben sind in diesem Workspace ausgeschaltet. Buchungen gelten sofort.",
-    heading: "Wartet auf Freigabe",
+    heading: "Genehmigungen",
+    eyebrow: "Workspace-Verwaltung",
+    subtitle: "Prüfe Urlaub mit der Besetzung des ganzen Teams im Blick.",
+    pendingCount: (n: number) => `Offen · ${n}`,
+    openCalendar: "Teamkalender öffnen",
+    advisory: "Hinweis zur Besetzung",
     empty: "Alles erledigt. Gerade wartet nichts auf dich.",
     daysLeft: (left: string, total: string, year: number) => `${left} von ${total} Tagen für ${year} übrig, inkl. dieser Anfrage`,
     understaffed: (present: number, total: number, days: string, more: number, min: number | null) =>

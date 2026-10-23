@@ -1,6 +1,8 @@
+import { AlertTriangle, CalendarDays, Check, X } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ActionForm } from "@/components/action-form";
-import { TypeDot, typeLabel } from "@/components/badges";
+import { StatusBadge, TypeDot, typeLabel } from "@/components/badges";
 import { Avatar, EmptyState, SampleBadge } from "@/components/ui";
 import { halfDayLabel, portionOn } from "@/lib/booking-days";
 import {
@@ -138,91 +140,89 @@ export default async function ApprovalsPage({
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold">{t.heading}</h2>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0 space-y-1.5">
+          <p className="text-xs tracking-wide text-muted uppercase">{t.eyebrow}</p>
+          <h1 className="text-[28px] leading-tight font-normal tracking-tight sm:text-[32px]">{t.heading}</h1>
+          <p className="text-[15px] text-muted">{t.subtitle}</p>
+        </div>
+        <Link href={`/w/${slug}/calendar`} className="btn-secondary min-h-11 px-4 py-2 text-[13px] text-primary-ink">
+          <CalendarDays aria-hidden className="size-4" /> {t.openCalendar}
+        </Link>
+      </div>
+      <p className="inline-flex rounded-[10px] bg-primary-soft px-4 py-2.5 text-[13px] font-semibold text-primary-ink">
+        {t.pendingCount(rows.length)}
+      </p>
       {rows.length === 0 ? (
         <EmptyState icon="🎉">{t.empty}</EmptyState>
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {rows.map(({ b, span, summary, clashes, shortDays }) => {
             const half = halfDayLabel(span, locale);
+            const who = b.membership.user.name ?? b.membership.user.email;
             return (
-              <li key={b.id} className="card space-y-3">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2 font-medium">
-                      <Avatar
-                        label={
-                          b.membership.user.name ?? b.membership.user.email
-                        }
-                      />
-                      {b.membership.user.name ?? b.membership.user.email}
-                      {b.membership.isSample && (
-                        <SampleBadge label={messages.common.sample} />
-                      )}
-                      <TypeDot type={b.type} locale={locale} />
+              <li key={b.id} className="space-y-4 rounded-[18px] border border-border bg-surface p-5 sm:p-6">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar label={who} className="size-10 text-xs" />
+                    <div className="min-w-0">
+                      <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                        {who}
+                        {b.membership.isSample && <SampleBadge label={messages.common.sample} />}
+                      </p>
+                      <p className="flex items-center gap-1.5 text-xs text-muted">
+                        <TypeDot type={b.type} locale={locale} />
+                        {typeLabel(b.type, locale, b.specialReason)}
+                        {half && ` · ${half}`}
+                      </p>
                     </div>
-                    <div className="text-sm">
-                      {formatRange(span.start, span.end, locale)} ·{" "}
-                      {messages.common.days(formatNumber(b.days, locale))} ·{" "}
-                      {typeLabel(b.type, locale, b.specialReason)}
-                      {half && ` · ${half}`}
-                    </div>
-                    {b.note && (
-                      <div className="text-sm text-muted">“{b.note}”</div>
-                    )}
                   </div>
-                  <div className="text-right text-xs text-muted">
+                  <StatusBadge status="PENDING" locale={locale} />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-2xl">{formatRange(span.start, span.end, locale)}</p>
+                  <p className="text-sm text-muted">
+                    {messages.common.days(formatNumber(b.days, locale))}
                     {summary.remaining !== null &&
-                      t.daysLeft(
+                      ` · ${t.daysLeft(
                         formatNumber(summary.remaining, locale),
                         formatNumber(summary.allowance ?? 0, locale),
                         summary.year,
-                      )}
-                  </div>
+                      )}`}
+                  </p>
+                  {b.note && <p className="text-sm text-muted">“{b.note}”</p>}
                 </div>
-                {shortDays.length > 0 && (
-                  <p className="text-sm text-danger">
-                    {t.understaffed(
-                      shortDays[0].present,
-                      memberCount,
-                      shortDays
-                        .slice(0, 3)
-                        .map((d) => formatDate(d.day, undefined, locale))
-                        .join(", "),
-                      Math.max(0, shortDays.length - 3),
-                      settings.minPeoplePresent,
-                    )}
-                  </p>
+                {(shortDays.length > 0 || clashes.length > 0) && (
+                  <div className="flex items-start gap-3 rounded-[10px] bg-warning-soft p-4 text-sm">
+                    <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0 text-warning" />
+                    <div className="space-y-1">
+                      <p className="font-semibold text-warning">{t.advisory}</p>
+                      {shortDays.length > 0 && (
+                        <p className="text-foreground">
+                          {t.understaffed(
+                            shortDays[0].present,
+                            memberCount,
+                            shortDays
+                              .slice(0, 3)
+                              .map((d) => formatDate(d.day, undefined, locale))
+                              .join(", "),
+                            Math.max(0, shortDays.length - 3),
+                            settings.minPeoplePresent,
+                          )}
+                        </p>
+                      )}
+                      {clashes.length > 0 && <p className="text-foreground">{t.alsoOff(clashes.join(", "))}</p>}
+                    </div>
+                  </div>
                 )}
-                {clashes.length > 0 && (
-                  <p className="text-sm text-amber-700 dark:text-amber-400">
-                    {t.alsoOff(clashes.join(", "))}
-                  </p>
-                )}
-                <ActionForm
-                  action={decideAction.bind(null, slug, b.id)}
-                  className="flex flex-wrap items-center gap-2"
-                >
-                  <input
-                    name="note"
-                    className="input min-w-48 flex-1 py-1.5 text-sm"
-                    placeholder={t.note}
-                    aria-label={t.note}
-                  />
-                  <button
-                    name="decision"
-                    value="approve"
-                    className="btn py-1.5"
-                  >
-                    {t.approve}
+                <ActionForm action={decideAction.bind(null, slug, b.id)} className="flex flex-wrap items-center gap-2">
+                  <input name="note" className="input min-w-48 flex-1 py-2 text-sm" placeholder={t.note} aria-label={t.note} />
+                  <button name="decision" value="approve" className="btn min-h-11 py-2">
+                    <Check aria-hidden className="size-4" /> {t.approve}
                   </button>
-                  <button
-                    name="decision"
-                    value="reject"
-                    className="rounded-lg border border-red-600/60 px-4 py-1.5 font-medium text-danger transition-colors hover:bg-red-500/10"
-                  >
-                    {t.decline}
+                  <button name="decision" value="reject" className="btn-secondary min-h-11 py-2 text-primary-ink">
+                    <X aria-hidden className="size-4" /> {t.decline}
                   </button>
                 </ActionForm>
               </li>
