@@ -95,11 +95,14 @@ label:has(> input[type="radio"]) {
 body:has(.app-shell) > header,
 body:has(.app-shell) > footer,
 body:has(.landing) > header,
-body:has(.landing) > footer {
+body:has(.landing) > footer,
+body:has(.auth-page) > header,
+body:has(.auth-page) > footer {
   display: none;
 }
 body:has(.app-shell) > main,
-body:has(.landing) > main {
+body:has(.landing) > main,
+body:has(.auth-page) > main {
   max-width: none;
   padding: 0;
 }
