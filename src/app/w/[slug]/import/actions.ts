@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { applyPeople, applyTimeOff, MAX_IMPORT_ROWS, MAX_TIME_OFF_ROWS, planPeople, planTimeOff, type PeoplePlan, type TimeOffPlan } from "@/lib/import-db";
+import { fetchSheet, sheetLink } from "@/lib/google-sheets";
 import { getMessages } from "@/lib/i18n/server";
 import { accessOf } from "@/lib/plans";
 import { requireAdmin, settingsOf } from "@/lib/session";
@@ -54,4 +55,16 @@ export async function applyImportAction(slug: string, kind: ImportKind, text: st
   }
   revalidatePath(`/w/${slug}`, "layout");
   return { ok: t.doneTimeOff(result.created, result.days) };
+}
+
+/** Loads a Google Sheets tab shared by link (#56). Only the sheet's CSV export on docs.google.com is fetched. */
+export async function loadSheetAction(slug: string, link: string): Promise<{ error?: string; text?: string }> {
+  await requireAdmin(slug);
+  const t = (await getMessages()).importer;
+  const sheet = sheetLink(link);
+  if (!sheet) return { error: t.sheetLinkErrors.notSheetsLink };
+  const result = await fetchSheet(sheet);
+  if ("error" in result) return { error: t.sheetLinkErrors[result.error] };
+  if (result.text.trim() === "") return { error: t.sheetLinkErrors.empty };
+  return { text: result.text };
 }

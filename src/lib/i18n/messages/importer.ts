@@ -17,6 +17,10 @@ export const importer = defineMessages({
           title: "Outlook or Google calendar",
           how: "Outlook: File → Save calendar (.ics). Google Calendar: Settings → Import & export → Export (a .zip). Add the people first, then open the file under Time off.",
         },
+        sheets: {
+          title: "Google Sheets",
+          how: "In the sheet, choose Share → General access → Anyone with the link (Viewer), copy the link and paste it below. Next time the same link brings in the changes.",
+        },
         tool: {
           title: "Another tool",
           how: "Personio, absence.io, Timetastic, Vacation Tracker and others: export the employee list and the absences as Excel or CSV and open them here, one after the other.",
@@ -40,6 +44,19 @@ export const importer = defineMessages({
     pasteLabel: "Paste the cells from Excel here",
     pastePlaceholder: "Name\tEmail\tVacation days\nAnna Schmidt\tanna@example.com\t28",
     chooseFile: "or open an Excel or CSV file",
+    sheetLinkLabel: "or paste a Google Sheets link",
+    sheetLinkLoad: "Load sheet",
+    sheetLinkLoading: "Loading…",
+    sheetLinkErrors: {
+      notSheetsLink: "This isn't a Google Sheets link. Copy it from the address bar of the sheet, or from Share → Copy link.",
+      notShared:
+        "This sheet isn't shared by link. In the sheet, choose Share → General access → Anyone with the link (Viewer), then load it again. You can switch it back afterwards.",
+      notFound: "This sheet wasn't found. Check the link, or whether the sheet or tab was deleted.",
+      tooBig: "This sheet is too big to import (more than 2 MB). Pick the tab with the team or the time off.",
+      empty: "This tab of the sheet is empty. Copy the link while the tab with the team or the time off is open.",
+      timeout: "Google took too long to answer. Try again in a moment.",
+      failed: "The sheet couldn't be loaded. Try again, or open it in Google Sheets and choose File → Download → .xlsx.",
+    },
     sheet: "Sheet",
     fileUnreadable: "This file can't be read. Open an Excel file (.xlsx) or a CSV file, or copy the cells and paste them.",
     oldExcel: "This is an old Excel file (.xls). In Excel, choose File → Save as → Excel workbook (.xlsx), then open that one.",
@@ -142,6 +159,10 @@ export const importer = defineMessages({
           title: "Outlook- oder Google-Kalender",
           how: "Outlook: Datei → Kalender speichern (.ics). Google Kalender: Einstellungen → Importieren & exportieren → Exportieren (eine .zip). Leg zuerst die Personen an, dann öffne die Datei unter Urlaub.",
         },
+        sheets: {
+          title: "Google Tabellen",
+          how: "Wähle in der Tabelle Freigeben → Allgemeiner Zugriff → Jeder, der über den Link verfügt (Betrachter), kopiere den Link und füge ihn unten ein. Beim nächsten Mal holt derselbe Link die Änderungen.",
+        },
         tool: {
           title: "Ein anderes Tool",
           how: "Personio, absence.io, Timetastic, Vacation Tracker und andere: exportiere die Mitarbeiterliste und die Abwesenheiten als Excel oder CSV und öffne sie hier nacheinander.",
@@ -165,6 +186,19 @@ export const importer = defineMessages({
     pasteLabel: "Füge die Zellen aus Excel hier ein",
     pastePlaceholder: "Name\tE-Mail\tUrlaubstage\nAnna Schmidt\tanna@beispiel.de\t28",
     chooseFile: "oder öffne eine Excel- oder CSV-Datei",
+    sheetLinkLabel: "oder füge einen Link zu Google Tabellen ein",
+    sheetLinkLoad: "Tabelle laden",
+    sheetLinkLoading: "Wird geladen…",
+    sheetLinkErrors: {
+      notSheetsLink: "Das ist kein Link zu Google Tabellen. Kopiere ihn aus der Adresszeile der Tabelle oder über Freigeben → Link kopieren.",
+      notShared:
+        "Diese Tabelle ist nicht per Link freigegeben. Wähle in der Tabelle Freigeben → Allgemeiner Zugriff → Jeder, der über den Link verfügt (Betrachter) und lade sie noch einmal. Danach kannst du es wieder zurückstellen.",
+      notFound: "Diese Tabelle wurde nicht gefunden. Prüfe den Link oder ob die Tabelle oder das Blatt gelöscht wurde.",
+      tooBig: "Diese Tabelle ist zu groß für den Import (über 2 MB). Wähle das Blatt mit dem Team oder dem Urlaub.",
+      empty: "Dieses Blatt der Tabelle ist leer. Kopiere den Link, während das Blatt mit dem Team oder dem Urlaub offen ist.",
+      timeout: "Google hat zu lange gebraucht. Versuch es gleich noch einmal.",
+      failed: "Die Tabelle ließ sich nicht laden. Versuch es noch einmal, oder öffne sie in Google Tabellen und wähle Datei → Herunterladen → .xlsx.",
+    },
     sheet: "Tabellenblatt",
     fileUnreadable: "Diese Datei lässt sich nicht lesen. Öffne eine Excel-Datei (.xlsx) oder eine CSV-Datei, oder kopiere die Zellen und füge sie ein.",
     oldExcel: "Das ist eine alte Excel-Datei (.xls). Wähle in Excel Datei → Speichern unter → Excel-Arbeitsmappe (.xlsx) und öffne dann diese.",
