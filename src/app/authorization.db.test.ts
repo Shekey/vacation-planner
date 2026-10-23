@@ -17,6 +17,7 @@ import * as billing from "./w/[slug]/billing/actions";
 import * as book from "./w/[slug]/book/actions";
 import * as holidays from "./w/[slug]/holidays/actions";
 import * as importer from "./w/[slug]/import/actions";
+import * as leaveTypes from "./w/[slug]/leave-types/actions";
 import * as me from "./w/[slug]/me/actions";
 import * as members from "./w/[slug]/members/actions";
 import * as onboarding from "./w/[slug]/onboarding-actions";
@@ -86,7 +87,9 @@ async function makeWorld() {
     return { ...m, user };
   };
   const [approver, viewer] = [await withRole("APPROVER"), await withRole("VIEWER")];
-  return { ours, theirs, approver, viewer, pending, adminBooking, cancelled, removed, invitation, holiday };
+  const leaveType = await db.leaveType.create({ data: { workspaceId: ours.workspace.id, name: "Fortbildung", color: "teal" } });
+  const oldLeaveType = await db.leaveType.create({ data: { workspaceId: ours.workspace.id, name: "Alt", color: "slate", archivedAt: new Date() } });
+  return { ours, theirs, approver, viewer, leaveType, oldLeaveType, pending, adminBooking, cancelled, removed, invitation, holiday };
 }
 
 const matrix: Record<string, Entry> = {
@@ -146,6 +149,17 @@ const matrix: Record<string, Entry> = {
   // Not a Sheets link, so nothing is fetched; admins get "not a Google Sheets link" back.
   "w/[slug]/import/actions.ts#loadSheetAction": { allowed: "admin", call: (_w, slug) => importer.loadSheetAction(slug, "https://example.com/sheet") },
 
+  "w/[slug]/leave-types/actions.ts#createLeaveTypeAction": {
+    allowed: "admin",
+    call: (_w, slug) => leaveTypes.createLeaveTypeAction(slug, {}, form({ name: "Überstunden", color: "blue", needsApproval: "on" })),
+  },
+  "w/[slug]/leave-types/actions.ts#updateLeaveTypeAction": {
+    allowed: "admin",
+    call: (w, slug) => leaveTypes.updateLeaveTypeAction(slug, w.leaveType.id, {}, form({ name: "Taken over", color: "rose", countsAsVacation: "on" })),
+  },
+  "w/[slug]/leave-types/actions.ts#archiveLeaveTypeAction": { allowed: "admin", call: (w, slug) => leaveTypes.archiveLeaveTypeAction(slug, w.leaveType.id) },
+  "w/[slug]/leave-types/actions.ts#restoreLeaveTypeAction": { allowed: "admin", call: (w, slug) => leaveTypes.restoreLeaveTypeAction(slug, w.oldLeaveType.id) },
+
   "w/[slug]/me/actions.ts#resetCalendarFeedAction": { allowed: "member", call: (_w, slug) => me.resetCalendarFeedAction(slug) },
   "w/[slug]/me/actions.ts#disableCalendarFeedAction": { allowed: "member", call: (_w, slug) => me.disableCalendarFeedAction(slug) },
   "w/[slug]/me/actions.ts#setAwayAction": { allowed: "approver", call: (_w, slug) => me.setAwayAction(slug, {}, form({ awayUntil: "2030-01-01" })) },
@@ -179,15 +193,16 @@ const matrix: Record<string, Entry> = {
 
 /** Everything in our workspace an action could change, to compare before and after a refused call. */
 async function snapshot(workspaceId: string) {
-  const [workspace, memberships, bookings, invitations, holidays, audit] = await Promise.all([
+  const [workspace, memberships, bookings, invitations, holidays, audit, leaveTypes] = await Promise.all([
     db.workspace.findUnique({ where: { id: workspaceId }, include: { settings: true } }),
     db.membership.findMany({ where: { workspaceId }, include: { user: true, carriedOver: true, keepCarried: true, pastAllowances: true }, orderBy: { id: "asc" } }),
     db.booking.findMany({ where: { workspaceId }, orderBy: { id: "asc" } }),
     db.invitation.findMany({ where: { workspaceId }, orderBy: { id: "asc" } }),
     db.holiday.findMany({ where: { workspaceId }, orderBy: { id: "asc" } }),
     db.auditEvent.count({ where: { workspaceId } }),
+    db.leaveType.findMany({ where: { workspaceId }, orderBy: { id: "asc" } }),
   ]);
-  return JSON.stringify({ workspace, memberships, bookings, invitations, holidays, audit });
+  return JSON.stringify({ workspace, memberships, bookings, invitations, holidays, audit, leaveTypes });
 }
 
 function signInAs(user: { id: string; email: string; name: string | null } | null) {

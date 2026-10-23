@@ -35,6 +35,8 @@ export default async function BookPage({ params, searchParams }: PageProps<"/w/[
         team={data.team}
         holidays={data.holidays}
         memberCount={data.memberCount}
+        leaveTypes={data.leaveTypes}
+        leaveTypeUsed={data.leaveTypeUsed}
         initial={{ membershipId, type: "VACATION", start, end, startPart: "FULL", endPart: "FULL", note: "" }}
       />
     </div>

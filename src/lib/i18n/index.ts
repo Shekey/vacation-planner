@@ -15,6 +15,7 @@ import { home } from "./messages/home";
 import { importer } from "./messages/importer";
 import { invite } from "./messages/invite";
 import { landing } from "./messages/landing";
+import { leaveTypes } from "./messages/leaveTypes";
 import { legal } from "./messages/legal";
 import { me } from "./messages/me";
 import { members } from "./messages/members";
@@ -46,6 +47,7 @@ const NAMESPACES = {
   importer,
   invite,
   landing,
+  leaveTypes,
   legal,
   me,
   members,

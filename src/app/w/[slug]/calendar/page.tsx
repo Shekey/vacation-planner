@@ -132,7 +132,11 @@ export default async function CalendarPage({
         </div>
         <ViewToggle slug={slug} view="month" month={month} labels={{ group: t.viewLabel, weeks: t.twoWeeks, month: t.month }} />
       </div>
-      <Legend locale={locale} withSick={can(membership.role, "sick:see")} />
+      <Legend
+        locale={locale}
+        withSick={can(membership.role, "sick:see")}
+        leaveTypes={await db.leaveType.findMany({ where: { workspaceId: workspace.id, archivedAt: null }, orderBy: { createdAt: "asc" } })}
+      />
 
       <ScrollToToday className="overflow-x-auto overscroll-x-contain rounded-[18px] border border-border bg-surface">
         <table className="w-full border-collapse text-xs">
@@ -226,7 +230,7 @@ export default async function CalendarPage({
                     const title = hits
                       .map(
                         ({ b, portion }) =>
-                          `${t.booking(label(m), typeLabel(b.type, locale, b.specialReason), portion !== "FULL" ? common.dayPart[portion] : null, b.status === "PENDING")}${
+                          `${t.booking(label(m), typeLabel(b.type, locale, b.specialReason, b.leaveType), portion !== "FULL" ? common.dayPart[portion] : null, b.status === "PENDING")}${
                             b.note ? ` – ${b.note}` : ""
                           }`,
                       )
@@ -249,7 +253,7 @@ export default async function CalendarPage({
                         {hits.map(({ b, portion }) => {
                           const block = (
                             <div
-                              className={`absolute inset-y-1.5 rounded-md ${typeColor(b.type)} ${
+                              className={`absolute inset-y-1.5 rounded-md ${typeColor(b.type, b.leaveType)} ${
                                 b.status === "PENDING"
                                   ? "pending-stripes opacity-70 ring-1 ring-warning/50"
                                   : ""

@@ -5,6 +5,7 @@ import {
   submitKeepingInput,
   type ActionResult,
 } from "@/components/action-form";
+import { typeColor } from "@/components/badges";
 import { useI18n } from "@/components/i18n-provider";
 import {
   countDays,
@@ -38,6 +39,10 @@ type TeamBooking = BookingSpan & {
   vacation: boolean;
 };
 
+type BuiltInType = "VACATION" | "SICK" | "SPECIAL" | "OTHER";
+/** A built-in type, or "lt:<id>" for one of the admin's own leave types (#34). */
+type TypeChoice = BuiltInType | `lt:${string}`;
+
 export type BookingFormProps = {
   action: (prev: ActionResult, formData: FormData) => Promise<ActionResult>;
   members: Member[];
@@ -55,9 +60,13 @@ export type BookingFormProps = {
   roles: { isAdmin: boolean; decides: boolean; seesSick: boolean; selfId: string };
   currentYear: number;
   team: TeamBooking[];
+  /** The admin's own leave types (#34). */
+  leaveTypes: { id: string; name: string; color: string; countsAsVacation: boolean; allowanceDays: number | null; needsApproval: boolean }[];
+  /** Days used this year of each leave type with its own allowance, by membership id and leave type id. */
+  leaveTypeUsed: Record<string, Record<string, number>>;
   initial: {
     membershipId: string;
-    type: "VACATION" | "SICK" | "SPECIAL" | "OTHER";
+    type: TypeChoice;
     specialReason?: SpecialReason | null;
     start: ISODate;
     end: ISODate;
@@ -67,6 +76,8 @@ export type BookingFormProps = {
     /** Set when editing, so the booking isn't counted twice or flagged as its own clash. */
     bookingId?: string;
     ownDaysThisYear?: number;
+    /** When editing a booking of a leave type with its own allowance: its days this year, so they aren't counted twice. */
+    ownTypeDaysThisYear?: number;
   };
 };
 
@@ -79,7 +90,9 @@ export function BookingForm(props: BookingFormProps) {
   const fmt = (n: number) => formatNumber(n, locale);
   const [state, formAction, pending] = useActionState(props.action, {});
   const [membershipId, setMembershipId] = useState(initial.membershipId);
-  const [type, setType] = useState(initial.type);
+  const [type, setType] = useState<TypeChoice>(initial.type);
+  const leaveType = type.startsWith("lt:") ? props.leaveTypes.find((l) => `lt:${l.id}` === type) : undefined;
+  const countsAsVacation = type === "VACATION" || !!leaveType?.countsAsVacation;
   const [start, setStart] = useState(initial.start);
   const [end, setEnd] = useState(initial.end);
   const [startsPm, setStartsPm] = useState(initial.startPart === "PM");
@@ -135,7 +148,7 @@ export function BookingForm(props: BookingFormProps) {
       ? countDays(span, rules, { from: `${year}-01-01`, to: `${year}-12-31` })
       : 0;
   const remainingAfter =
-    member?.allowance != null && type === "VACATION"
+    member?.allowance != null && countsAsVacation
       ? member.allowance -
         (member.takenThisYear - (initial.ownDaysThisYear ?? 0)) -
         daysThisYear
@@ -155,10 +168,22 @@ export function BookingForm(props: BookingFormProps) {
     return [...names.values()];
   }, [start, end, props.team, initial.bookingId, membershipId]);
 
+  // What's left of a leave type's own allowance (#34) after this booking, counted by start year like the Me page.
+  const typeLeftAfter =
+    leaveType?.allowanceDays != null && start.startsWith(String(year))
+      ? leaveType.allowanceDays -
+        ((props.leaveTypeUsed[membershipId]?.[leaveType.id] ?? 0) - (initial.ownTypeDaysThisYear ?? 0)) -
+        days
+      : null;
+
   const sick = type === "SICK";
   const forSomeoneElse = membershipId !== props.roles.selfId;
   const willBePending =
-    settings.approvalsEnabled && !sick && !props.roles.isAdmin && !(props.roles.decides && forSomeoneElse);
+    settings.approvalsEnabled &&
+    !sick &&
+    leaveType?.needsApproval !== false &&
+    !props.roles.isAdmin &&
+    !(props.roles.decides && forSomeoneElse);
 
   // Sick days in this person's vacation give those vacation days back (admins only, see giveBackVacation).
   const vacationReturned =
@@ -226,11 +251,20 @@ export function BookingForm(props: BookingFormProps) {
         <legend className="text-sm font-medium">{t.type}</legend>
         <div className="flex flex-wrap gap-2">
           {/* Someone else's sick days are health data: only admins enter them. */}
-          {(["VACATION", "SICK", "SPECIAL", "OTHER"] as const).filter((o) => o !== "SICK" || props.roles.seesSick || !forSomeoneElse).map((option) => (
+          {[
+            ...(["VACATION", "SICK", "SPECIAL", "OTHER"] as const)
+              .filter((o) => o !== "SICK" || props.roles.seesSick || !forSomeoneElse)
+              .map((o) => ({ value: o as TypeChoice, label: t.typeOption[o], dot: null })),
+            ...props.leaveTypes.map((l) => ({
+              value: `lt:${l.id}` as TypeChoice,
+              label: l.name,
+              dot: typeColor("OTHER", l),
+            })),
+          ].map((option) => (
             <label
-              key={option}
-              className={`cursor-pointer rounded-lg border px-3 py-1.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40 text-sm ${
-                type === option
+              key={option.value}
+              className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40 text-sm ${
+                type === option.value
                   ? "border-primary bg-primary text-primary-foreground shadow-sm"
                   : "border-border bg-surface hover:border-primary/50"
               }`}
@@ -238,12 +272,13 @@ export function BookingForm(props: BookingFormProps) {
               <input
                 type="radio"
                 name="type"
-                value={option}
-                checked={type === option}
-                onChange={() => setType(option)}
+                value={option.value}
+                checked={type === option.value}
+                onChange={() => setType(option.value)}
                 className="sr-only"
               />
-              {t.typeOption[option]}
+              {option.dot && <span aria-hidden className={`inline-block size-2 rounded-full ${option.dot}`} />}
+              {option.label}
             </label>
           ))}
         </div>
@@ -376,6 +411,13 @@ export function BookingForm(props: BookingFormProps) {
                 {remainingAfter < 0
                   ? t.overAllowance(fmt(-remainingAfter), year)
                   : t.daysLeftAfter(fmt(remainingAfter), year)}
+              </p>
+            )}
+            {leaveType && typeLeftAfter !== null && (
+              <p className={typeLeftAfter < 0 ? "text-danger" : "text-muted"}>
+                {typeLeftAfter < 0
+                  ? t.overTypeAllowance(leaveType.name, fmt(-typeLeftAfter), year)
+                  : t.typeDaysLeftAfter(leaveType.name, fmt(typeLeftAfter), year)}
               </p>
             )}
             {holidaysInRange.length > 0 && (
