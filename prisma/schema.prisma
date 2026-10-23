@@ -199,6 +199,8 @@ model WorkspaceSettings {
   onboardingDismissedAt DateTime?
   // Kind of team picked at setup (keys of TEAM_TYPES in src/lib/team-types.ts); null for older workspaces.
   teamType              String?
+  // People may connect an AI assistant with a personal token (#45); admins can turn it off.
+  assistantAccess       Boolean   @default(true)
   // Microsoft 365 directory (#57): the tenant whose admin approved read-only access, and the group that makes up the
   // team (null: everyone). Only ids are kept; people are read from Microsoft Graph when needed.
   directoryTenantId     String?
@@ -243,6 +245,7 @@ model Membership {
   carriedOver    CarriedOver[]
   keepCarried    KeepCarriedOver[]
   invitations    Invitation[]
+  personalTokens PersonalToken[]
 
   @@unique([workspaceId, userId])
 }
@@ -464,6 +467,22 @@ model SignInAttempt {
   @@index([emailHash, createdAt])
   @@index([ipHash, createdAt])
   @@index([createdAt])
+}
+
+/// A personal token for an AI assistant (#45), for one person in one workspace. Only a SHA-256 hash is stored;
+/// the token is shown once when it is made.
+model PersonalToken {
+  id           String    @id @default(cuid())
+  membershipId String
+  name         String
+  tokenHash    String    @unique
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime
+  lastUsedAt   DateTime?
+
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@index([membershipId])
 }
 
 /// A person's own Outlook calendar (#35), connected on Account. Approved time off becomes an "Out of office" event there,

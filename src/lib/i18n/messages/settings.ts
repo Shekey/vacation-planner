@@ -57,6 +57,9 @@ export const settings = defineMessages({
     overAllowanceHint: "Admins can always book over, and approvers for others. Time off that has ended can only be changed by admins.",
     approvals: "Require approval",
     approvalsHint: "Bookings by members wait for an admin or approver to approve them. Turning this off approves everything pending.",
+    assistantAccess: "AI assistants",
+    assistantAccessHint:
+      "People can connect Claude, Copilot or another AI assistant with a personal token, to see who is away and book or cancel their own time off. Turning this off stops every token at once.",
     reminderDays: "Remind approvers after",
     reminderHint: "Once per request, to the admins and approvers who aren't away; the person hears that it's still waiting. Empty: no reminders.",
     autoApproveDays: "Approve automatically after",
@@ -182,6 +185,9 @@ export const settings = defineMessages({
     overAllowanceHint: "Admins können immer mehr buchen, Genehmiger:innen für andere. Vergangene Abwesenheiten können nur Admins ändern.",
     approvals: "Freigabe erforderlich",
     approvalsHint: "Buchungen von Mitgliedern warten, bis ein Admin oder eine Genehmiger:in sie genehmigt. Wenn du das ausschaltest, wird alles Offene genehmigt.",
+    assistantAccess: "KI-Assistenten",
+    assistantAccessHint:
+      "Alle können Claude, Copilot oder einen anderen KI-Assistenten mit einem persönlichen Token verbinden, um zu sehen, wer weg ist, und eigene Abwesenheiten zu buchen oder zu stornieren. Ausschalten stoppt sofort alle Tokens.",
     reminderDays: "Erinnern nach",
     reminderHint: "Einmal pro Antrag, an die Admins und Genehmiger:innen, die nicht abwesend sind; die Person erfährt, dass der Antrag noch wartet. Leer: keine Erinnerungen.",
     autoApproveDays: "Automatisch genehmigen nach",

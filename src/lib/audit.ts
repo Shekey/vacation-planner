@@ -25,6 +25,8 @@ export const AUDIT_ACTIONS = [
   "support.access_used",
   "support.trial_extended",
   "support.workspace_restored",
+  // A call from an AI assistant with a personal token (#45); `detail` is the tool.
+  "assistant.call",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

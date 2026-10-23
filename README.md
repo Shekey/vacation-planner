@@ -291,6 +291,7 @@ To try a migration on real-shaped data before it reaches production, give Vercel
 - **Calendar feed**: each member can get a private iCal link to subscribe to the team calendar in Google Calendar, Outlook or Apple Calendar.
 - **People search**: type a name to see whether someone is out today and their upcoming time off.
 - **Microsoft Teams**: optional channel webhook (Teams Workflows "Post to a channel when a webhook request is received") that posts bookings, requests and approvals as Adaptive Cards, plus a weekday-morning "who's out today" digest.
+- **AI assistants (MCP)**: on *Account → Connect an AI assistant* people make a personal token and paste the shown line into Claude Code, VS Code (Copilot) or another MCP client. `/api/mcp` lets the assistant check the balance, see who is away, preview and book or cancel the person's own time off, and, for admins and approvers, decide requests. It goes through the same code as the app, every call is in Activity, and admins can switch it off in Settings → Integrations. ChatGPT and claude.ai connectors need OAuth, which is not built yet.
 - **Team calendar** (month view, click a day to book), an overview with who's out today and the next two weeks, and email notifications for invites, requests and decisions.
 
 ## Notes

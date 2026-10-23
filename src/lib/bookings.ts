@@ -202,7 +202,7 @@ function prepare(input: BookingInput, settings: Settings, rules: DayRules, t: Me
  * anyway). An approver's own time off waits for someone else to decide. Sick days are never asked for, and neither are
  * leave types the admin set to need no approval (#34).
  */
-function initialStatus(
+export function initialStatus(
   actor: Actor,
   settings: Settings,
   type: BookingType | undefined,

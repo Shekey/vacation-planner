@@ -78,6 +78,7 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
     overAllowance: (["WARN", "APPROVAL", "BLOCK"] as const).find((p) => p === formData.get("overAllowance")) ?? "WARN",
     allowHalfDays: formData.get("allowHalfDays") === "on",
     countWeekends: formData.get("countWeekends") === "on",
+    assistantAccess: formData.get("assistantAccess") === "on",
     defaultAllowanceDays: parsed.data.defaultAllowance,
     maxCarryOverDays: parsed.data.maxCarryOver,
     carryOverExpiry,

@@ -31,6 +31,11 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
             photo. During the sign-in, three short-lived cookies protect it against misuse.
           </li>
           <li>
+            AI assistants, only if you connect one: the token&apos;s name, a hash of the token, when it was made, last used and expires. What the
+            assistant looks up (your balance, who is away, your bookings) goes to the assistant&apos;s provider you chose, under your agreement
+            with them. Every use is recorded in the workspace&apos;s activity log.
+          </li>
+          <li>
             Outlook calendar, only if you connect it on your account page: we store the address of your Microsoft account and an encrypted
             access key, so we can put your approved time off into your own calendar as “Out of office” (without the kind of time off) and,
             if you choose it, schedule your automatic reply. If you named a stand-in, the reply to people in your organisation names them.
@@ -158,6 +163,11 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
           Anmeldung mit Microsoft oder Google, nur wenn Sie sie wählen: Der Anbieter übermittelt uns Ihren Namen, Ihre E-Mail-Adresse und eine
           Kennung Ihres Kontos dort, die wir speichern, um Sie wiederzuerkennen. Wir erhalten keinen Zugriff auf Ihr Microsoft- oder Google-Konto
           und kein Profilbild. Während der Anmeldung schützen drei kurzlebige Cookies sie vor Missbrauch.
+        </li>
+        <li>
+          KI-Assistenten, nur wenn Sie einen verbinden: Name des Tokens, ein Hashwert des Tokens, Erstellung, letzte Nutzung und Ablauf. Was der
+          Assistent abruft (Ihr Kontingent, wer abwesend ist, Ihre Buchungen), geht an den von Ihnen gewählten Anbieter des Assistenten, nach
+          Ihrem Vertrag mit ihm. Jede Nutzung wird im Verlauf des Workspaces festgehalten.
         </li>
         <li>
           Outlook-Kalender, nur wenn Sie ihn in Ihrem Konto verbinden: Wir speichern die Adresse Ihres Microsoft-Kontos und einen

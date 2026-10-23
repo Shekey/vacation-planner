@@ -1,0 +1,78 @@
+import { defineMessages } from "../define";
+
+/** "Connect an AI assistant" on the account page (#45). */
+export const assistant = defineMessages({
+  en: {
+    heading: "Connect an AI assistant",
+    intro:
+      "Ask Claude, GitHub Copilot or another AI assistant things like “book me off from 3 to 7 November” or “is Anna away next week?”. The assistant gets a personal token: it acts as you, in one workspace, and only books or cancels your own time off. It always shows you a preview before booking. Colleagues' time off shows as “away”.",
+    privacy: "What you ask goes to the assistant's provider, under your agreement with them. Every use shows in the workspace's activity log.",
+    name: "Name",
+    namePlaceholder: "e.g. Claude on my laptop",
+    workspace: "Workspace",
+    validFor: "Valid for",
+    days: (n: number) => (n === 365 ? "1 year" : `${n} days`),
+    create: "Create token",
+    creating: "Creating…",
+    created: "Your token. Copy it now; it won't be shown again.",
+    setup: "Set it up",
+    claudeCode: "Claude Code, in a terminal:",
+    vscode: "VS Code with GitHub Copilot, in .vscode/mcp.json:",
+    other: (url: string) =>
+      `Other assistants that support MCP over HTTP: the address is ${url}, with the header “Authorization: Bearer” and your token. ChatGPT and claude.ai connectors need a sign-in instead of a token; that comes later.`,
+    yourTokens: "Your tokens",
+    none: "No tokens yet.",
+    lastUsed: (when: string) => `Last used ${when}`,
+    neverUsed: "Never used",
+    expiresOn: (when: string) => `valid until ${when}`,
+    expired: "expired",
+    revoke: "Revoke",
+    revokeConfirm: "Revoke this token? Assistants using it stop working at once.",
+    revoked: "Token revoked.",
+    turnedOff: (workspace: string) => `Your admins turned AI assistants off for ${workspace}.`,
+    errors: {
+      nameLength: "Give the token a name of 2 to 40 characters.",
+      tooMany: (n: number) => `You already have ${n} tokens. Revoke one first.`,
+      workspace: "Pick one of your workspaces.",
+      turnedOff: "AI assistants are turned off in this workspace.",
+      validFor: "Pick how long the token is valid.",
+    },
+  },
+  de: {
+    heading: "KI-Assistenten verbinden",
+    intro:
+      "Frag Claude, GitHub Copilot oder einen anderen KI-Assistenten Dinge wie „trag mir Urlaub vom 3. bis 7. November ein“ oder „ist Anna nächste Woche weg?“. Der Assistent bekommt ein persönliches Token: Er handelt als du, in einem Workspace, und bucht oder storniert nur deine eigenen Abwesenheiten. Vor dem Buchen zeigt er dir immer eine Vorschau. Die Abwesenheiten deiner Kolleg:innen sieht er nur als „abwesend“.",
+    privacy:
+      "Was du fragst, geht an den Anbieter des Assistenten, nach deinem Vertrag mit ihm. Jede Nutzung erscheint im Verlauf des Workspaces.",
+    name: "Name",
+    namePlaceholder: "z. B. Claude auf meinem Laptop",
+    workspace: "Workspace",
+    validFor: "Gültig für",
+    days: (n: number) => (n === 365 ? "1 Jahr" : `${n} Tage`),
+    create: "Token erstellen",
+    creating: "Wird erstellt…",
+    created: "Dein Token. Kopier es jetzt; es wird nicht noch einmal angezeigt.",
+    setup: "Einrichten",
+    claudeCode: "Claude Code, im Terminal:",
+    vscode: "VS Code mit GitHub Copilot, in .vscode/mcp.json:",
+    other: (url: string) =>
+      `Andere Assistenten, die MCP über HTTP unterstützen: Die Adresse ist ${url}, mit dem Header „Authorization: Bearer“ und deinem Token. ChatGPT- und claude.ai-Connectoren brauchen statt eines Tokens eine Anmeldung; die kommt später.`,
+    yourTokens: "Deine Tokens",
+    none: "Noch keine Tokens.",
+    lastUsed: (when: string) => `Zuletzt genutzt am ${when}`,
+    neverUsed: "Noch nie genutzt",
+    expiresOn: (when: string) => `gültig bis ${when}`,
+    expired: "abgelaufen",
+    revoke: "Widerrufen",
+    revokeConfirm: "Dieses Token widerrufen? Assistenten, die es nutzen, funktionieren sofort nicht mehr.",
+    revoked: "Token widerrufen.",
+    turnedOff: (workspace: string) => `Deine Admins haben KI-Assistenten für ${workspace} ausgeschaltet.`,
+    errors: {
+      nameLength: "Gib dem Token einen Namen mit 2 bis 40 Zeichen.",
+      tooMany: (n: number) => `Du hast schon ${n} Tokens. Widerrufe zuerst eines.`,
+      workspace: "Wähl einen deiner Workspaces.",
+      turnedOff: "KI-Assistenten sind in diesem Workspace ausgeschaltet.",
+      validFor: "Wähl, wie lange das Token gültig ist.",
+    },
+  },
+});
