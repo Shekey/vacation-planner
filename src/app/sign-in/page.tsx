@@ -4,41 +4,47 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { AuthShell } from "@/components/auth-shell";
 import { SubmitButton } from "@/components/submit-button";
+import type { Messages } from "@/lib/i18n";
 import { getMessages } from "@/lib/i18n/server";
+import { enabledOAuthProviders, type OAuthProvider } from "@/lib/oauth";
 import { safeRedirectPath } from "@/lib/security";
-import { sendSignInLinkAction } from "./actions";
+import { sendSignInLinkAction, signInWithProviderAction } from "./actions";
 
 export async function generateMetadata() {
   return { title: (await getMessages()).signIn.title };
 }
 
-/** The Google and Microsoft sign-in buttons from the design. Inactive until the providers are wired up: pass an `action` to enable one. */
-function ProviderButtons({ google, microsoft, orEmail }: { google: string; microsoft: string; orEmail: string }) {
+/** Sign in with Microsoft or Google (#32), for the providers whose keys are set. Hidden when none are. */
+function ProviderButtons({ providers, redirectTo, t }: { providers: OAuthProvider[]; redirectTo: string; t: Messages["signIn"] }) {
+  if (providers.length === 0) return null;
   const base =
-    "flex h-[52px] w-full items-center justify-center gap-3 rounded-[12px] border border-border bg-surface text-[15px] font-semibold disabled:cursor-not-allowed disabled:opacity-60";
+    "flex h-[52px] w-full items-center justify-center gap-3 rounded-[12px] border border-border bg-surface text-[15px] font-semibold";
   return (
-    <div className="space-y-3">
-      <button type="button" disabled className={base}>
-        <span aria-hidden className="text-[21px] font-bold text-primary">
-          G
-        </span>
-        {google}
-      </button>
-      <button type="button" disabled className={base}>
-        <span aria-hidden className="grid grid-cols-2 gap-0.5">
-          <span className="size-2 bg-[#f25022]" />
-          <span className="size-2 bg-[#7fba00]" />
-          <span className="size-2 bg-[#00a4ef]" />
-          <span className="size-2 bg-[#ffb900]" />
-        </span>
-        {microsoft}
-      </button>
+    <form action={signInWithProviderAction} className="space-y-3">
+      <input type="hidden" name="callbackUrl" value={redirectTo} />
+      {providers.map((provider) => (
+        <button key={provider} name="provider" value={provider} className={base}>
+          {provider === "google" ? (
+            <span aria-hidden className="text-[21px] font-bold text-primary">
+              G
+            </span>
+          ) : (
+            <span aria-hidden className="grid grid-cols-2 gap-0.5">
+              <span className="size-2 bg-[#f25022]" />
+              <span className="size-2 bg-[#7fba00]" />
+              <span className="size-2 bg-[#00a4ef]" />
+              <span className="size-2 bg-[#ffb900]" />
+            </span>
+          )}
+          {provider === "google" ? t.google : t.microsoft}
+        </button>
+      ))}
       <div className="flex items-center gap-3 py-2 text-xs text-muted">
         <hr className="flex-1 border-border" />
-        {orEmail}
+        {t.orEmail}
         <hr className="flex-1 border-border" />
       </div>
-    </div>
+    </form>
   );
 }
 
@@ -106,8 +112,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
 
   return (
     <AuthShell>
-      <form className="space-y-7" action={sendSignInLinkAction}>
-        <input type="hidden" name="callbackUrl" value={redirectTo} />
+      <div className="space-y-7">
         <div className="space-y-3 pt-4">
           <h1 className="text-[32px] leading-[1.15] font-normal">
             {t.hero[0]}
@@ -116,39 +121,42 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
           </h1>
           <p className="text-[15px] text-muted">{redirectTo.startsWith("/invite/") ? t.inviteIntro : t.intro}</p>
         </div>
-        <ProviderButtons google={t.google} microsoft={t.microsoft} orEmail={t.orEmail} />
+        <ProviderButtons providers={enabledOAuthProviders()} redirectTo={redirectTo} t={t} />
         {typeof error === "string" && (
           <p role="alert" className="rounded-[12px] bg-danger-soft p-3 text-sm text-danger">
             {(Object.hasOwn(t.errors, error) ? t.errors[error] : undefined) ?? t.defaultError}
           </p>
         )}
-        <div className="space-y-4">
-          <label className="block space-y-2">
-            <span className="text-[13px] font-semibold">{t.emailLabel}</span>
-            <span className="relative block">
-              <input
-                className="input h-[52px] rounded-[12px] bg-surface px-3.5 pr-11 text-[15px]"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                maxLength={254}
-                placeholder={t.emailPlaceholder}
-                defaultValue={address || undefined}
-              />
-              <Mail aria-hidden className="pointer-events-none absolute top-1/2 right-3.5 size-[18px] -translate-y-1/2 text-muted" />
-            </span>
-          </label>
-          <SubmitButton className={`btn ${action}`} pending={t.sending}>
-            <ArrowRight aria-hidden className="size-[18px]" />
-            {t.submit}
-          </SubmitButton>
-        </div>
-        <p className="flex gap-2.5 text-[13px] text-muted">
-          <KeyRound aria-hidden className="mt-0.5 size-[18px] shrink-0 text-primary" />
-          {t.inviteHint}
-        </p>
-      </form>
+        <form className="space-y-7" action={sendSignInLinkAction}>
+          <input type="hidden" name="callbackUrl" value={redirectTo} />
+          <div className="space-y-4">
+            <label className="block space-y-2">
+              <span className="text-[13px] font-semibold">{t.emailLabel}</span>
+              <span className="relative block">
+                <input
+                  className="input h-[52px] rounded-[12px] bg-surface px-3.5 pr-11 text-[15px]"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  maxLength={254}
+                  placeholder={t.emailPlaceholder}
+                  defaultValue={address || undefined}
+                />
+                <Mail aria-hidden className="pointer-events-none absolute top-1/2 right-3.5 size-[18px] -translate-y-1/2 text-muted" />
+              </span>
+            </label>
+            <SubmitButton className={`btn ${action}`} pending={t.sending}>
+              <ArrowRight aria-hidden className="size-[18px]" />
+              {t.submit}
+            </SubmitButton>
+          </div>
+          <p className="flex gap-2.5 text-[13px] text-muted">
+            <KeyRound aria-hidden className="mt-0.5 size-[18px] shrink-0 text-primary" />
+            {t.inviteHint}
+          </p>
+        </form>
+      </div>
     </AuthShell>
   );
 }

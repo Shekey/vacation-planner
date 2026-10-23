@@ -26,6 +26,11 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
         <ul>
           <li>Account: email address, name, preferred language, time of sign-in, session data.</li>
           <li>
+            Sign-in with Microsoft or Google, only if you choose it: the provider sends us your name, your email address and an id for your
+            account there, which we store to recognise you next time. We receive no access to your Microsoft or Google account and no profile
+            photo. During the sign-in, three short-lived cookies protect it against misuse.
+          </li>
+          <li>
             Cookies: only technically necessary ones (§ 25(2) no. 2 TDDDG): the session cookie that keeps you signed in, two cookies that
             protect the sign-in form (CSRF protection and return address), and a cookie with your chosen language.
           </li>
@@ -78,7 +83,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
 
         <h2>3. Purposes and legal bases</h2>
         <ul>
-          <li>Providing the service and sign-in via email link: Art. 6(1)(b) GDPR (contract).</li>
+          <li>Providing the service and sign-in via email link, Microsoft or Google: Art. 6(1)(b) GDPR (contract).</li>
           <li>Billing and retention of invoices: Art. 6(1)(c) GDPR (legal obligations under the HGB and AO).</li>
           <li>Security, abuse prevention and troubleshooting: Art. 6(1)(f) GDPR (legitimate interest).</li>
           <li>
@@ -133,6 +138,11 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
       <h2>2. Welche Daten wir verarbeiten</h2>
       <ul>
         <li>Konto: E-Mail-Adresse, Name, bevorzugte Sprache, Zeitpunkt der Anmeldung, Sitzungsdaten.</li>
+        <li>
+          Anmeldung mit Microsoft oder Google, nur wenn Sie sie wählen: Der Anbieter übermittelt uns Ihren Namen, Ihre E-Mail-Adresse und eine
+          Kennung Ihres Kontos dort, die wir speichern, um Sie wiederzuerkennen. Wir erhalten keinen Zugriff auf Ihr Microsoft- oder Google-Konto
+          und kein Profilbild. Während der Anmeldung schützen drei kurzlebige Cookies sie vor Missbrauch.
+        </li>
         <li>
           Cookies: nur technisch notwendige (§ 25 Abs. 2 Nr. 2 TDDDG): das Sitzungs-Cookie, das Sie angemeldet hält, zwei Cookies, die das
           Anmeldeformular schützen (CSRF-Schutz und Rücksprungadresse), und ein Cookie mit der gewählten Sprache.
@@ -191,7 +201,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
 
       <h2>3. Zwecke und Rechtsgrundlagen</h2>
       <ul>
-        <li>Bereitstellung des Dienstes und Anmeldung per E-Mail-Link: Art. 6 Abs. 1 lit. b DSGVO (Vertrag).</li>
+        <li>Bereitstellung des Dienstes und Anmeldung per E-Mail-Link, Microsoft oder Google: Art. 6 Abs. 1 lit. b DSGVO (Vertrag).</li>
         <li>Abrechnung und Aufbewahrung von Rechnungen: Art. 6 Abs. 1 lit. c DSGVO (gesetzliche Pflichten nach HGB und AO).</li>
         <li>Sicherheit, Missbrauchsschutz und Fehlersuche: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse).</li>
         <li>

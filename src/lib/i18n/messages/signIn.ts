@@ -5,12 +5,17 @@ export const signIn = defineMessages({
     title: "Sign in",
     /** Codes Auth.js puts in ?error= when it sends someone back here, plus our own RateLimited. */
     errors: {
-      Configuration: "We couldn't send the sign-in email. This is a problem on our side, not with your address. Please try again in a few minutes.",
+      Configuration:
+        "We couldn't sign you in. This is a problem on our side, not with your address or account. Please try again in a few minutes.",
       Verification:
         "That sign-in link has expired or was already used. Links work once, for an hour; some company mail filters open links before you do. Enter your email to get a new one.",
       EmailSignInError: "We couldn't send an email to that address. Check it for typos, or try again in a few minutes.",
       AccessDenied: "You don't have access.",
       RateLimited: "Too many sign-in links were requested from your network. Please try again in an hour.",
+      EmailNotVerified:
+        "Your Google or Microsoft account didn't give us a confirmed email address, so we can't tell which account is yours. Enter your email below to get a sign-in link instead.",
+      OAuthCallbackError: "Signing in with Google or Microsoft was cancelled or didn't work. Try again, or enter your email below.",
+      OAuthAccountNotLinked: "This email already has an account. Enter it below to get a sign-in link.",
     } as Record<string, string>,
     defaultError: "Something went wrong signing you in. Please try again.",
     checkEmail: "Check your email",
@@ -64,18 +69,24 @@ export const signIn = defineMessages({
     title: "Anmelden",
     errors: {
       Configuration:
-        "Wir konnten die Anmelde-E-Mail nicht verschicken. Das liegt an uns, nicht an deiner Adresse. Bitte versuch es in ein paar Minuten noch einmal.",
+        "Wir konnten dich nicht anmelden. Das liegt an uns, nicht an deiner Adresse oder deinem Konto. Bitte versuch es in ein paar Minuten noch einmal.",
       Verification:
         "Dieser Anmeldelink ist abgelaufen oder wurde schon benutzt. Links funktionieren einmal, für eine Stunde; manche Mailfilter in Firmen öffnen Links, bevor du es tust. Gib deine E-Mail-Adresse ein, um einen neuen zu bekommen.",
       EmailSignInError:
         "Wir konnten keine E-Mail an diese Adresse schicken. Prüf sie auf Tippfehler oder versuch es in ein paar Minuten noch einmal.",
       AccessDenied: "Du hast keinen Zugriff.",
       RateLimited: "Aus deinem Netzwerk wurden zu viele Anmeldelinks angefordert. Bitte versuch es in einer Stunde noch einmal.",
+      EmailNotVerified:
+        "Dein Google- oder Microsoft-Konto hat uns keine bestätigte E-Mail-Adresse mitgegeben, deshalb wissen wir nicht, welches Konto deins ist. Gib unten deine E-Mail-Adresse ein, dann schicken wir dir einen Anmeldelink.",
+      OAuthCallbackError:
+        "Die Anmeldung mit Google oder Microsoft wurde abgebrochen oder hat nicht geklappt. Versuch es noch einmal oder gib unten deine E-Mail-Adresse ein.",
+      OAuthAccountNotLinked: "Für diese E-Mail-Adresse gibt es schon ein Konto. Gib sie unten ein, um einen Anmeldelink zu bekommen.",
     },
     defaultError: "Bei der Anmeldung ist etwas schiefgelaufen. Bitte versuch es noch einmal.",
     checkEmail: "Schau in dein Postfach",
     sentTo: "Wir haben einen Anmeldelink geschickt an",
-    sentBody: "Öffne ihn auf diesem oder einem anderen Gerät. Er funktioniert einmal und läuft nach einer Stunde ab. Du kannst diesen Tab schließen.",
+    sentBody:
+      "Öffne ihn auf diesem oder einem anderen Gerät. Er funktioniert einmal und läuft nach einer Stunde ab. Du kannst diesen Tab schließen.",
     alreadySent:
       "Wir haben in den letzten Minuten schon mehrere Links an diese Adresse geschickt, deshalb kam kein weiterer. Nimm den neuesten; jeder gilt eine Stunde. In 10 Minuten kannst du wieder einen neuen anfordern.",
     back: "Zurück zur Anmeldung",
@@ -112,7 +123,8 @@ export const signIn = defineMessages({
     hero: ["Ein bisschen Ruhe,", "für deine freie Zeit."],
     inviteIntro: "Melde dich an, um deine Einladung anzunehmen. Wir schicken dir einen Link per E-Mail.",
     intro: "Melde dich an, um deine Abwesenheiten mit deinem Team zu planen. Kein Passwort nötig.",
-    inviteHint: "Nutze die E-Mail-Adresse, an die dein Team die Einladung geschickt hat. Die Anmeldung schafft keinen Zugang zu einem Workspace.",
+    inviteHint:
+      "Nutze die E-Mail-Adresse, an die dein Team die Einladung geschickt hat. Die Anmeldung schafft keinen Zugang zu einem Workspace.",
     hosting: "Gehostet in Frankfurt, EU. Keine Tracking-Cookies.",
     privacy: "Datenschutz",
     emailLabel: "Geschäftliche E-Mail-Adresse",
