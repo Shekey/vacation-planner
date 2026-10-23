@@ -54,6 +54,28 @@ describe("the last admin", () => {
   });
 });
 
+describe("roles", () => {
+  it("can be approver or view only, and the activity log says which", async () => {
+    const team = await makeWorkspace();
+    await signedInAsAdmin(team);
+    for (const role of ["APPROVER", "VIEWER", "MEMBER"] as const) {
+      expect(await updateMemberAction(team.workspace.slug, team.member.id, {}, form({ role, allowance: "20" }))).toEqual({ ok: t.saved });
+      expect((await db.membership.findUniqueOrThrow({ where: { id: team.member.id } })).role).toBe(role);
+    }
+    const changes = await db.auditEvent.findMany({ where: { workspaceId: team.workspace.id, action: "member.role_changed" }, orderBy: { createdAt: "asc" } });
+    expect(changes.map((e) => e.detail)).toEqual(["APPROVER", "VIEWER", "MEMBER"]);
+  });
+
+  it("stay member for someone without email, who can't sign in", async () => {
+    const team = await makeWorkspace();
+    await signedInAsAdmin(team);
+    await addWithoutEmailAction(team.workspace.slug, {}, form({ name: "Paper Person" }));
+    const paper = await db.membership.findFirstOrThrow({ where: { workspaceId: team.workspace.id, user: { name: "Paper Person" } } });
+    await updateMemberAction(team.workspace.slug, paper.id, {}, form({ role: "APPROVER", allowance: "20" }));
+    expect((await db.membership.findUniqueOrThrow({ where: { id: paper.id } })).role).toBe("MEMBER");
+  });
+});
+
 describe("removing and restoring someone", () => {
   it("cancels their future time off and brings it back with them", async () => {
     const team = await makeWorkspace();

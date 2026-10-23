@@ -9,6 +9,7 @@ import type { Locale } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { hasNoEmail } from "@/lib/no-email";
 import Link from "next/link";
+import { ROLES } from "@/lib/permissions";
 import { requireAdmin } from "@/lib/session";
 import { restoreCutoff, restoreDaysLeft } from "@/lib/undo";
 import { SampleTeamButton } from "../sample-team-button";
@@ -151,8 +152,11 @@ export default async function MembersPage({
                       className="input w-auto py-1"
                       aria-label={t.roleFor(who)}
                     >
-                      <option value="MEMBER">{common.member}</option>
-                      <option value="ADMIN">{common.admin}</option>
+                      {ROLES.map((r) => (
+                        <option key={r} value={r}>
+                          {common.role[r]}
+                        </option>
+                      ))}
                     </select>
                     <label className="flex items-center gap-1">
                       <input
@@ -351,13 +355,27 @@ export default async function MembersPage({
               defaultValue="MEMBER"
               aria-label={t.inviteAs}
             >
-              <option value="MEMBER">{t.asMembers}</option>
-              <option value="ADMIN">{t.asAdmins}</option>
+              {ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {t.as[r]}
+                </option>
+              ))}
             </select>
             <button className="btn">{t.sendInvites}</button>
           </div>
         </ActionForm>
         <p className="text-xs text-muted">{t.inviteHint}</p>
+        <details className="rounded-lg border border-border px-3 py-2 text-sm">
+          <summary className="cursor-pointer py-1 font-medium">{t.rolesHeading}</summary>
+          <dl className="space-y-1.5 pt-1 pb-2">
+            {ROLES.map((r) => (
+              <div key={r}>
+                <dt className="inline font-medium">{common.role[r]}: </dt>
+                <dd className="inline text-muted">{common.roleHint[r]}</dd>
+              </div>
+            ))}
+          </dl>
+        </details>
         <details className="rounded-lg border border-border px-3 py-2">
           <summary className="cursor-pointer py-1 text-sm font-medium">
             {t.noEmail.toggle}
@@ -406,7 +424,7 @@ export default async function MembersPage({
                 <span>
                   {i.email}{" "}
                   <span className="text-muted">
-                    · {i.role === "ADMIN" ? t.roleAdmin : t.roleMember}
+                    · {common.role[i.role]}
                   </span>
                   {i.expiresAt < now && (
                     <span className="ml-2 text-danger">

@@ -6,6 +6,7 @@ import { accessOf } from "@/lib/plans";
 import type { Plan } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { isLocale } from "@/lib/i18n";
+import { can, type Action, type Role } from "@/lib/permissions";
 
 /** The signed-in user, or a redirect to sign in. */
 export const requireUser = cache(async () => {
@@ -29,7 +30,14 @@ export const requireMembership = cache(async (slug: string) => {
   return { user, membership, workspace: membership.workspace };
 });
 
-/** Like requireMembership, but only for admins; members get a 404. */
+/** Like requireMembership, but only for roles allowed to do `action` (#77); everyone else gets a 404. */
+export async function requirePermission(slug: string, action: Action) {
+  const ctx = await requireMembership(slug);
+  if (!can(ctx.membership.role, action)) notFound();
+  return ctx;
+}
+
+/** Like requireMembership, but only for admins; everyone else gets a 404. */
 export async function requireAdmin(slug: string) {
   const ctx = await requireMembership(slug);
   if (ctx.membership.role !== "ADMIN") notFound();
@@ -69,6 +77,6 @@ export function settingsOf(workspace: { settings: SettingsRow | null } & Billing
   };
 }
 
-export function actorOf(ctx: { user: { id: string }; membership: { id: string; role: "ADMIN" | "MEMBER" } }) {
+export function actorOf(ctx: { user: { id: string }; membership: { id: string; role: Role } }) {
   return { userId: ctx.user.id, membershipId: ctx.membership.id, role: ctx.membership.role };
 }

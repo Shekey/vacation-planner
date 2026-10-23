@@ -25,6 +25,7 @@ import {
 import { db } from "@/lib/db";
 import { intlLocale } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
+import { can } from "@/lib/permissions";
 import { requireMembership, settingsOf } from "@/lib/session";
 import { holidayName } from "@/lib/holidays";
 
@@ -131,7 +132,7 @@ export default async function CalendarPage({
         </div>
         <ViewToggle slug={slug} view="month" month={month} labels={{ group: t.viewLabel, weeks: t.twoWeeks, month: t.month }} />
       </div>
-      <Legend locale={locale} withSick={membership.role === "ADMIN"} />
+      <Legend locale={locale} withSick={can(membership.role, "sick:see")} />
 
       <ScrollToToday className="overflow-x-auto overscroll-x-contain rounded-[18px] border border-border bg-surface">
         <table className="w-full border-collapse text-xs">
@@ -174,7 +175,7 @@ export default async function CalendarPage({
           <tbody>
             {members.map((m) => {
               const own = byMember.get(m.id) ?? [];
-              const canBook = isAdmin || m.id === membership.id;
+              const canBook = m.id === membership.id ? can(membership.role, "bookings:own") : can(membership.role, "bookings:manage-all");
               const region = regionOf(m, settings);
               return (
                 <tr

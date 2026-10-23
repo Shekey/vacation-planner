@@ -81,9 +81,12 @@ model VerificationToken {
 
 // ---------- Domain ----------
 
+// ADMIN runs the workspace, APPROVER decides requests and books for others, MEMBER books their own, VIEWER only looks (#77).
 enum Role {
   ADMIN
+  APPROVER
   MEMBER
+  VIEWER
 }
 
 enum Plan {

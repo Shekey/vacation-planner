@@ -28,9 +28,9 @@ export default async function BookPage({ params, searchParams }: PageProps<"/w/[
       <BookingForm
         action={saveBooking.bind(null, slug, null)}
         members={data.members}
-        canChooseMember={data.isAdmin && data.members.length > 1}
+        canChooseMember={data.forOthers && data.members.length > 1}
         settings={data.settings}
-        isAdmin={data.isAdmin}
+        roles={data.roles}
         currentYear={data.currentYear}
         team={data.team}
         holidays={data.holidays}

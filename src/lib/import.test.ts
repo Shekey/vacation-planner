@@ -73,6 +73,10 @@ describe("cells", () => {
   it("role", () => {
     expect(parseRole("Admin")).toBe("ADMIN");
     expect(parseRole("Mitglied")).toBe("MEMBER");
+    expect(parseRole("Genehmiger:in")).toBe("APPROVER");
+    expect(parseRole("Teamleitung")).toBe("APPROVER");
+    expect(parseRole("Nur ansehen")).toBe("VIEWER");
+    expect(parseRole("Read-only")).toBe("VIEWER");
     expect(parseRole("")).toBe("MEMBER");
     expect(parseRole("Chef")).toBe("bad");
   });

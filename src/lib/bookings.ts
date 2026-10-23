@@ -22,6 +22,7 @@ import { recordAudit, bookingDetail } from "@/lib/audit";
 import { isSampleEmail } from "@/lib/sample-team";
 import { canRestore } from "@/lib/undo";
 import { afterResponse } from "@/lib/background";
+import { can } from "@/lib/permissions";
 import { approveLinkUrl } from "@/lib/approve-link";
 
 export const ACTIVE_STATUSES: BookingStatus[] = ["PENDING", "APPROVED"];
@@ -55,13 +56,13 @@ export function rulesFor(
 /**
  * Hides other people's sick days from a viewer who isn't an admin: they show as "Other" without a note,
  * since being sick is health data (Art. 9 GDPR). Only the person and admins see them as sick, and only they
- * see why someone takes special leave.
+ * see why someone takes special leave. Approvers see "Other" like everyone else.
  */
 export function forViewer<T extends { type: BookingType; note: string | null; membershipId: string; specialReason?: SpecialReason | null }>(
   bookings: T[],
   viewer: { membershipId: string; role: Role },
 ): T[] {
-  if (viewer.role === "ADMIN") return bookings;
+  if (can(viewer.role, "sick:see")) return bookings;
   return bookings.map((b) => {
     if (b.membershipId === viewer.membershipId) return b;
     if (b.type === "SICK") return { ...b, type: "OTHER" as const, note: null };
@@ -153,9 +154,24 @@ function prepare(input: BookingInput, settings: Settings, rules: DayRules, t: Me
   };
 }
 
-/** Pending when approvals are on, unless an admin created it. Sick days are never asked for. */
-function initialStatus(actor: Actor, settings: Settings, type?: BookingType): BookingStatus {
-  return settings.approvalsEnabled && actor.role !== "ADMIN" && type !== "SICK" ? "PENDING" : "APPROVED";
+/**
+ * Pending when approvals are on, unless an admin made it, or an approver for someone else (they could approve it
+ * anyway). An approver's own time off waits for someone else to decide. Sick days are never asked for.
+ */
+function initialStatus(actor: Actor, settings: Settings, type: BookingType | undefined, membershipId: string): BookingStatus {
+  if (!settings.approvalsEnabled || type === "SICK" || actor.role === "ADMIN") return "APPROVED";
+  return membershipId !== actor.membershipId && can(actor.role, "bookings:decide") ? "APPROVED" : "PENDING";
+}
+
+/**
+ * Whether the actor may book this kind of time off for this person: their own needs "bookings:own" (not viewers),
+ * someone else's needs "bookings:manage-all", and someone else's sick days need "sick:see" (admins only).
+ */
+function assertMayBook(actor: Actor, membershipId: string, type: BookingType, t: Messages["errors"], own: string) {
+  const self = membershipId === actor.membershipId;
+  if (self && !can(actor.role, "bookings:own")) throw new BookingError(t.viewerCantBook);
+  if (!self && !can(actor.role, "bookings:manage-all")) throw new BookingError(own);
+  if (!self && type === "SICK" && !can(actor.role, "sick:see")) throw new BookingError(t.onlyAdminsSickForOthers);
 }
 
 type Tx = Parameters<Parameters<typeof db.$transaction>[0]>[0];
@@ -182,7 +198,7 @@ async function giveBackVacation(
     })
   ).filter((b) => spansOverlap(spanOf(b), opts.sick));
   if (vacations.length === 0) return 0;
-  if (opts.actor.role !== "ADMIN") throw new BookingError(opts.t.sickInVacation);
+  if (!can(opts.actor.role, "sick:see")) throw new BookingError(opts.t.sickInVacation);
 
   let returned = 0;
   for (const b of vacations) {
@@ -244,9 +260,7 @@ export async function createBooking(opts: {
 }) {
   const { workspace, settings, actor, membershipId, input } = opts;
   const t = (await getMessages()).errors;
-  if (membershipId !== actor.membershipId && actor.role !== "ADMIN") {
-    throw new BookingError(t.onlyAdminsBookForOthers);
-  }
+  assertMayBook(actor, membershipId, input.type, t, t.onlyAdminsBookForOthers);
   await assertWithinPlan(workspace.id);
   const target = await db.membership.findFirst({
     where: { id: membershipId, workspaceId: workspace.id, removedAt: null },
@@ -254,7 +268,7 @@ export async function createBooking(opts: {
   });
   if (!target) throw new BookingError(t.memberNotInWorkspace);
 
-  const status = initialStatus(actor, settings, input.type);
+  const status = initialStatus(actor, settings, input.type, membershipId);
   const holidays = await loadHolidays(workspace.id, regionOf(target, settings));
   const rules = rulesFor(target, settings, holidays);
   const data = prepare(input, settings, rules, t);
@@ -279,7 +293,7 @@ export async function createBooking(opts: {
   // The booking is saved: emails and chat posts go out after the response, so a slow provider doesn't hold the person up.
   await afterResponse(async () => {
     if (status === "PENDING") await notifyAdminsOfRequest(workspace, settings, target.user, booking, opts.origin);
-    if (input.type === "SICK" && actor.role !== "ADMIN") await notifyAdminsOfSickDays(workspace, settings, target.user, booking, opts.origin);
+    if (input.type === "SICK" && !can(actor.role, "sick:see")) await notifyAdminsOfSickDays(workspace, settings, target.user, booking, opts.origin);
     await announce(
       workspace.id,
       settings,
@@ -350,12 +364,12 @@ export async function updateBooking(opts: {
   });
   if (!existing) throw new BookingError(t.bookingNotFound);
   await assertWithinPlan(workspace.id);
-  if (existing.membershipId !== actor.membershipId && actor.role !== "ADMIN") {
-    throw new BookingError(t.onlyOwnChange);
-  }
+  assertMayBook(actor, existing.membershipId, input.type, t, t.onlyOwnChange);
+  // Someone else's sick days stay with those who may see them, whatever they are changed into.
+  if (existing.type === "SICK") assertMayBook(actor, existing.membershipId, "SICK", t, t.onlyOwnChange);
 
   // A member changing dates sends the booking back for approval.
-  const status = initialStatus(actor, settings, input.type);
+  const status = initialStatus(actor, settings, input.type, existing.membershipId);
   const holidays = await loadHolidays(workspace.id, regionOf(existing.membership, settings));
   const rules = rulesFor(existing.membership, settings, holidays);
   const data = prepare(input, settings, rules, t);
@@ -394,9 +408,7 @@ export async function cancelBooking(opts: { workspaceId: string; actor: Actor; b
     include: { membership: { include: { user: { select: { name: true, email: true } } } } },
   });
   if (!booking) throw new BookingError(t.bookingNotFound);
-  if (booking.membershipId !== opts.actor.membershipId && opts.actor.role !== "ADMIN") {
-    throw new BookingError(t.onlyOwnCancel);
-  }
+  assertMayBook(opts.actor, booking.membershipId, booking.type, t, t.onlyOwnCancel);
   // Remember what it was, so "Restore" puts it back as it was (approved stays approved).
   // Only while it is still as read, so a second tap or an approval at the same moment can't apply on top.
   const { count } = await db.booking.updateMany({
@@ -429,15 +441,13 @@ export async function restoreBooking(opts: {
     include: { membership: { include: { user: { select: { name: true, email: true } } } } },
   });
   if (!booking) throw new BookingError(t.bookingNotFound);
-  if (booking.membershipId !== opts.actor.membershipId && opts.actor.role !== "ADMIN") {
-    throw new BookingError(t.onlyOwnChange);
-  }
+  assertMayBook(opts.actor, booking.membershipId, booking.type, t, t.onlyOwnChange);
   if (!canRestore(booking.cancelledAt)) throw new BookingError(t.restoreExpired);
   await assertWithinPlan(opts.workspace.id);
   const { count } = await write(() =>
     db.booking.updateMany({
       where: { id: booking.id, status: "CANCELLED" },
-      data: { status: booking.cancelledFrom ?? initialStatus(opts.actor, opts.settings), cancelledAt: null, cancelledFrom: null },
+      data: { status: booking.cancelledFrom ?? initialStatus(opts.actor, opts.settings, booking.type, booking.membershipId), cancelledAt: null, cancelledFrom: null },
     }),
   );
   if (count === 0) throw new BookingError(t.bookingNotFound);
@@ -460,12 +470,14 @@ export async function decideBooking(opts: {
   origin: string;
 }) {
   const t = (await getMessages()).errors;
-  if (opts.actor.role !== "ADMIN") throw new BookingError(t.onlyAdminsApprove);
+  if (!can(opts.actor.role, "bookings:decide")) throw new BookingError(t.onlyAdminsApprove);
   const booking = await db.booking.findFirst({
     where: { id: opts.bookingId, workspaceId: opts.workspace.id, status: "PENDING" },
     include: { membership: { include: { user: true } } },
   });
   if (!booking) throw new BookingError(t.alreadyHandled);
+  // An approver's own request is decided by someone else; admins already skip approval for their own.
+  if (booking.membershipId === opts.actor.membershipId && opts.actor.role !== "ADMIN") throw new BookingError(t.notOwnRequest);
 
   // Only a booking that is still pending: when two admins (or a double tap) decide at once, one wins and the
   // other gets "already handled", so the person gets one email and the channel one post.
@@ -524,11 +536,12 @@ async function notifyAdminsOfRequest(
   workspace: { id: string; name: string; slug: string },
   settings: Settings,
   requester: { name: string | null; email: string },
-  booking: { id: string; startDate: Date; endDate: Date; daysCount: Prisma.Decimal | number },
+  booking: { id: string; membershipId: string; startDate: Date; endDate: Date; daysCount: Prisma.Decimal | number },
   origin: string,
 ) {
+  // Admins and approvers (#77), but not the person asking: an approver's own request goes to the others.
   const admins = await db.membership.findMany({
-    where: { workspaceId: workspace.id, role: "ADMIN", removedAt: null },
+    where: { workspaceId: workspace.id, role: { in: ["ADMIN", "APPROVER"] }, removedAt: null, id: { not: booking.membershipId } },
     select: { id: true, user: { select: { email: true, locale: true } } },
   });
   const who = requester.name ?? requester.email;

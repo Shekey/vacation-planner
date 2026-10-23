@@ -8,6 +8,7 @@ import { formatRange, fromISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { formatNumber } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
+import { can } from "@/lib/permissions";
 import { requireMembership, settingsOf } from "@/lib/session";
 import { cancelBookingAction, restoreBookingAction } from "../book/actions";
 import { canRestore } from "@/lib/undo";
@@ -135,12 +136,14 @@ export default async function MyTimeOffPage({
         {upcoming.length === 0 ? (
           <EmptyState icon="🏝️">
             {t.nothingPlanned}{" "}
-            <Link
-              href={`/w/${slug}/book`}
-              className="font-medium text-primary hover:underline"
-            >
-              {t.bookTimeOff}
-            </Link>
+            {can(membership.role, "bookings:own") && (
+              <Link
+                href={`/w/${slug}/book`}
+                className="font-medium text-primary hover:underline"
+              >
+                {t.bookTimeOff}
+              </Link>
+            )}
           </EmptyState>
         ) : (
           <ul className="divide-y divide-border">

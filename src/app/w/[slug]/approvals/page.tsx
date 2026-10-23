@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/ui";
 import { todayIn } from "@/lib/dates";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { reviewRequests } from "@/lib/request-review";
-import { requireAdmin, settingsOf } from "@/lib/session";
+import { requirePermission, settingsOf } from "@/lib/session";
 import { decideAction } from "./actions";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -18,7 +18,7 @@ export default async function ApprovalsPage({
   params,
 }: PageProps<"/w/[slug]/approvals">) {
   const { slug } = await params;
-  const { workspace } = await requireAdmin(slug);
+  const { workspace } = await requirePermission(slug, "bookings:decide");
   const settings = settingsOf(workspace);
   const locale = await getLocale();
   const messages = await getMessages();

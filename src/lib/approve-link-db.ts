@@ -1,6 +1,6 @@
 import { readApproveToken } from "@/lib/approve-link";
 import { db } from "@/lib/db";
-import { can } from "@/lib/permissions";
+import { can, type Role } from "@/lib/permissions";
 
 export type ApproveLinkContext =
   | { status: "broken" }
@@ -8,7 +8,7 @@ export type ApproveLinkContext =
   | {
       status: "ok";
       bookingId: string;
-      admin: { id: string; userId: string; role: "ADMIN" | "MEMBER"; user: { email: string; name: string | null } };
+      admin: { id: string; userId: string; role: Role; user: { email: string; name: string | null } };
       workspace: NonNullable<Awaited<ReturnType<typeof loadWorkspace>>>;
     };
 

@@ -11,6 +11,7 @@ import { addDays, eachDay, formatDate, fromISO, isISODate, isoWeekday, isWeekend
 import { db } from "@/lib/db";
 import { holidayName } from "@/lib/holidays";
 import { getLocale, getMessages } from "@/lib/i18n/server";
+import { can } from "@/lib/permissions";
 import { requireMembership, settingsOf } from "@/lib/session";
 import { peopleOff } from "@/lib/staffing";
 
@@ -203,7 +204,7 @@ export async function TeamWeeks({ slug, query }: { slug: string; query: Record<s
             </tr>
             {members.map((m) => {
               const own = bookings.filter((b) => b.membershipId === m.id);
-              const canBook = isAdmin || m.id === membership.id;
+              const canBook = m.id === membership.id ? can(membership.role, "bookings:own") : can(membership.role, "bookings:manage-all");
               const region = regionOf(m, settings);
               // One pill per booking, drawn from its first visible day across all the days it covers.
               const pills = own.flatMap((b) => {

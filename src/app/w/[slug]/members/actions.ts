@@ -19,6 +19,7 @@ import { coldMailLeft, MailLimitError, recordColdMail } from "@/lib/mail-limits"
 import { accessOf } from "@/lib/plans";
 import { restoreMember } from "@/lib/restore";
 import { MEMBER_REMOVED } from "@/lib/undo";
+import { isRole } from "@/lib/permissions";
 import { requireAdmin } from "@/lib/session";
 import { appOrigin } from "@/lib/url";
 
@@ -38,7 +39,8 @@ export async function inviteAction(slug: string, _prev: ActionResult, formData: 
   const { invite } = await inviteContext(slug);
   const t = (await getMessages()).members;
   const { valid, invalid } = parseEmailList(String(formData.get("emails") ?? ""));
-  const role = formData.get("role") === "ADMIN" ? "ADMIN" : "MEMBER";
+  const picked = formData.get("role");
+  const role = isRole(picked) ? picked : "MEMBER";
   if (invalid.length) return { error: t.errors.invalidEmail(invalid.join(", ")) };
   if (valid.length === 0) return { error: t.errors.noEmail };
   if (valid.length > 50) return { error: t.errors.tooMany };
@@ -151,7 +153,8 @@ export async function updateMemberAction(
   if (!member) return { error: t.errors.memberNotFound };
 
   // Sample people and people without email can't sign in, so they never become admins.
-  const role = formData.get("role") === "ADMIN" && !isPlaceholderEmail(member.user.email) ? "ADMIN" : "MEMBER";
+  const picked = formData.get("role");
+  const role = isRole(picked) && !isPlaceholderEmail(member.user.email) ? picked : "MEMBER";
   if (role === "MEMBER" && member.role === "ADMIN" && (await wouldRemoveLastAdmin(ctx.workspace.id, member.id))) {
     return { error: t.errors.lastAdmin };
   }

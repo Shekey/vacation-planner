@@ -24,6 +24,7 @@ import { Avatar, LogoMark } from "@/components/ui";
 import { db } from "@/lib/db";
 import { getMessages } from "@/lib/i18n/server";
 import { accessOf, isOverLimit, PLANS } from "@/lib/plans";
+import { can } from "@/lib/permissions";
 import { requireMembership, settingsOf } from "@/lib/session";
 
 export default async function WorkspaceLayout({
@@ -34,8 +35,11 @@ export default async function WorkspaceLayout({
   const { workspace, membership, user } = await requireMembership(slug);
   const settings = settingsOf(workspace);
   const isAdmin = membership.role === "ADMIN";
+  // Approvers see Approvals; viewers have nothing to book (#77).
+  const canDecide = can(membership.role, "bookings:decide") && settings.approvalsEnabled;
+  const canBook = can(membership.role, "bookings:own") || can(membership.role, "bookings:manage-all");
   const pendingCount =
-    isAdmin && settings.approvalsEnabled
+    canDecide
       ? await db.booking.count({
           where: { workspaceId: workspace.id, status: "PENDING" },
         })
@@ -114,16 +118,18 @@ export default async function WorkspaceLayout({
               </SidebarLink>
             </li>
           </ul>
-          {isAdmin && (
+          {(isAdmin || canDecide) && (
             <div className="space-y-2 border-t border-border pt-5">
               <p className="px-3 text-[11px] font-semibold tracking-wide text-muted uppercase">{t.shell.tools}</p>
               <ul className="space-y-0.5">
-                <li>
-                  <SidebarLink href={`${base}/admin`} exact icon={<LayoutDashboard aria-hidden />}>
-                    {t.shell.adminOverview}
-                  </SidebarLink>
-                </li>
-                {settings.approvalsEnabled && (
+                {isAdmin && (
+                  <li>
+                    <SidebarLink href={`${base}/admin`} exact icon={<LayoutDashboard aria-hidden />}>
+                      {t.shell.adminOverview}
+                    </SidebarLink>
+                  </li>
+                )}
+                {canDecide && (
                   <li>
                     <SidebarLink href={`${base}/approvals`} icon={<Inbox aria-hidden />}>
                       {t.nav.approvals}
@@ -136,26 +142,30 @@ export default async function WorkspaceLayout({
                     </SidebarLink>
                   </li>
                 )}
-                <li>
-                  <SidebarLink href={`${base}/members`} icon={<UserCog aria-hidden />}>
-                    {t.nav.members}
-                  </SidebarLink>
-                </li>
-                <li>
-                  <SidebarLink href={`${base}/activity`} icon={<History aria-hidden />}>
-                    {t.nav.activity}
-                  </SidebarLink>
-                </li>
-                <li>
-                  <SidebarLink href={`${base}/settings`} icon={<Settings2 aria-hidden />}>
-                    {t.nav.settings}
-                  </SidebarLink>
-                </li>
-                <li>
-                  <SidebarLink href={`${base}/billing`} icon={<CreditCard aria-hidden />}>
-                    {t.nav.billing}
-                  </SidebarLink>
-                </li>
+                {isAdmin && (
+                  <>
+                    <li>
+                      <SidebarLink href={`${base}/members`} icon={<UserCog aria-hidden />}>
+                        {t.nav.members}
+                      </SidebarLink>
+                    </li>
+                    <li>
+                      <SidebarLink href={`${base}/activity`} icon={<History aria-hidden />}>
+                        {t.nav.activity}
+                      </SidebarLink>
+                    </li>
+                    <li>
+                      <SidebarLink href={`${base}/settings`} icon={<Settings2 aria-hidden />}>
+                        {t.nav.settings}
+                      </SidebarLink>
+                    </li>
+                    <li>
+                      <SidebarLink href={`${base}/billing`} icon={<CreditCard aria-hidden />}>
+                        {t.nav.billing}
+                      </SidebarLink>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
           )}
@@ -176,7 +186,7 @@ export default async function WorkspaceLayout({
           </div>
           <div className="flex shrink-0 items-center gap-4 sm:gap-5">
             <span className="hidden text-xs text-muted xl:inline">{workspace.timezone}</span>
-            {isAdmin && settings.approvalsEnabled && (
+            {canDecide && (
               <Link
                 href={`${base}/approvals`}
                 className="relative grid size-11 place-items-center rounded-full text-muted hover:bg-surface-muted hover:text-foreground"
@@ -187,9 +197,11 @@ export default async function WorkspaceLayout({
                 {pendingCount > 0 && <span aria-hidden className="absolute top-2.5 right-2.5 size-2 rounded-full bg-warning" />}
               </Link>
             )}
-            <Link href={`${base}/book`} className="btn hidden py-2 text-sm lg:inline-flex">
-              <Plus aria-hidden className="size-4" /> {t.bookTimeOff}
-            </Link>
+            {canBook && (
+              <Link href={`${base}/book`} className="btn hidden py-2 text-sm lg:inline-flex">
+                <Plus aria-hidden className="size-4" /> {t.bookTimeOff}
+              </Link>
+            )}
             <div className="lg:hidden">
               <ProfileMenu label={userLabel} hint={t.shell.profile} account={t.shell.account} signOutLabel={common.signOut} compact />
             </div>
@@ -200,10 +212,8 @@ export default async function WorkspaceLayout({
           {/* Below the sidebar breakpoint: holidays and the admin pages the bottom bar has no room for. */}
           <nav aria-label={t.shell.tools} className="-mx-4 -mt-2 flex gap-1 overflow-x-auto px-4 pb-1 whitespace-nowrap sm:-mx-8 sm:px-8 lg:hidden">
             <NavLink href={`${base}/holidays`}>{t.nav.holidays}</NavLink>
-            {isAdmin && (
-              <>
-                <NavLink href={`${base}/admin`}>{t.shell.adminOverview}</NavLink>
-                {settings.approvalsEnabled && (
+            {isAdmin && <NavLink href={`${base}/admin`}>{t.shell.adminOverview}</NavLink>}
+            {canDecide && (
                   <NavLink href={`${base}/approvals`}>
                     {t.nav.approvals}
                     {pendingCount > 0 && (
@@ -213,7 +223,9 @@ export default async function WorkspaceLayout({
                       </span>
                     )}
                   </NavLink>
-                )}
+            )}
+            {isAdmin && (
+              <>
                 <NavLink href={`${base}/members`}>{t.nav.members}</NavLink>
                 <NavLink href={`${base}/activity`}>{t.nav.activity}</NavLink>
                 <NavLink href={`${base}/settings`}>{t.nav.settings}</NavLink>
@@ -287,13 +299,17 @@ export default async function WorkspaceLayout({
             label: t.nav.short.calendar,
             icon: "calendar",
           },
-          {
-            href: `${base}/book`,
-            label: t.nav.short.book,
-            icon: "plus",
-            primary: true,
-            exact: true,
-          },
+          ...(canBook
+            ? [
+                {
+                  href: `${base}/book`,
+                  label: t.nav.short.book,
+                  icon: "plus" as const,
+                  primary: true,
+                  exact: true,
+                },
+              ]
+            : []),
           { href: `${base}/people`, label: t.nav.short.people, icon: "people" },
           { href: `${base}/me`, label: t.nav.short.me, icon: "me" },
         ]}

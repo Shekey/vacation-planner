@@ -1,0 +1,46 @@
+[1m[38;2;173;127;168m▲ Next.js 16.4.2[39m[22m
+- Local:         http://localhost:3100
+- Network:       http://192.0.2.2:3100
+[32m[1m✓[22m[39m Ready in 135ms
+[32m[1m✓[22m[39m Running next.config.ts took 309ms
+<claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
+
+[auth] Magic link for ada-mvkmz0h5@e2e.test:
+http://localhost:3100/sign-in/confirm?callbackUrl=http%3A%2F%2Flocalhost%3A3100%2F&token=c2d1a43287b74f6b709fa7ca3e7ade40998977ae915244297a74187ad84e6e1d&email=ada-mvkmz0h5%40e2e.test
+
+
+[email] To: ben-mvkmz0h5@e2e.test
+Subject: Ada Admin invited you to E2E team mvkmz0h5 on Urlaubflow
+
+Ada Admin invited you to join E2E team mvkmz0h5.
+
+Accept the invitation: http://localhost:3100/invite/47h_rSBHFkdc-MebtOavIX9KPQEVCgffhEXbz-qikhs
+
+The link expires in 7 days.
+
+
+[auth] Magic link for ben-mvkmz0h5@e2e.test:
+http://localhost:3100/sign-in/confirm?callbackUrl=http%3A%2F%2Flocalhost%3A3100%2Finvite%2F47h_rSBHFkdc-MebtOavIX9KPQEVCgffhEXbz-qikhs&token=1e0522d0f015c16b412a91ed00ea26d6d0c6903cd9392974ecdccbb6bf625c93&email=ben-mvkmz0h5%40e2e.test
+
+
+[email] To: ada-mvkmz0h5@e2e.test
+Subject: Ben Member requested time off
+
+Ben Member requested 3 days off, 1 Mar – 3 Mar 2027, in E2E team mvkmz0h5.
+
+Approve: http://localhost:3100/decide/Y212a216NHkzMDAwOXY4N2QzMmEwMGYwdC5jbXZrbXoyaHMwMDAzdjg3ZGpkemRpdGE5LjE3OTMzNDQ1Nzc.hpSl9_SUs3L2TNdnTq7q82RGbFhgSNoaJfJtPaDBRMU?d=approve
+
+Decline: http://localhost:3100/decide/Y212a216NHkzMDAwOXY4N2QzMmEwMGYwdC5jbXZrbXoyaHMwMDAzdjg3ZGpkemRpdGE5LjE3OTMzNDQ1Nzc.hpSl9_SUs3L2TNdnTq7q82RGbFhgSNoaJfJtPaDBRMU?d=decline
+
+Both links show who else is off first and work for 7 days without signing in. Don't forward this email.
+
+All open requests: http://localhost:3100/w/e2e-team-mvkmz0h5/approvals
+
+
+[email] To: ben-mvkmz0h5@e2e.test
+Subject: Your time off was approved
+
+Your request for 1 Mar – 3 Mar 2027 in E2E team mvkmz0h5 was approved.
+
+http://localhost:3100/w/e2e-team-mvkmz0h5/me
+

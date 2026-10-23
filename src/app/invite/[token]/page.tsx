@@ -58,7 +58,7 @@ export default async function InvitePage({ params }: PageProps<"/invite/[token]"
       }}
     >
       <h1 className="text-xl font-semibold">{t.join(invitation.workspace.name)}</h1>
-      <p className="opacity-80">{t.invitedAs(invitation.role === "ADMIN")}</p>
+      <p className="opacity-80">{t.invitedAs(invitation.role)}</p>
       <button className="btn">{t.accept}</button>
     </form>
   );

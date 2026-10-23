@@ -406,7 +406,7 @@ export function ImportClient({ slug }: { slug: string }) {
                         )
                       : null,
                     r.region ? regionName(r.region, locale) : null,
-                    r.role === "ADMIN" ? messages.common.admin : null,
+                    r.role !== "MEMBER" ? messages.common.role[r.role] : null,
                   ]
                     .filter(Boolean)
                     .join(" · "),

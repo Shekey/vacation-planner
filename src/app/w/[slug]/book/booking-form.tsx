@@ -51,7 +51,8 @@ export type BookingFormProps = {
   /** Every region's holidays; only the booked person's apply. */
   holidays: { date: ISODate; name: string; region: string }[];
   memberCount: number;
-  isAdmin: boolean;
+  /** What the person booking may do (#77): admins skip approval, approvers too when booking for others. */
+  roles: { isAdmin: boolean; decides: boolean; seesSick: boolean; selfId: string };
   currentYear: number;
   team: TeamBooking[];
   initial: {
@@ -155,7 +156,9 @@ export function BookingForm(props: BookingFormProps) {
   }, [start, end, props.team, initial.bookingId, membershipId]);
 
   const sick = type === "SICK";
-  const willBePending = settings.approvalsEnabled && !props.isAdmin && !sick;
+  const forSomeoneElse = membershipId !== props.roles.selfId;
+  const willBePending =
+    settings.approvalsEnabled && !sick && !props.roles.isAdmin && !(props.roles.decides && forSomeoneElse);
 
   // Sick days in this person's vacation give those vacation days back (admins only, see giveBackVacation).
   const vacationReturned =
@@ -222,7 +225,8 @@ export function BookingForm(props: BookingFormProps) {
       <fieldset className="space-y-1">
         <legend className="text-sm font-medium">{t.type}</legend>
         <div className="flex flex-wrap gap-2">
-          {(["VACATION", "SICK", "SPECIAL", "OTHER"] as const).map((option) => (
+          {/* Someone else's sick days are health data: only admins enter them. */}
+          {(["VACATION", "SICK", "SPECIAL", "OTHER"] as const).filter((o) => o !== "SICK" || props.roles.seesSick || !forSomeoneElse).map((option) => (
             <label
               key={option}
               className={`cursor-pointer rounded-lg border px-3 py-1.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40 text-sm ${
@@ -407,8 +411,8 @@ export function BookingForm(props: BookingFormProps) {
             )}
             {willBePending && <p className="text-muted">{t.needsApproval}</p>}
             {sick && vacationReturned > 0 && (
-              <p className={props.isAdmin ? undefined : "text-amber-700 dark:text-amber-400"}>
-                {props.isAdmin ? t.sickGivesBack(fmt(vacationReturned)) : t.sickAskAdmin}
+              <p className={props.roles.seesSick ? undefined : "text-amber-700 dark:text-amber-400"}>
+                {props.roles.seesSick ? t.sickGivesBack(fmt(vacationReturned)) : t.sickAskAdmin}
               </p>
             )}
             {sick && <p className="text-muted">{t.sickHint}</p>}

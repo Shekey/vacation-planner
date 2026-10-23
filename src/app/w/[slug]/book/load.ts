@@ -5,6 +5,8 @@ import { getLocale, getMessages } from "@/lib/i18n/server";
 import type { requireMembership } from "@/lib/session";
 import { settingsOf } from "@/lib/session";
 import { holidayName } from "@/lib/holidays";
+import { can } from "@/lib/permissions";
+import { notFound } from "next/navigation";
 
 type Ctx = Awaited<ReturnType<typeof requireMembership>>;
 
@@ -12,7 +14,15 @@ type Ctx = Awaited<ReturnType<typeof requireMembership>>;
 export async function loadBookingFormData(ctx: Ctx) {
   const { workspace, membership } = ctx;
   const settings = settingsOf(workspace);
-  const isAdmin = membership.role === "ADMIN";
+  // Admins and approvers book for others (#77); sick days for others stay with admins; viewers don't book.
+  const forOthers = can(membership.role, "bookings:manage-all");
+  if (!forOthers && !can(membership.role, "bookings:own")) notFound();
+  const roles = {
+    isAdmin: membership.role === "ADMIN",
+    decides: can(membership.role, "bookings:decide"),
+    seesSick: can(membership.role, "sick:see"),
+    selfId: membership.id,
+  };
   const today = todayIn(workspace.timezone);
   const locale = await getLocale();
   const currentYear = Number(today.slice(0, 4));
@@ -28,7 +38,7 @@ export async function loadBookingFormData(ctx: Ctx) {
   const memberCount = await db.membership.count({ where: { workspaceId: workspace.id, removedAt: null } });
 
   const memberships = await db.membership.findMany({
-    where: { workspaceId: workspace.id, removedAt: null, ...(isAdmin ? {} : { id: membership.id }) },
+    where: { workspaceId: workspace.id, removedAt: null, ...(forOthers ? {} : { id: membership.id }) },
     include: { user: { select: { name: true, email: true } } },
     orderBy: { user: { email: "asc" } },
   });
@@ -57,5 +67,5 @@ export async function loadBookingFormData(ctx: Ctx) {
     vacation: b.type === "VACATION",
   }));
 
-  return { settings, isAdmin, today, currentYear, members, team, holidays, memberCount };
+  return { settings, forOthers, roles, today, currentYear, members, team, holidays, memberCount };
 }
