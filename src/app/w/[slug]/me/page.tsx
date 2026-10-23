@@ -4,7 +4,7 @@ import { AllowanceCard } from "@/components/allowance-card";
 import { StatusBadge, TypeDot, typeLabel } from "@/components/badges";
 import { halfDayLabel } from "@/lib/booking-days";
 import { allowanceSummary, spanOf, withDays } from "@/lib/bookings";
-import { formatRange, fromISO, todayIn } from "@/lib/dates";
+import { formatDate, formatRange, fromISO, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { formatNumber } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
@@ -15,7 +15,7 @@ import { canRestore } from "@/lib/undo";
 import { CopyField } from "@/components/copy-field";
 import { EmptyState } from "@/components/ui";
 import { appOrigin } from "@/lib/url";
-import { disableCalendarFeedAction, resetCalendarFeedAction } from "./actions";
+import { disableCalendarFeedAction, resetCalendarFeedAction, setAwayAction } from "./actions";
 
 export async function generateMetadata() {
   return { title: (await getMessages()).me.title };
@@ -56,6 +56,7 @@ export default async function MyTimeOffPage({
     .filter((b) => b.endDate >= fromISO(today))
     .reverse();
   const past = bookings.filter((b) => b.endDate < fromISO(today));
+  const awayUntil = membership.awayUntil && toISO(membership.awayUntil) >= today ? toISO(membership.awayUntil) : null;
 
   const row = (b: (typeof bookings)[number], editable: boolean) => {
     const span = spanOf(b);
@@ -182,6 +183,27 @@ export default async function MyTimeOffPage({
           </ActionForm>
         )}
       </section>
+
+      {can(membership.role, "bookings:decide") && (
+        <section className="card space-y-3" id="away">
+          <h2 className="font-medium">{t.awayTitle}</h2>
+          <p className="text-sm text-muted">{t.awayHint}</p>
+          {awayUntil && <p className="text-sm font-medium">{t.awayNow(formatDate(awayUntil, { day: "numeric", month: "long", year: "numeric" }, locale))}</p>}
+          <ActionForm action={setAwayAction.bind(null, slug)} className="flex flex-wrap items-end gap-3">
+            <label className="space-y-1 text-sm">
+              <span className="block">{t.awayUntil}</span>
+              <input type="date" name="awayUntil" min={today} defaultValue={awayUntil ?? ""} className="input" />
+            </label>
+            <button className="btn">{t.awaySave}</button>
+          </ActionForm>
+          {awayUntil && (
+            <ActionForm action={setAwayAction.bind(null, slug)}>
+              <input type="hidden" name="awayUntil" value="" />
+              <button className="text-sm underline">{t.awayClear}</button>
+            </ActionForm>
+          )}
+        </section>
+      )}
 
       {past.length > 0 && (
         <section className="card space-y-2">

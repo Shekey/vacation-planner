@@ -280,6 +280,7 @@ export async function createBooking(opts: {
         data: {
           ...data,
           status,
+          ...(status === "PENDING" ? { pendingSince: new Date() } : {}),
           workspaceId: workspace.id,
           membershipId,
           createdById: actor.userId,
@@ -381,7 +382,7 @@ export async function updateBooking(opts: {
       }
       return tx.booking.update({
         where: { id: existing.id },
-        data: { ...data, status, ...(status === "PENDING" ? { decidedById: null, decidedAt: null, decisionNote: null } : {}) },
+        data: { ...data, status, ...(status === "PENDING" ? { decidedById: null, decidedAt: null, decisionNote: null, pendingSince: new Date(), remindedAt: null } : {}) },
       });
     }),
   );
@@ -533,17 +534,21 @@ function recipientLocale(user: { locale?: string | null }, settings: Settings): 
 }
 
 async function notifyAdminsOfRequest(
-  workspace: { id: string; name: string; slug: string },
+  workspace: { id: string; name: string; slug: string; timezone?: string },
   settings: Settings,
   requester: { name: string | null; email: string },
   booking: { id: string; membershipId: string; startDate: Date; endDate: Date; daysCount: Prisma.Decimal | number },
   origin: string,
 ) {
   // Admins and approvers (#77), but not the person asking: an approver's own request goes to the others.
-  const admins = await db.membership.findMany({
-    where: { workspaceId: workspace.id, role: { in: ["ADMIN", "APPROVER"] }, removedAt: null, id: { not: booking.membershipId } },
-    select: { id: true, user: { select: { email: true, locale: true } } },
-  });
+  // Those marked away get it only when everyone is away (#80).
+  const admins = availableDeciders(
+    await db.membership.findMany({
+      where: { workspaceId: workspace.id, role: { in: ["ADMIN", "APPROVER"] }, removedAt: null, id: { not: booking.membershipId } },
+      select: { id: true, awayUntil: true, user: { select: { email: true, locale: true } } },
+    }),
+    todayIn(workspace.timezone ?? "UTC"),
+  );
   const who = requester.name ?? requester.email;
   // One email per admin, in their language: the approve and decline links are signed for that admin (#33).
   for (const admin of admins) {
@@ -566,6 +571,12 @@ async function notifyAdminsOfRequest(
       ),
     });
   }
+}
+
+/** Admins and approvers who aren't away today; everyone when all of them are, so a request never goes nowhere. */
+export function availableDeciders<T extends { awayUntil: Date | null }>(deciders: T[], today: ISODate): T[] {
+  const here = deciders.filter((d) => !d.awayUntil || toISO(d.awayUntil) < today);
+  return here.length > 0 ? here : deciders;
 }
 
 /** Tells admins in their language that someone reported sick; the email says nothing beyond the dates. */

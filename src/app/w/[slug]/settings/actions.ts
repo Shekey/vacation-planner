@@ -39,6 +39,18 @@ function settingsSchema(t: Messages["settings"]) {
       .trim()
       .transform((s) => (s === "" ? null : Number(s)))
       .refine((n) => n === null || (Number.isInteger(n) && n >= 1 && n <= 10000), t.errors.minPeople),
+    reminderDays: z
+      .string()
+      .trim()
+      .default("")
+      .transform((s) => (s === "" ? null : Number(s)))
+      .refine((n) => n === null || (Number.isInteger(n) && n >= 1 && n <= 60), t.errors.days),
+    autoApproveDays: z
+      .string()
+      .trim()
+      .default("")
+      .transform((s) => (s === "" ? null : Number(s)))
+      .refine((n) => n === null || (Number.isInteger(n) && n >= 1 && n <= 60), t.errors.days),
     teamsWebhookUrl: z
       .string()
       .trim()
@@ -69,6 +81,8 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
     maxCarryOverDays: parsed.data.maxCarryOver,
     carryOverExpiry,
     minPeoplePresent: parsed.data.minPeoplePresent,
+    reminderDays: parsed.data.reminderDays,
+    autoApproveDays: parsed.data.autoApproveDays,
     teamsWebhookUrl: parsed.data.teamsWebhookUrl,
     slackWebhookUrl: parsed.data.slackWebhookUrl,
     locale: parsed.data.locale,

@@ -167,6 +167,10 @@ model WorkspaceSettings {
   carryOverExpiry       String?
   // Warn when fewer people than this would be working on a day; null turns the check off.
   minPeoplePresent      Int?
+  // Pending requests (#80): remind the approvers once after this many days (null: never), and approve
+  // automatically after this many days if nobody answered (null: never, the default).
+  reminderDays          Int?      @default(3)
+  autoApproveDays       Int?
   // ISO 3166 country code last used to import public holidays, e.g. "BA".
   holidayCountry        String?
   // Default ISO 3166-2 region for members' regional holidays, e.g. "DE-BE"; null means nationwide only.
@@ -214,6 +218,8 @@ model Membership {
   employmentStart     DateTime? @db.Date
   // A made-up person from "Fill with a sample team": never emailed, can't sign in, not counted toward the plan.
   isSample            Boolean   @default(false)
+  // An admin or approver who is away until this day (inclusive): new requests and reminders go to the others (#80).
+  awayUntil           DateTime? @db.Date
 
   workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -339,6 +345,9 @@ model Booking {
   createdById   String?
   decidedById   String?
   decidedAt     DateTime?
+  // When it last became pending (made, or changed by the person), and when the approvers were reminded of it (#80).
+  pendingSince  DateTime?
+  remindedAt    DateTime?
   decisionNote  String?
   // Set when the booking is cancelled, so it can be restored for RESTORE_DAYS: when, what it was before, and "MEMBER_REMOVED"
   // when it was cancelled because the person was removed (it then comes back with them).
