@@ -149,9 +149,7 @@ test.describe("accessibility (WCAG 2.2 AA, 390 px)", () => {
       // Reduced motion, so scroll-in animations are finished when axe measures contrast.
       const context = await browser.newContext({ locale: look.lang, colorScheme: look.scheme, reducedMotion: "reduce", viewport: { width: 390, height: 844 } });
       const page = await context.newPage();
-      // The landing page (/) is left out until it is rebuilt in the new design (#110): its old team-type
-      // calendars fail colour contrast on the selected tab.
-      for (const path of ["/sign-in", "/impressum"]) {
+      for (const path of ["/", "/sign-in", "/impressum"]) {
         await page.goto(`${path}?lang=${look.lang}`);
         await expect(page.locator("html")).toHaveAttribute("lang", look.lang);
         await expectNoViolations(page, path);

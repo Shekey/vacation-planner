@@ -2,6 +2,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { auth } from "@/auth";
+import { approveToken } from "@/lib/approve-link";
 import { cancelBooking, createBooking } from "@/lib/bookings";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
@@ -10,6 +11,7 @@ import { makeUser, makeWorkspace } from "@/test/db";
 import * as account from "./account/actions";
 import * as operator from "./admin/actions";
 import * as twoFactor from "./two-factor/actions";
+import * as decide from "./decide/[token]/actions";
 import * as approvals from "./w/[slug]/approvals/actions";
 import * as billing from "./w/[slug]/billing/actions";
 import * as book from "./w/[slug]/book/actions";
@@ -42,9 +44,14 @@ type Caller = "signedOut" | "outsider" | "member" | "admin";
  * - `admin`, `member`: workspace actions, called with our slug (and the outsider's) and ids from our workspace.
  * - `self`: acts on the caller's own account; only needs a sign-in.
  * - `operator`: the operator's area; refused for everyone here, none of them is in SUPERADMIN_EMAILS.
+ * - `link`: the approve link from a request email; works signed out, but only with a token signed for an admin of the
+ *   booking's own workspace. `call` uses a token for the other workspace's admin, `allowedCall` our admin's.
  * - `public`: sign-in and language, meant to work signed out.
  */
-type Entry = { allowed: "admin" | "member" | "self" | "operator"; call: (w: World, slug: string) => Promise<unknown> } | { allowed: "public" };
+type Entry =
+  | { allowed: "admin" | "member" | "self" | "operator"; call: (w: World, slug: string) => Promise<unknown> }
+  | { allowed: "link"; call: (w: World, slug: string) => Promise<unknown>; allowedCall: (w: World) => Promise<unknown> }
+  | { allowed: "public" };
 
 function form(fields: Record<string, string | string[]> = {}) {
   const data = new FormData();
@@ -92,6 +99,11 @@ const matrix: Record<string, Entry> = {
   // Only for admins of the deleted workspace; ours isn't deleted and the others aren't its admins.
   "workspaces/restore-actions.ts#restoreWorkspaceAction": { allowed: "self", call: (w) => restoreWorkspace.restoreWorkspaceAction(w.ours.workspace.id) },
 
+  "decide/[token]/actions.ts#decideByLinkAction": {
+    allowed: "link",
+    call: (w) => decide.decideByLinkAction(approveToken({ bookingId: w.pending.id, membershipId: w.theirs.admin.id }), {}, form({ decision: "approve" })),
+    allowedCall: (w) => decide.decideByLinkAction(approveToken({ bookingId: w.pending.id, membershipId: w.ours.admin.id }), {}, form({ decision: "approve" })),
+  },
   "w/[slug]/approvals/actions.ts#decideAction": {
     allowed: "admin",
     call: (w, slug) => approvals.decideAction(slug, w.pending.id, {}, form({ decision: "approve" })),
@@ -121,6 +133,9 @@ const matrix: Record<string, Entry> = {
 
   "w/[slug]/import/actions.ts#previewImportAction": { allowed: "admin", call: (_w, slug) => importer.previewImportAction(slug, "people", "Name\nZoe Import") },
   "w/[slug]/import/actions.ts#applyImportAction": { allowed: "admin", call: (_w, slug) => importer.applyImportAction(slug, "people", "Name\nZoe Import", false) },
+
+  // Not a Sheets link, so nothing is fetched; admins get "not a Google Sheets link" back.
+  "w/[slug]/import/actions.ts#loadSheetAction": { allowed: "admin", call: (_w, slug) => importer.loadSheetAction(slug, "https://example.com/sheet") },
 
   "w/[slug]/me/actions.ts#resetCalendarFeedAction": { allowed: "member", call: (_w, slug) => me.resetCalendarFeedAction(slug) },
   "w/[slug]/me/actions.ts#disableCalendarFeedAction": { allowed: "member", call: (_w, slug) => me.disableCalendarFeedAction(slug) },
@@ -204,7 +219,7 @@ describe("who may call which server action", () => {
         { who: "outsider", user: userOf(w.theirs.admin), slug: theirs },
       ];
       if (entry.allowed === "operator") attempts.push({ who: "member", user: userOf(w.ours.member), slug: ours }, { who: "admin", user: userOf(w.ours.admin), slug: ours });
-      if (entry.allowed === "admin") attempts.push({ who: "member", user: userOf(w.ours.member), slug: ours });
+      if (entry.allowed === "admin" || entry.allowed === "link") attempts.push({ who: "member", user: userOf(w.ours.member), slug: ours });
 
       const before = await snapshot(w.ours.workspace.id);
       for (const { who, user, slug } of attempts) {
@@ -228,6 +243,10 @@ describe("who may call which server action", () => {
           const outcome = await run(() => entry.call(w, ours));
           expect(outcome.how, `${m.role} was turned away`).not.toMatch(/^404$|sign-in|two-factor/);
         }
+      }
+      if (entry.allowed === "link") {
+        signInAs(null);
+        expect(await run(() => entry.allowedCall(w)), "our admin's link").toEqual({ refused: false, how: "returned" });
       }
     });
   }
