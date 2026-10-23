@@ -8,6 +8,7 @@ import { book } from "./messages/book";
 import { calendar } from "./messages/calendar";
 import { chat } from "./messages/chat";
 import { common } from "./messages/common";
+import { directory } from "./messages/directory";
 import { email } from "./messages/email";
 import { errors } from "./messages/errors";
 import { holidays } from "./messages/holidays";
@@ -41,6 +42,7 @@ const NAMESPACES = {
   calendar,
   chat,
   common,
+  directory,
   email,
   errors,
   holidays,

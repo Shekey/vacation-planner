@@ -59,8 +59,13 @@ Register `https://urlaubflow.de` as the site in both. Until the domain is live, 
 
 Redeploy, then try both buttons with an account that is already in a workspace. You should land in that workspace and not get a new, empty account.
 
+**People from Microsoft 365** (#57, same Microsoft app registration, about 10 minutes more): admins can then connect their company's Microsoft 365 on *Bring your team over* → *Microsoft 365 or Google users*, pick everyone or a group, and add people from it. The app reads names and email addresses only, with its own credentials; nothing is written to Microsoft 365 and nobody is added or removed without an admin pressing the button. Each night the admins get one email when joiners or leavers change.
+1. Under *Authentication*, add a second *Web* redirect URI: `https://urlaubflow.de/api/directory/microsoft/callback` (and the Vercel and localhost ones while testing).
+2. Under *API permissions* → *Add a permission* → *Microsoft Graph* → **Application permissions**, add `User.Read.All` and `GroupMember.Read.All`. Don't press *Grant admin consent* for your own tenant unless you want to test with it: each customer's Microsoft 365 admin approves these for their own company when they connect.
+3. Nothing else to set: it uses `AUTH_MICROSOFT_ENTRA_ID_ID` and `_SECRET`. When the client secret expires, the nightly check and loading people stop too.
+
 **Outlook calendar (#35)** uses the same Microsoft app. Once `AUTH_MICROSOFT_ENTRA_ID_ID` and `_SECRET` are set, everyone gets an *Outlook calendar* section on their Account page: approved time off goes into their own calendar as an all-day "Out of office" event, and, if they tick it, their automatic reply is scheduled for the next time off. In the app registration:
-1. Add a second *Web* redirect URI: `https://urlaubflow.de/api/outlook/callback` (and the Vercel and localhost ones while testing).
+1. Add another *Web* redirect URI: `https://urlaubflow.de/api/outlook/callback` (and the Vercel and localhost ones while testing).
 2. Under *API permissions* → *Microsoft Graph* → *Delegated*, add `offline_access`, `User.Read`, `Calendars.ReadWrite` and `MailboxSettings.ReadWrite`. None needs an admin; each person approves for themselves. Some companies only allow apps their admin approved, so their admin may have to approve it once.
 3. Changes arrive right after each approval, change or cancellation; the nightly housekeeping run catches the rest (for example automatic approvals). The refresh token is stored encrypted with a key derived from `AUTH_SECRET`, so changing `AUTH_SECRET` means everyone connects Outlook again.
 

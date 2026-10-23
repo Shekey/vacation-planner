@@ -16,6 +16,7 @@ import {
   previewImportAction,
   type ImportKind,
 } from "./actions";
+import { DirectoryPanel, type DirectoryStatus } from "./directory-panel";
 
 /** Where a team keeps vacation before switching, and which tab that starts on. */
 const STARTS = [
@@ -61,7 +62,7 @@ function rememberSheet(slug: string, kind: ImportKind, link: string) {
   }
 }
 
-export function ImportClient({ slug }: { slug: string }) {
+export function ImportClient({ slug, directory, initialStart }: { slug: string; directory: DirectoryStatus; initialStart?: string }) {
   const { locale, t: messages } = useI18n();
   const t = messages.importer;
   const weekdays = messages.members.weekdays;
@@ -74,7 +75,7 @@ export function ImportClient({ slug }: { slug: string }) {
   const [sendWelcome, setSendWelcome] = useState(true);
   const [sheets, setSheets] = useState<Sheet[] | null>(null);
   const [sheetIndex, setSheetIndex] = useState(0);
-  const [start, setStart] = useState<Start | null>(null);
+  const [start, setStart] = useState<Start | null>(STARTS.find(([key]) => key === initialStart)?.[0] ?? null);
   const [sheetUrl, setSheetUrl] = useState("");
   const [loadingSheet, startSheetLoad] = useTransition();
   const [pending, startTransition] = useTransition();
@@ -149,10 +150,10 @@ export function ImportClient({ slug }: { slug: string }) {
   const rowError = (e: ImportError) =>
     (t.rowErrors[e.code] as (v?: string) => string)(e.value);
 
-  const check = () =>
+  const check = (input = text) =>
     startTransition(async () => {
       reset();
-      const result = await previewImportAction(slug, kind, text);
+      const result = await previewImportAction(slug, kind, input);
       if (result.error) setError(result.error);
       setPeople(result.people ?? null);
       setTimeOff(result.timeOff ?? null);
@@ -205,6 +206,17 @@ export function ImportClient({ slug }: { slug: string }) {
           <p className="rounded-xl bg-primary/5 p-3 text-sm" aria-live="polite">
             {t.start.options[start].how}
           </p>
+        )}
+        {start === "directory" && (
+          <DirectoryPanel
+            slug={slug}
+            status={directory}
+            onLoaded={(loaded) => {
+              setSheets(null);
+              setText(loaded);
+              check(loaded);
+            }}
+          />
         )}
       </section>
 
@@ -313,7 +325,7 @@ export function ImportClient({ slug }: { slug: string }) {
       <div>
         <button
           className="btn-secondary"
-          onClick={check}
+          onClick={() => check()}
           disabled={pending || text.trim() === ""}
         >
           {pending && !people && !timeOff ? t.checking : t.check}
