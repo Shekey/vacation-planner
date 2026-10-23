@@ -12,6 +12,7 @@ export const chat = defineMessages({
     kind: { VACATION: "vacation", SICK: "sick leave", SPECIAL: "special leave", OTHER: "time off" },
     booking: (who: string, verb: string, range: string, days: string, kind: string) => `${who} ${verb}: ${range} (${days}, ${kind})`,
     openCalendar: "Open team calendar",
+    reviewRequest: "Review request",
     feed: {
       title: (workspace: string) => `${workspace} time off`,
       type: { VACATION: "vacation", SICK: "sick leave", SPECIAL: "special leave", OTHER: "time off" },
@@ -36,6 +37,7 @@ export const chat = defineMessages({
     kind: { VACATION: "Urlaub", SICK: "krank", SPECIAL: "Sonderurlaub", OTHER: "Abwesenheit" },
     booking: (who: string, verb: string, range: string, days: string, kind: string) => `${who} ${verb}: ${range} (${days}, ${kind})`,
     openCalendar: "Teamkalender öffnen",
+    reviewRequest: "Antrag ansehen",
     feed: {
       title: (workspace: string) => `${workspace} Abwesenheiten`,
       type: { VACATION: "Urlaub", SICK: "krank", SPECIAL: "Sonderurlaub", OTHER: "abwesend" },
