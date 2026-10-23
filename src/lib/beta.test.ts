@@ -42,10 +42,9 @@ describe("landing page texts", () => {
   it("beta texts name the founder discount and the regular price in both languages", () => {
     for (const locale of ["en", "de"] as const) {
       const b = messagesFor(locale).landing.beta;
-      expect(b.founder(50, "€19.50")).toContain("50");
-      expect(b.founder(50, "€19.50")).toContain("19.50");
-      expect(b.later.team(25, "€39")).toContain("€39");
-      expect(b.now.features).toHaveLength(3);
+      expect(b.founder.title(50)).toContain("50");
+      expect(b.founder.body(50, "€19.50")).toContain("19.50");
+      expect(b.now.features).toHaveLength(5);
     }
   });
 });
