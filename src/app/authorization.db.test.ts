@@ -38,10 +38,12 @@ import * as restoreWorkspace from "./workspaces/restore-actions";
 vi.mock("@/auth", () => ({ auth: vi.fn(async () => null), signIn: vi.fn(), signOut: vi.fn() }));
 
 type World = Awaited<ReturnType<typeof makeWorld>>;
-type Caller = "signedOut" | "outsider" | "member" | "admin";
+type Caller = "signedOut" | "outsider" | "member" | "viewer" | "approver" | "admin";
 
 /**
- * - `admin`, `member`: workspace actions, called with our slug (and the outsider's) and ids from our workspace.
+ * - `admin`, `approver`, `member`: workspace actions, called with our slug (and the outsider's) and ids from our
+ *   workspace. `admin` is for admins only; `approver` also lets approvers in (#77); `member` lets in everyone in the
+ *   workspace, view-only people too.
  * - `self`: acts on the caller's own account; only needs a sign-in.
  * - `operator`: the operator's area; refused for everyone here, none of them is in SUPERADMIN_EMAILS.
  * - `link`: the approve link from a request email; works signed out, but only with a token signed for an admin of the
@@ -49,7 +51,7 @@ type Caller = "signedOut" | "outsider" | "member" | "admin";
  * - `public`: sign-in and language, meant to work signed out.
  */
 type Entry =
-  | { allowed: "admin" | "member" | "self" | "operator"; call: (w: World, slug: string) => Promise<unknown> }
+  | { allowed: "admin" | "approver" | "member" | "self" | "operator"; call: (w: World, slug: string) => Promise<unknown> }
   | { allowed: "link"; call: (w: World, slug: string) => Promise<unknown>; allowedCall: (w: World) => Promise<unknown> }
   | { allowed: "public" };
 
@@ -78,7 +80,13 @@ async function makeWorld() {
     data: { workspaceId: ours.workspace.id, email: "invited@test.invalid", tokenHash: `hash-${pending.id}`, expiresAt: new Date("2031-01-01") },
   });
   const holiday = await db.holiday.create({ data: { workspaceId: ours.workspace.id, date: new Date("2030-10-03"), name: "Tag der Deutschen Einheit" } });
-  return { ours, theirs, pending, adminBooking, cancelled, removed, invitation, holiday };
+  const withRole = async (role: "APPROVER" | "VIEWER") => {
+    const user = await makeUser(role === "APPROVER" ? "Approver" : "Viewer");
+    const m = await db.membership.create({ data: { workspaceId: ours.workspace.id, userId: user.id, role, annualAllowanceDays: 20 } });
+    return { ...m, user };
+  };
+  const [approver, viewer] = [await withRole("APPROVER"), await withRole("VIEWER")];
+  return { ours, theirs, approver, viewer, pending, adminBooking, cancelled, removed, invitation, holiday };
 }
 
 const matrix: Record<string, Entry> = {
@@ -105,20 +113,20 @@ const matrix: Record<string, Entry> = {
     allowedCall: (w) => decide.decideByLinkAction(approveToken({ bookingId: w.pending.id, membershipId: w.ours.admin.id }), {}, form({ decision: "approve" })),
   },
   "w/[slug]/approvals/actions.ts#decideAction": {
-    allowed: "admin",
+    allowed: "approver",
     call: (w, slug) => approvals.decideAction(slug, w.pending.id, {}, form({ decision: "approve" })),
   },
   "w/[slug]/billing/actions.ts#checkoutAction": { allowed: "admin", call: (_w, slug) => billing.checkoutAction(slug, "TEAM", "monthly") },
   "w/[slug]/billing/actions.ts#portalAction": { allowed: "admin", call: (_w, slug) => billing.portalAction(slug) },
 
-  // Booking for the admin: a member may only book for themselves.
+  // Booking for the admin: a member may only book for themselves, approvers may book for others.
   "w/[slug]/book/actions.ts#saveBooking": {
-    allowed: "admin",
+    allowed: "approver",
     call: (w, slug) =>
       book.saveBooking(slug, null, {}, form({ membershipId: w.ours.admin.id, type: "VACATION", start: "2030-06-03", end: "2030-06-04", startPart: "FULL", endPart: "FULL" })),
   },
-  "w/[slug]/book/actions.ts#cancelBookingAction": { allowed: "admin", call: (w, slug) => book.cancelBookingAction(slug, w.adminBooking.id) },
-  "w/[slug]/book/actions.ts#restoreBookingAction": { allowed: "admin", call: (w, slug) => book.restoreBookingAction(slug, w.cancelled.id) },
+  "w/[slug]/book/actions.ts#cancelBookingAction": { allowed: "approver", call: (w, slug) => book.cancelBookingAction(slug, w.adminBooking.id) },
+  "w/[slug]/book/actions.ts#restoreBookingAction": { allowed: "approver", call: (w, slug) => book.restoreBookingAction(slug, w.cancelled.id) },
 
   "w/[slug]/holidays/actions.ts#addHolidayAction": {
     allowed: "admin",
@@ -139,6 +147,7 @@ const matrix: Record<string, Entry> = {
 
   "w/[slug]/me/actions.ts#resetCalendarFeedAction": { allowed: "member", call: (_w, slug) => me.resetCalendarFeedAction(slug) },
   "w/[slug]/me/actions.ts#disableCalendarFeedAction": { allowed: "member", call: (_w, slug) => me.disableCalendarFeedAction(slug) },
+  "w/[slug]/me/actions.ts#setAwayAction": { allowed: "approver", call: (_w, slug) => me.setAwayAction(slug, {}, form({ awayUntil: "2030-01-01" })) },
 
   "w/[slug]/members/actions.ts#inviteAction": { allowed: "admin", call: (_w, slug) => members.inviteAction(slug, {}, form({ emails: "new@test.invalid", role: "ADMIN" })) },
   "w/[slug]/members/actions.ts#addWithoutEmailAction": { allowed: "admin", call: (_w, slug) => members.addWithoutEmailAction(slug, {}, form({ name: "Paper Person" })) },
@@ -219,7 +228,9 @@ describe("who may call which server action", () => {
         { who: "outsider", user: userOf(w.theirs.admin), slug: theirs },
       ];
       if (entry.allowed === "operator") attempts.push({ who: "member", user: userOf(w.ours.member), slug: ours }, { who: "admin", user: userOf(w.ours.admin), slug: ours });
-      if (entry.allowed === "admin" || entry.allowed === "link") attempts.push({ who: "member", user: userOf(w.ours.member), slug: ours });
+      if (entry.allowed === "admin" || entry.allowed === "approver" || entry.allowed === "link")
+        attempts.push({ who: "member", user: userOf(w.ours.member), slug: ours }, { who: "viewer", user: userOf(w.viewer), slug: ours });
+      if (entry.allowed === "admin") attempts.push({ who: "approver", user: userOf(w.approver), slug: ours });
 
       const before = await snapshot(w.ours.workspace.id);
       for (const { who, user, slug } of attempts) {
@@ -236,8 +247,12 @@ describe("who may call which server action", () => {
       expect(await snapshot(w.ours.workspace.id), "our workspace changed").toBe(before);
 
       // And the roles that may call it get past the check, so the refusals above aren't from broken arguments.
-      if (entry.allowed === "admin" || entry.allowed === "member") {
-        const allowed = entry.allowed === "member" ? [w.ours.member, w.ours.admin] : [w.ours.admin];
+      if (entry.allowed === "admin" || entry.allowed === "approver" || entry.allowed === "member") {
+        const allowed = {
+          admin: [w.ours.admin],
+          approver: [w.ours.admin, w.approver],
+          member: [w.ours.member, w.viewer, w.approver, w.ours.admin],
+        }[entry.allowed];
         for (const m of allowed) {
           signInAs(userOf(m));
           const outcome = await run(() => entry.call(w, ours));
