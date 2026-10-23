@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { isCronRequest } from "@/lib/security";
 import { messagesFor } from "@/lib/i18n";
 import { postToChannels } from "@/lib/notify";
+import { waitingDays } from "@/lib/pending-reminders";
 import { settingsOf } from "@/lib/session";
 import { appOrigin } from "@/lib/url";
 
@@ -13,7 +14,7 @@ import { appOrigin } from "@/lib/url";
 export const maxDuration = 60;
 
 /**
- * Morning "who's out today" post for every workspace with a Teams or Slack webhook (weekdays only).
+ * Morning "who's out today" post, plus how many requests are waiting for every workspace with a Teams or Slack webhook (weekdays only).
  * Posts go out a few at a time within a time budget; what didn't fit is reported, not silently dropped.
  * Vercel Cron calls this daily (see vercel.json) with the CRON_SECRET bearer token.
  */
@@ -54,12 +55,24 @@ export async function GET(req: Request) {
                 : t.digest.until(formatDate(span.end, undefined, channels.locale));
         return `• ${who} (${when})`;
       });
-    if (out.length === 0) return;
+    // Requests nobody answered yet (#80): a count and the oldest, no names, so the channel doesn't learn who asked for what.
+    const pending = channels.approvalsEnabled
+      ? await db.booking.findMany({
+          where: { workspaceId: ws.id, status: "PENDING", membership: { removedAt: null, isSample: false } },
+          select: { pendingSince: true, createdAt: true },
+        })
+      : [];
+    if (out.length === 0 && pending.length === 0) return;
 
+    const now = new Date();
+    const waiting = pending.length > 0 ? t.digest.waiting(pending.length, Math.max(...pending.map((b) => waitingDays(b, now)))) : null;
+    const text = [out.length > 0 ? `${t.digest.title(ws.name)}\n\n${out.join("\n\n")}` : null, waiting].filter(Boolean).join("\n\n");
     await postToChannels(
       channels,
-      `${t.digest.title(ws.name)}\n\n${out.join("\n\n")}`,
-      { title: t.openCalendar, url: `${origin}/w/${ws.slug}/calendar` },
+      text,
+      out.length > 0
+        ? { title: t.openCalendar, url: `${origin}/w/${ws.slug}/calendar` }
+        : { title: t.reviewRequest, url: `${origin}/w/${ws.slug}/approvals` },
       ws.id,
     );
     posted++;

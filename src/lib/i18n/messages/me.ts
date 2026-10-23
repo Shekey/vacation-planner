@@ -21,6 +21,16 @@ export const me = defineMessages({
     feedPitch: "See the team's time off and holidays next to your meetings.",
     getLink: "Get a calendar link",
     past: "Past",
+    awayTitle: "Away from approvals",
+    awayHint:
+      "Going on holiday? Until this day, new requests and reminders go to the other admins and approvers. If everyone is away, they still reach you.",
+    awayUntil: "Away until",
+    awaySave: "Save",
+    awayClear: "I'm back",
+    awayNow: (date: string) => `You're marked away until ${date}.`,
+    awaySaved: "Saved. The others get new requests until then.",
+    awayCleared: "Welcome back. New requests reach you again.",
+    awayInvalid: "Pick a day from today on, or leave it empty.",
   },
   de: {
     title: "Mein Urlaub",
@@ -41,5 +51,15 @@ export const me = defineMessages({
     feedPitch: "Sieh Urlaube und Feiertage des Teams direkt neben deinen Terminen.",
     getLink: "Kalenderlink holen",
     past: "Vergangen",
+    awayTitle: "Abwesend bei Freigaben",
+    awayHint:
+      "Gehst du in Urlaub? Bis zu diesem Tag gehen neue Anträge und Erinnerungen an die anderen Admins und Genehmiger:innen. Sind alle weg, bekommst du sie trotzdem.",
+    awayUntil: "Abwesend bis",
+    awaySave: "Speichern",
+    awayClear: "Ich bin zurück",
+    awayNow: (date: string) => `Du bist bis ${date} als abwesend eingetragen.`,
+    awaySaved: "Gespeichert. Bis dahin bekommen die anderen neue Anträge.",
+    awayCleared: "Willkommen zurück. Neue Anträge erreichen dich wieder.",
+    awayInvalid: "Wähle einen Tag ab heute oder lass das Feld leer.",
   },
 });

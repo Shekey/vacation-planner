@@ -25,6 +25,8 @@ export const chat = defineMessages({
       afternoon: "afternoon",
       today: "today",
       until: (date: string) => `until ${date}`,
+      waiting: (count: number, oldestDays: number) =>
+        `${count === 1 ? "1 request is" : `${count} requests are`} waiting for approval${oldestDays > 0 ? `, the oldest for ${oldestDays} ${oldestDays === 1 ? "day" : "days"}` : ""}.`,
     },
   },
   de: {
@@ -50,6 +52,8 @@ export const chat = defineMessages({
       afternoon: "nachmittags",
       today: "heute",
       until: (date: string) => `bis ${date}`,
+      waiting: (count: number, oldestDays: number) =>
+        `${count === 1 ? "1 Antrag wartet" : `${count} Anträge warten`} auf Freigabe${oldestDays > 0 ? `, der älteste seit ${oldestDays} ${oldestDays === 1 ? "Tag" : "Tagen"}` : ""}.`,
     },
   },
 });

@@ -243,6 +243,24 @@ export default async function SettingsPage({
                   </div>
                 </div>
               )}
+              {/* Only matters with approvals on, but kept in the form so turning approvals off doesn't lose them. */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                {(
+                  [
+                    ["reminderDays", t.reminderDays, t.reminderHint, workspace.settings?.reminderDays],
+                    ["autoApproveDays", t.autoApproveDays, t.autoApproveHint, workspace.settings?.autoApproveDays],
+                  ] as const
+                ).map(([name, text, help, value]) => (
+                  <label key={name} className={field}>
+                    <span className={label}>{text}</span>
+                    <span className="flex items-center gap-2">
+                      <input name={name} type="number" min={1} max={60} step={1} className={`${input} w-24`} defaultValue={value ?? ""} />
+                      <span className={hint}>{t.daysUnit}</span>
+                    </span>
+                    <span className={hint}>{help}</span>
+                  </label>
+                ))}
+              </div>
               <hr className="border-border" />
               <Toggle name="allowHalfDays" label={t.halfDays} hint={t.halfDaysHint} defaultChecked={settings.allowHalfDays} on={t.on} off={t.off} />
               <hr className="border-border" />

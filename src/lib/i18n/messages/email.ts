@@ -19,6 +19,17 @@ export const email = defineMessages({
         `Your request for ${range} in ${workspace} was ${approved ? "approved" : "declined"}.`,
       note: (note: string) => `Note: ${note}`,
     },
+    reminder: {
+      subject: (who: string, days: number) => `Still waiting: ${who}'s request (${days} days)`,
+      text: (who: string, days: string, range: string, workspace: string, waited: number, urls: { approve: string; decline: string; all: string }) =>
+        `${who} asked for ${days} off, ${range}, in ${workspace} ${waited} days ago and is still waiting for an answer.\n\nApprove: ${urls.approve}\n\nDecline: ${urls.decline}\n\nBoth links work for 7 days without signing in. Don't forward this email.\n\nAll open requests: ${urls.all}`,
+    },
+    stillPending: {
+      subject: "Your request is still waiting",
+      text: (range: string, workspace: string, names: string, url: string) =>
+        `Your request for ${range} in ${workspace} hasn't been answered yet. We reminded ${names}.\n\nBetter not book anything you can't cancel until it's approved.\n\n${url}`,
+    },
+    autoApproved: (days: number) => `Nobody answered within ${days} days, so it was approved automatically, as your team set it up.`,
     request: {
       subject: (who: string) => `${who} requested time off`,
       text: (who: string, days: string, range: string, workspace: string, urls: { approve: string; decline: string; all: string }) =>
@@ -70,6 +81,17 @@ export const email = defineMessages({
         `Dein Antrag für ${range} in ${workspace} wurde ${approved ? "genehmigt" : "abgelehnt"}.`,
       note: (note: string) => `Notiz: ${note}`,
     },
+    reminder: {
+      subject: (who: string, days: number) => `Wartet noch: Antrag von ${who} (${days} Tage)`,
+      text: (who: string, days: string, range: string, workspace: string, waited: number, urls: { approve: string; decline: string; all: string }) =>
+        `${who} hat vor ${waited} Tagen ${days} frei beantragt, ${range}, in ${workspace}, und wartet noch auf eine Antwort.\n\nGenehmigen: ${urls.approve}\n\nAblehnen: ${urls.decline}\n\nBeide Links gelten 7 Tage ohne Anmeldung. Leite diese E-Mail nicht weiter.\n\nAlle offenen Anträge: ${urls.all}`,
+    },
+    stillPending: {
+      subject: "Dein Antrag wartet noch",
+      text: (range: string, workspace: string, names: string, url: string) =>
+        `Dein Antrag für ${range} in ${workspace} ist noch nicht beantwortet. Wir haben ${names} erinnert.\n\nBuche besser nichts, was du nicht stornieren kannst, bis er genehmigt ist.\n\n${url}`,
+    },
+    autoApproved: (days: number) => `Innerhalb von ${days} Tagen hat niemand geantwortet, deshalb wurde er automatisch genehmigt, so wie dein Team es eingestellt hat.`,
     request: {
       subject: (who: string) => `${who} hat frei beantragt`,
       text: (who: string, days: string, range: string, workspace: string, urls: { approve: string; decline: string; all: string }) =>
