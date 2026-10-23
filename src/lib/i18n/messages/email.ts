@@ -21,8 +21,8 @@ export const email = defineMessages({
     },
     request: {
       subject: (who: string) => `${who} requested time off`,
-      text: (who: string, days: string, range: string, workspace: string, url: string) =>
-        `${who} requested ${days} off, ${range}, in ${workspace}.\n\nReview it: ${url}`,
+      text: (who: string, days: string, range: string, workspace: string, urls: { approve: string; decline: string; all: string }) =>
+        `${who} requested ${days} off, ${range}, in ${workspace}.\n\nApprove: ${urls.approve}\n\nDecline: ${urls.decline}\n\nBoth links show who else is off first and work for 7 days without signing in. Don't forward this email.\n\nAll open requests: ${urls.all}`,
     },
     sick: {
       subject: (who: string) => `${who} is off sick`,
@@ -72,8 +72,8 @@ export const email = defineMessages({
     },
     request: {
       subject: (who: string) => `${who} hat frei beantragt`,
-      text: (who: string, days: string, range: string, workspace: string, url: string) =>
-        `${who} hat ${days} frei beantragt, ${range}, in ${workspace}.\n\nAntrag ansehen: ${url}`,
+      text: (who: string, days: string, range: string, workspace: string, urls: { approve: string; decline: string; all: string }) =>
+        `${who} hat ${days} frei beantragt, ${range}, in ${workspace}.\n\nGenehmigen: ${urls.approve}\n\nAblehnen: ${urls.decline}\n\nBeide Links zeigen erst, wer sonst abwesend ist, und gelten 7 Tage ohne Anmeldung. Leite diese E-Mail nicht weiter.\n\nAlle offenen Anträge: ${urls.all}`,
     },
     sick: {
       subject: (who: string) => `${who} ist krank`,
