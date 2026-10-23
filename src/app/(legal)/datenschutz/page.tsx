@@ -26,9 +26,9 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
         <ul>
           <li>Account: email address, name, preferred language, time of sign-in, session data.</li>
           <li>
-            AI assistants, only if you connect one: the token's name, a hash of the token, when it was made, last used and expires. What the
-            assistant looks up (your balance, who is away, your bookings) goes to the assistant's provider you chose, under your agreement
-            with them. Every use is recorded in the workspace's activity log.
+            AI assistants, only if you connect one: the token&apos;s name, a hash of the token, when it was made, last used and expires. What the
+            assistant looks up (your balance, who is away, your bookings) goes to the assistant&apos;s provider you chose, under your agreement
+            with them. Every use is recorded in the workspace&apos;s activity log.
           </li>
           <li>
             Cookies: only technically necessary ones (§ 25(2) no. 2 TDDDG): the session cookie that keeps you signed in, two cookies that
