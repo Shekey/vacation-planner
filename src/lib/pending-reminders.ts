@@ -37,7 +37,10 @@ export async function handlePendingRequests(origin: string, now = new Date()) {
   const workspaces = await db.workspace.findMany({
     where: {
       deletedAt: null,
-      settings: { approvalsEnabled: true, OR: [{ reminderDays: { not: null } }, { autoApproveDays: { not: null } }] },
+      settings: {
+        OR: [{ approvalsEnabled: true }, { overAllowance: "APPROVAL" }],
+        AND: { OR: [{ reminderDays: { not: null } }, { autoApproveDays: { not: null } }] },
+      },
       bookings: { some: { status: "PENDING" } },
     },
     include: { settings: true },

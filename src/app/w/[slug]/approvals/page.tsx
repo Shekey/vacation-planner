@@ -1,3 +1,4 @@
+import { approvalsInUse } from "@/lib/bookings";
 import { CalendarDays } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -24,7 +25,7 @@ export default async function ApprovalsPage({
   const messages = await getMessages();
   const t = messages.approvals;
 
-  if (!settings.approvalsEnabled) {
+  if (!approvalsInUse(settings)) {
     return <p className="text-muted">{t.turnedOff}</p>;
   }
 

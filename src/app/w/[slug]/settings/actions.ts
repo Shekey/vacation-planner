@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { ActionResult } from "@/components/action-form";
 import { isMonthDay } from "@/lib/booking-days";
-import { approveAllPending, keepLastYearsAllowance } from "@/lib/bookings";
+import { approvalsInUse, approveAllPending, keepLastYearsAllowance } from "@/lib/bookings";
 import { todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { recordAudit } from "@/lib/audit";
@@ -75,6 +75,7 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
   if (carryOverExpiry !== null && !isMonthDay(carryOverExpiry)) return { error: t.errors.expiryDay };
   const flags = {
     approvalsEnabled: formData.get("approvalsEnabled") === "on",
+    overAllowance: (["WARN", "APPROVAL", "BLOCK"] as const).find((p) => p === formData.get("overAllowance")) ?? "WARN",
     allowHalfDays: formData.get("allowHalfDays") === "on",
     countWeekends: formData.get("countWeekends") === "on",
     defaultAllowanceDays: parsed.data.defaultAllowance,
@@ -90,7 +91,8 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
     ...(parsed.data.teamsWebhookUrl !== (ctx.workspace.settings?.teamsWebhookUrl ?? null) && { teamsError: null, teamsErrorAt: null }),
     ...(parsed.data.slackWebhookUrl !== (ctx.workspace.settings?.slackWebhookUrl ?? null) && { slackError: null, slackErrorAt: null }),
   };
-  const wasApprovals = settingsOf(ctx.workspace).approvalsEnabled;
+  // Requests could be pending before (approvals on, or bookings over the allowance needing approval) but not any more.
+  const wasApprovals = approvalsInUse(settingsOf(ctx.workspace));
   // The default is copied when someone joins, so people who joined earlier need an explicit update.
   const applyToAll = formData.get("applyAllowanceToAll") === "on";
 
@@ -122,7 +124,7 @@ export async function saveSettingsAction(slug: string, _prev: ActionResult, form
   const [, applied] = applyToAll ? await db.$transaction([updateWorkspace, applyAllowance]) : [await updateWorkspace];
 
   let note = applied ? t.allowanceApplied(applied.count) : "";
-  if (wasApprovals && !flags.approvalsEnabled) {
+  if (wasApprovals && !approvalsInUse(flags)) {
     const { count } = await approveAllPending(ctx.workspace.id, ctx.user.id);
     if (count) note += t.pendingApproved(count);
   }

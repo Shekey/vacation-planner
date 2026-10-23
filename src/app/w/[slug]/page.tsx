@@ -4,7 +4,7 @@ import Link from "next/link";
 import { StatusBadge, TypeDot, typeLabel } from "@/components/badges";
 import { Avatar, EmptyState, SampleBadge } from "@/components/ui";
 import { halfDayLabel, portionOn } from "@/lib/booking-days";
-import { activeBookingsBetween, allowanceSummary, forViewer, loadHolidays, regionOf, rulesFor, spanOf } from "@/lib/bookings";
+import { activeBookingsBetween, allowanceSummary, approvalsInUse, forViewer, loadHolidays, regionOf, rulesFor, spanOf } from "@/lib/bookings";
 import { addDays, eachDay, formatDate, formatRange, fromISO, isoWeekday, partOfDay, relativeDay, toISO, todayIn } from "@/lib/dates";
 import { peopleOff } from "@/lib/staffing";
 import { daysAtRisk, longWeekendTips } from "@/lib/smart-days";
@@ -43,7 +43,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
       forViewer(bs, { membershipId: membership.id, role: membership.role }),
     ),
     allowanceSummary(membership, settings, year, holidays, today),
-    can(membership.role, "bookings:decide") && settings.approvalsEnabled
+    can(membership.role, "bookings:decide") && approvalsInUse(settings)
       ? db.booking.count({ where: { workspaceId: workspace.id, status: "PENDING" } })
       : 0,
     db.booking.findFirst({

@@ -1,3 +1,4 @@
+import { approvalsInUse } from "@/lib/bookings";
 import {
   Bell,
   CalendarDays,
@@ -36,7 +37,7 @@ export default async function WorkspaceLayout({
   const settings = settingsOf(workspace);
   const isAdmin = membership.role === "ADMIN";
   // Approvers see Approvals; viewers have nothing to book (#77).
-  const canDecide = can(membership.role, "bookings:decide") && settings.approvalsEnabled;
+  const canDecide = can(membership.role, "bookings:decide") && approvalsInUse(settings);
   const canBook = can(membership.role, "bookings:own") || can(membership.role, "bookings:manage-all");
   const pendingCount =
     canDecide
