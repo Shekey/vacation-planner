@@ -222,9 +222,11 @@ model Membership {
   // An admin or approver who is away until this day (inclusive): new requests and reminders go to the others (#80).
   awayUntil           DateTime? @db.Date
 
-  workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace      Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   bookings       Booking[]
+  // Bookings where this person covers for a colleague (#34).
+  standingIn     Booking[]         @relation("StandIn")
   pastAllowances AllowanceYear[]
   carriedOver    CarriedOver[]
   keepCarried    KeepCarriedOver[]
@@ -343,6 +345,8 @@ model Booking {
   // as vacation and OTHER otherwise, so allowance, approvals and sick-day privacy work as before.
   leaveTypeId   String?
   note          String?
+  // Who covers while the person is away (Vertretung, #34): a colleague from the same workspace, optional.
+  standInId     String?
   status        BookingStatus
   daysCount     Decimal        @db.Decimal(4, 1)
   // Null once the creator deleted their account.
@@ -361,14 +365,16 @@ model Booking {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
-  workspace  Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
-  createdBy  User?      @relation("BookingCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  decidedBy  User?      @relation("BookingDecider", fields: [decidedById], references: [id], onDelete: SetNull)
-  leaveType  LeaveType? @relation(fields: [leaveTypeId], references: [id], onDelete: SetNull)
+  workspace  Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  membership Membership  @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  standIn    Membership? @relation("StandIn", fields: [standInId], references: [id], onDelete: SetNull)
+  createdBy  User?       @relation("BookingCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  decidedBy  User?       @relation("BookingDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+  leaveType  LeaveType?  @relation(fields: [leaveTypeId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, startDate])
   @@index([membershipId])
+  @@index([standInId])
 }
 
 // Leave types an admin adds next to the built-in ones (#34), like Überstundenabbau or Fortbildung. A label to pick, no
