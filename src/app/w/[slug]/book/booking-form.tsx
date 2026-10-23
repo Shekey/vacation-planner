@@ -52,6 +52,8 @@ export type BookingFormProps = {
     allowHalfDays: boolean;
     approvalsEnabled: boolean;
     minPeoplePresent: number | null;
+    /** Booking more vacation than is left (#82). */
+    overAllowance?: "WARN" | "APPROVAL" | "BLOCK";
   };
   /** Every region's holidays; only the booked person's apply. */
   holidays: { date: ISODate; name: string; region: string }[];
@@ -190,12 +192,12 @@ export function BookingForm(props: BookingFormProps) {
 
   const sick = type === "SICK";
   const forSomeoneElse = membershipId !== props.roles.selfId;
+  // Admins, and approvers for someone else, may always book over the allowance (#82).
+  const mayGoOver = props.roles.isAdmin || (props.roles.decides && forSomeoneElse);
+  const over = remainingAfter !== null && remainingAfter < 0 && !mayGoOver;
+  const blocked = over && settings.overAllowance === "BLOCK";
   const willBePending =
-    settings.approvalsEnabled &&
-    !sick &&
-    leaveType?.needsApproval !== false &&
-    !props.roles.isAdmin &&
-    !(props.roles.decides && forSomeoneElse);
+    ((settings.approvalsEnabled && leaveType?.needsApproval !== false) || (over && settings.overAllowance === "APPROVAL")) && !sick && !mayGoOver;
 
   // Sick days in this person's vacation give those vacation days back (admins only, see giveBackVacation).
   const vacationReturned =
@@ -484,7 +486,8 @@ export function BookingForm(props: BookingFormProps) {
             {standInAway && standInName && (
               <p className="text-amber-700 dark:text-amber-400">{t.standInAway(standInName)}</p>
             )}
-            {willBePending && <p className="text-muted">{t.needsApproval}</p>}
+            {blocked && <p className="text-danger">{t.overBlocked}</p>}
+            {willBePending && !blocked && <p className="text-muted">{over && !settings.approvalsEnabled ? t.overNeedsApproval : t.needsApproval}</p>}
             {sick && vacationReturned > 0 && (
               <p className={props.roles.seesSick ? undefined : "text-amber-700 dark:text-amber-400"}>
                 {props.roles.seesSick ? t.sickGivesBack(fmt(vacationReturned)) : t.sickAskAdmin}
@@ -503,7 +506,7 @@ export function BookingForm(props: BookingFormProps) {
       )}
       <button
         className="btn"
-        disabled={pending || Boolean(problem) || days === 0}
+        disabled={pending || Boolean(problem) || days === 0 || blocked}
       >
         {pending
           ? t.saving

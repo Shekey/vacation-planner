@@ -25,6 +25,8 @@ export const book = defineMessages({
     weekendsNotCounted: " (weekends not counted)",
     holidaysNotCounted: " (holidays not counted)",
     overAllowance: (n: string, year: number) => `This is ${n} ${n === "1" ? "day" : "days"} over the ${year} allowance.`,
+    overBlocked: "Your team doesn't allow booking more days than you have left. Ask an admin if you need more.",
+    overNeedsApproval: "This is more than you have left, so an admin or approver has to approve it.",
     standIn: "Stand-in (optional)",
     noStandIn: "No stand-in",
     standInHint: "Who covers during this time off. They get an email once it's approved, without the reason.",
@@ -73,6 +75,8 @@ export const book = defineMessages({
     holidaysNotCounted: " (Feiertage nicht gezählt)",
     overAllowance: (n: string, year: number) =>
       `Damit liegst du ${n} ${n === "1" ? "Tag" : "Tage"} über deinem Urlaubsanspruch für ${year}.`,
+    overBlocked: "In deinem Team kannst du nicht mehr Tage buchen, als du übrig hast. Frag einen Admin, wenn du mehr brauchst.",
+    overNeedsApproval: "Das ist mehr, als du übrig hast. Deshalb muss ein Admin oder eine Genehmiger:in zustimmen.",
     standIn: "Vertretung (optional)",
     noStandIn: "Keine Vertretung",
     standInHint: "Wer in dieser Zeit vertritt. Die Vertretung bekommt eine E-Mail, sobald es genehmigt ist, ohne den Grund.",

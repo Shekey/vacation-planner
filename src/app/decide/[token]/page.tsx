@@ -4,7 +4,7 @@ import { DecisionForm } from "@/components/decision-form";
 import { RequestCard } from "@/components/request-card";
 import { StatusBadge } from "@/components/badges";
 import { loadApproveLink } from "@/lib/approve-link-db";
-import { spanOf } from "@/lib/bookings";
+import { approvalsInUse, spanOf } from "@/lib/bookings";
 import { formatDate, formatRange, todayIn, toISO } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { getLocale, getMessages } from "@/lib/i18n/server";
@@ -85,7 +85,7 @@ export default async function DecideByLinkPage({ params, searchParams }: PagePro
         <p className="text-xs tracking-wide text-muted uppercase">{workspace.name}</p>
         <h1 className="text-2xl font-semibold tracking-tight">{t.link.title}</h1>
       </div>
-      {!settings.approvalsEnabled ? (
+      {!approvalsInUse(settings) ? (
         <p className="text-muted">{t.turnedOff}</p>
       ) : (
         <RequestCard

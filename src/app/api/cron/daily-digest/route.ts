@@ -1,5 +1,5 @@
 import { portionOn } from "@/lib/booking-days";
-import { activeBookingsBetween, spanOf } from "@/lib/bookings";
+import { activeBookingsBetween, approvalsInUse, spanOf } from "@/lib/bookings";
 import { formatDate, fromISO, isWeekend, todayIn } from "@/lib/dates";
 import { forEachWithin, reportCronRun } from "@/lib/cron";
 import { db } from "@/lib/db";
@@ -56,7 +56,7 @@ export async function GET(req: Request) {
         return `• ${who} (${when})`;
       });
     // Requests nobody answered yet (#80): a count and the oldest, no names, so the channel doesn't learn who asked for what.
-    const pending = channels.approvalsEnabled
+    const pending = approvalsInUse(channels)
       ? await db.booking.findMany({
           where: { workspaceId: ws.id, status: "PENDING", membership: { removedAt: null, isSample: false } },
           select: { pendingSince: true, createdAt: true },

@@ -12,7 +12,7 @@ import {
   type DayRules,
 } from "@/lib/booking-days";
 import { formatRange, fromISO, toISO, todayIn, type ISODate } from "@/lib/dates";
-import { getMessages } from "@/lib/i18n/server";
+import { getLocale, getMessages } from "@/lib/i18n/server";
 import { formatNumber, isLocale, LOCALES, messagesFor, type Locale, type Messages } from "@/lib/i18n";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
@@ -42,7 +42,14 @@ export type Settings = {
   holidayRegion: string | null;
   /** Language of chat posts and of emails to people who haven't picked one; English when unset. */
   locale?: Locale;
+  /** Booking more vacation than is left (#82): warn (the default), ask for approval, or block. Admins always may. */
+  overAllowance?: "WARN" | "APPROVAL" | "BLOCK";
 };
+
+/** Whether requests can be pending: approvals are on, or bookings over the allowance need approval (#82). */
+export function approvalsInUse(settings: Pick<Settings, "approvalsEnabled" | "overAllowance">): boolean {
+  return settings.approvalsEnabled || settings.overAllowance === "APPROVAL";
+}
 
 /** Day-counting rules for one member: the workspace's weekend rule or their own work days, plus holidays. */
 export function rulesFor(
@@ -216,6 +223,58 @@ function assertMayBook(actor: Actor, membershipId: string, type: BookingType, t:
   if (!self && type === "SICK" && !can(actor.role, "sick:see")) throw new BookingError(t.onlyAdminsSickForOthers);
 }
 
+/** Who may book over the allowance whatever the policy (#82): admins, and approvers for someone else. */
+function mayGoOver(actor: Actor, membershipId: string) {
+  return actor.role === "ADMIN" || (membershipId !== actor.membershipId && can(actor.role, "bookings:decide"));
+}
+
+/**
+ * Vacation days this booking goes over the allowance by, in the worst year it touches; 0 when it fits or allowances
+ * aren't tracked (#82). When changing a booking, its old days are given back first.
+ */
+async function daysOverAllowance(
+  target: AllowanceMember,
+  settings: Settings,
+  rules: DayRules,
+  span: BookingSpan,
+  today: ISODate,
+  existing?: { span: BookingSpan; type: BookingType },
+) {
+  let over = 0;
+  for (let year = Number(span.start.slice(0, 4)); year <= Number(span.end.slice(0, 4)); year++) {
+    const summary = await allowanceSummary(target, settings, year, rules.holidays, today);
+    if (summary.remaining === null) continue;
+    const bounds = { from: `${year}-01-01`, to: `${year}-12-31` };
+    const back = existing?.type === "VACATION" ? countDays(existing.span, rules, bounds) : 0;
+    over = Math.max(over, countDays(span, rules, bounds) - (summary.remaining + back));
+  }
+  return over;
+}
+
+/**
+ * Applies the workspace's policy for booking more vacation than is left (#82): blocked, or sent for approval even when
+ * approvals are off. Returns the status to save.
+ */
+async function applyOverAllowance(
+  status: BookingStatus,
+  opts: { actor: Actor; membershipId: string; settings: Settings; input: BookingInput; target: AllowanceMember; rules: DayRules; today: ISODate; existing?: { span: BookingSpan; type: BookingType }; t: Messages["errors"] },
+): Promise<BookingStatus> {
+  const policy = opts.settings.overAllowance ?? "WARN";
+  if (policy === "WARN" || opts.input.type !== "VACATION" || mayGoOver(opts.actor, opts.membershipId)) return status;
+  const over = await daysOverAllowance(opts.target, opts.settings, opts.rules, opts.input, opts.today, opts.existing);
+  if (over <= 0) return status;
+  if (policy === "BLOCK") throw new BookingError(opts.t.overAllowanceBlocked(formatNumber(over, await getLocale())));
+  return "PENDING";
+}
+
+/**
+ * Time off that has ended is history (#82): only admins change, cancel or restore it, so nobody's balance changes
+ * behind the team's back. Admins' changes show in Activity.
+ */
+function assertNotPast(actor: Actor, endDate: Date, today: ISODate, t: Messages["errors"]) {
+  if (toISO(endDate) < today && actor.role !== "ADMIN") throw new BookingError(t.pastLocked);
+}
+
 type Tx = Parameters<Parameters<typeof db.$transaction>[0]>[0];
 
 /**
@@ -294,7 +353,7 @@ async function write<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 export async function createBooking(opts: {
-  workspace: { id: string; name: string; slug: string };
+  workspace: { id: string; name: string; slug: string; timezone?: string };
   settings: Settings;
   actor: Actor;
   membershipId: string;
@@ -313,10 +372,20 @@ export async function createBooking(opts: {
   if (!target) throw new BookingError(t.memberNotInWorkspace);
   await assertStandIn(workspace.id, membershipId, input.standInId, t);
 
-  const status = initialStatus(actor, settings, input.type, membershipId, leaveType);
   const holidays = await loadHolidays(workspace.id, regionOf(target, settings));
   const rules = rulesFor(target, settings, holidays);
   const data = prepare(input, settings, rules, t);
+  const today = todayIn(workspace.timezone ?? "UTC");
+  const status = await applyOverAllowance(initialStatus(actor, settings, input.type, membershipId, leaveType), {
+    actor,
+    membershipId,
+    settings,
+    input,
+    target,
+    rules,
+    today,
+    t,
+  });
   let returned = 0;
   const booking = await write(() =>
     db.$transaction(async (tx) => {
@@ -396,7 +465,7 @@ async function announce(
 }
 
 export async function updateBooking(opts: {
-  workspace: { id: string; name: string; slug: string };
+  workspace: { id: string; name: string; slug: string; timezone?: string };
   settings: Settings;
   actor: Actor;
   bookingId: string;
@@ -417,11 +486,23 @@ export async function updateBooking(opts: {
   if (existing.type === "SICK") assertMayBook(actor, existing.membershipId, "SICK", t, t.onlyOwnChange);
   await assertStandIn(workspace.id, existing.membershipId, input.standInId, t);
 
-  // A member changing dates sends the booking back for approval.
-  const status = initialStatus(actor, settings, input.type, existing.membershipId, leaveType);
+  const today = todayIn(workspace.timezone ?? "UTC");
+  assertNotPast(actor, existing.endDate, today, t);
   const holidays = await loadHolidays(workspace.id, regionOf(existing.membership, settings));
   const rules = rulesFor(existing.membership, settings, holidays);
   const data = prepare(input, settings, rules, t);
+  // A member changing dates sends the booking back for approval.
+  const status = await applyOverAllowance(initialStatus(actor, settings, input.type, existing.membershipId, leaveType), {
+    actor,
+    membershipId: existing.membershipId,
+    settings,
+    input,
+    target: existing.membership,
+    rules,
+    today,
+    existing: { span: spanOf(existing), type: existing.type },
+    t,
+  });
   let returned = 0;
   const booking = await write(() =>
     db.$transaction(async (tx) => {
@@ -435,6 +516,16 @@ export async function updateBooking(opts: {
     }),
   );
   if (returned > 0) await recordVacationReturned(workspace.id, actor, existing.membership.user, input);
+  // Changing time off that has already ended is rare and changes a balance: Activity shows it (#82).
+  if (toISO(existing.endDate) < today) {
+    await recordAudit({
+      workspaceId: workspace.id,
+      actorId: actor.userId,
+      action: "booking.past_changed",
+      targetLabel: existing.membership.user.name ?? existing.membership.user.email,
+      detail: `${bookingDetail(spanOf(existing))} → ${bookingDetail(input)}`,
+    });
+  }
   await afterResponse(async () => {
     if (status === "PENDING") await notifyAdminsOfRequest(workspace, settings, existing.membership.user, booking, opts.origin);
     // A new stand-in, or new dates, or newly approved: the stand-in hears what they cover now.
@@ -461,10 +552,11 @@ export async function cancelBooking(opts: { workspaceId: string; actor: Actor; b
   const t = (await getMessages()).errors;
   const booking = await db.booking.findFirst({
     where: { id: opts.bookingId, workspaceId: opts.workspaceId, status: { in: ACTIVE_STATUSES } },
-    include: { membership: { include: { user: { select: { name: true, email: true } } } } },
+    include: { membership: { include: { user: { select: { name: true, email: true } } } }, workspace: { select: { timezone: true } } },
   });
   if (!booking) throw new BookingError(t.bookingNotFound);
   assertMayBook(opts.actor, booking.membershipId, booking.type, t, t.onlyOwnCancel);
+  assertNotPast(opts.actor, booking.endDate, todayIn(booking.workspace.timezone), t);
   // Remember what it was, so "Restore" puts it back as it was (approved stays approved).
   // Only while it is still as read, so a second tap or an approval at the same moment can't apply on top.
   const { count } = await db.booking.updateMany({
@@ -494,10 +586,15 @@ export async function restoreBooking(opts: {
   const t = (await getMessages()).errors;
   const booking = await db.booking.findFirst({
     where: { id: opts.bookingId, workspaceId: opts.workspace.id, status: "CANCELLED", cancelReason: null, membership: { removedAt: null } },
-    include: { membership: { include: { user: { select: { name: true, email: true } } } }, leaveType: { select: { needsApproval: true } } },
+    include: {
+      membership: { include: { user: { select: { name: true, email: true } } } },
+      workspace: { select: { timezone: true } },
+      leaveType: { select: { needsApproval: true } },
+    },
   });
   if (!booking) throw new BookingError(t.bookingNotFound);
   assertMayBook(opts.actor, booking.membershipId, booking.type, t, t.onlyOwnChange);
+  assertNotPast(opts.actor, booking.endDate, todayIn(booking.workspace.timezone), t);
   if (!canRestore(booking.cancelledAt)) throw new BookingError(t.restoreExpired);
   await assertWithinPlan(opts.workspace.id);
   const { count } = await write(() =>
@@ -831,7 +928,7 @@ export async function allowanceSummary(
   membership: AllowanceMember,
   settings: Settings,
   year: number,
-  holidays?: Set<ISODate>,
+  holidays?: ReadonlySet<ISODate>,
   today: ISODate = todayIn("UTC"),
 ): Promise<AllowanceSummary> {
   const summaries = await allowanceSummaries([membership], settings, year, today, holidays);
@@ -848,7 +945,7 @@ export async function allowanceSummaries(
   settings: Settings,
   year: number,
   today: ISODate = todayIn("UTC"),
-  holidays?: Set<ISODate>,
+  holidays?: ReadonlySet<ISODate>,
 ): Promise<Map<string, AllowanceSummary>> {
   const result = new Map<string, AllowanceSummary>();
   if (memberships.length === 0) return result;

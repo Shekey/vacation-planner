@@ -262,6 +262,17 @@ export default async function SettingsPage({
                   </label>
                 ))}
               </div>
+              <label className={field}>
+                <span className={`${label} block`}>{t.overAllowance}</span>
+                <select name="overAllowance" defaultValue={settings.overAllowance} className={input}>
+                  {(["WARN", "APPROVAL", "BLOCK"] as const).map((p) => (
+                    <option key={p} value={p}>
+                      {t.overAllowanceOption[p]}
+                    </option>
+                  ))}
+                </select>
+                <span className={hint}>{t.overAllowanceHint}</span>
+              </label>
               <hr className="border-border" />
               <Toggle name="allowHalfDays" label={t.halfDays} hint={t.halfDaysHint} defaultChecked={settings.allowHalfDays} on={t.on} off={t.off} />
               <hr className="border-border" />

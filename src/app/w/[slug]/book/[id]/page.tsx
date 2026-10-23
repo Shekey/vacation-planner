@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { countDays } from "@/lib/booking-days";
 import { ACTIVE_STATUSES, spanOf } from "@/lib/bookings";
+import { todayIn, toISO } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { getMessages } from "@/lib/i18n/server";
 import { can } from "@/lib/permissions";
@@ -27,6 +28,17 @@ export default async function EditBookingPage({ params }: PageProps<"/w/[slug]/b
     (!can(ctx.membership.role, "bookings:manage-all") || (booking.type === "SICK" && !can(ctx.membership.role, "sick:see")))
   ) {
     notFound();
+  }
+
+  // Time off that has ended is only changed by admins (#82).
+  if (toISO(booking.endDate) < todayIn(ctx.workspace.timezone) && ctx.membership.role !== "ADMIN") {
+    const t = (await getMessages()).book;
+    return (
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">{t.editTitle}</h2>
+        <p className="card text-sm text-muted">{(await getMessages()).errors.pastLocked}</p>
+      </div>
+    );
   }
 
   const data = await loadBookingFormData(ctx, booking.leaveTypeId);

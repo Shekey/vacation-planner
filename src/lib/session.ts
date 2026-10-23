@@ -46,6 +46,7 @@ export async function requireAdmin(slug: string) {
 
 type SettingsRow = {
   approvalsEnabled: boolean;
+  overAllowance?: "WARN" | "APPROVAL" | "BLOCK";
   countWeekends: boolean;
   allowHalfDays: boolean;
   maxCarryOverDays: { toString(): string } | null;
@@ -65,6 +66,7 @@ export function settingsOf(workspace: { settings: SettingsRow | null } & Billing
   const chat = accessOf(workspace).chat;
   return {
     approvalsEnabled: s?.approvalsEnabled ?? false,
+    overAllowance: s?.overAllowance ?? "WARN",
     countWeekends: s?.countWeekends ?? false,
     allowHalfDays: s?.allowHalfDays ?? true,
     maxCarryOverDays: s?.maxCarryOverDays == null ? null : Number(s.maxCarryOverDays),

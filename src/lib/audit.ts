@@ -12,6 +12,7 @@ export const AUDIT_ACTIONS = [
   "booking.declined",
   "booking.vacation_returned",
   "booking.auto_approved",
+  "booking.past_changed",
   "workspace.deleted",
   "workspace.restored",
   "import.people",
