@@ -58,7 +58,7 @@ export default async function HomePage() {
             <li key={workspace.id}>
               <Link href={`/w/${workspace.slug}`} className="card block hover:bg-black/5 dark:hover:bg-white/5">
                 <div className="font-medium">{workspace.name}</div>
-                <div className="text-sm opacity-70">{role === "ADMIN" ? common.admin : common.member}</div>
+                <div className="text-sm text-muted">{role === "ADMIN" ? common.admin : common.member}</div>
               </Link>
             </li>
           ))}

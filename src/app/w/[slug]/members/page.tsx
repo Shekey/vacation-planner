@@ -44,7 +44,8 @@ export default async function MembersPage({
   const { slug } = await params;
   const { workspace, membership: me } = await requireAdmin(slug);
   const locale: Locale = await getLocale();
-  const { members: t, common, importer } = await getMessages();
+  const { members: t, common, importer, adminOverview } = await getMessages();
+  const adminEyebrow = adminOverview.eyebrow;
   const WEEKDAYS = t.weekdays;
 
   const year = Number(todayIn(workspace.timezone).slice(0, 4));
@@ -88,123 +89,14 @@ export default async function MembersPage({
 
   return (
     <div className="space-y-8">
-      <section className="card space-y-3">
-        <h2 className="font-medium">{t.inviteHeading}</h2>
-        {usingTestSender() && (
-          <p
-            role="alert"
-            className="rounded-md bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200"
-          >
-            {t.testSender} <code>EMAIL_FROM</code> {t.testSenderEnd}
-          </p>
-        )}
-        <ActionForm
-          action={inviteAction.bind(null, slug)}
-          className="space-y-3"
-          resetOnSuccess
-        >
-          <textarea
-            name="emails"
-            aria-label={t.emailsLabel}
-            className="input"
-            rows={3}
-            required
-            placeholder={t.emailsPlaceholder}
-          />
-          <div className="flex flex-wrap items-center gap-3">
-            <select
-              name="role"
-              className="input w-auto"
-              defaultValue="MEMBER"
-              aria-label={t.inviteAs}
-            >
-              <option value="MEMBER">{t.asMembers}</option>
-              <option value="ADMIN">{t.asAdmins}</option>
-            </select>
-            <button className="btn">{t.sendInvites}</button>
-          </div>
-        </ActionForm>
-        <p className="text-xs opacity-60">{t.inviteHint}</p>
-        <details className="rounded-lg border border-border px-3 py-2">
-          <summary className="cursor-pointer py-1 text-sm font-medium">
-            {t.noEmail.toggle}
-          </summary>
-          <ActionForm
-            action={addWithoutEmailAction.bind(null, slug)}
-            className="mt-2 space-y-2"
-            resetOnSuccess
-          >
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                name="name"
-                required
-                maxLength={100}
-                autoComplete="off"
-                aria-label={t.noEmail.nameLabel}
-                placeholder={t.noEmail.namePlaceholder}
-                className="input w-auto min-w-0 flex-1"
-              />
-              <button className="btn">{t.noEmail.add}</button>
-            </div>
-            <p className="text-xs opacity-60">{t.noEmail.hint}</p>
-          </ActionForm>
-        </details>
-        <p className="text-sm">
-          <Link
-            href={`/w/${slug}/import`}
-            className="font-medium text-primary hover:underline"
-          >
-            {importer.link} →
-          </Link>
-          <span className="block text-xs opacity-60">{importer.linkHint}</span>
-        </p>
-        <SampleTeamButton slug={slug} samples={samples} />
-      </section>
-
-      {invites.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-lg font-semibold">{t.pendingHeading}</h2>
-          <ul className="divide-y divide-black/5 dark:divide-white/10">
-            {invites.map((i) => (
-              <li
-                key={i.id}
-                className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
-              >
-                <span>
-                  {i.email}{" "}
-                  <span className="opacity-60">
-                    · {i.role === "ADMIN" ? t.roleAdmin : t.roleMember}
-                  </span>
-                  {i.expiresAt < now && (
-                    <span className="ml-2 text-red-600 dark:text-red-400">
-                      {t.expired}
-                    </span>
-                  )}
-                </span>
-                <span className="flex gap-3">
-                  <ActionForm
-                    action={resendInviteAction.bind(null, slug, i.id)}
-                  >
-                    <button className="text-primary hover:underline">
-                      {t.resend}
-                    </button>
-                  </ActionForm>
-                  <ActionForm
-                    action={revokeInviteAction.bind(null, slug, i.id)}
-                  >
-                    <button className="text-red-600 dark:text-red-400 hover:underline">
-                      {t.revoke}
-                    </button>
-                  </ActionForm>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <div className="space-y-1.5">
+        <p className="text-xs tracking-wide text-muted uppercase">{adminEyebrow}</p>
+        <h1 className="text-[28px] leading-tight font-normal tracking-tight sm:text-[32px]">{t.title}</h1>
+        <p className="text-[15px] text-muted">{t.subtitle(members.length)}</p>
+      </div>
 
       <section className="card space-y-2">
-        <h2 className="font-medium">{t.membersHeading(members.length)}</h2>
+        <h2 className="text-lg">{t.membersHeading(members.length)}</h2>
         <ul className="divide-y divide-border">
           {members.map((m) => {
             const who = m.user.name ?? m.user.email;
@@ -217,19 +109,18 @@ export default async function MembersPage({
               <li
                 key={m.id}
                 id={`member-${m.id}`}
-                className="flex scroll-mt-20 flex-wrap items-center justify-between gap-3 rounded-lg py-3 target:-mx-2 target:px-2 target:bg-primary/10"
+                className="flex scroll-mt-20 flex-wrap items-center justify-between gap-3 rounded-lg py-3 target:-mx-2 target:px-2 target:bg-primary-soft"
               >
                 <div className="flex min-w-0 items-center gap-2.5">
                   <Avatar
                     label={who}
-                    seed={m.user.email}
                     className="size-9 text-sm"
                   />
                   <div className="min-w-0">
                     <div className="font-medium">
                       {who}
                       {m.id === me.id && (
-                        <span className="font-normal opacity-60"> {t.you}</span>
+                        <span className="font-normal text-muted"> {t.you}</span>
                       )}
                       {m.isSample && <SampleBadge label={common.sample} />}
                     </div>
@@ -240,7 +131,7 @@ export default async function MembersPage({
                     ) : (
                       m.user.name &&
                       !m.isSample && (
-                        <div className="truncate text-sm opacity-60">
+                        <div className="truncate text-sm text-muted">
                           {m.user.email}
                         </div>
                       )
@@ -279,7 +170,7 @@ export default async function MembersPage({
                         className="input w-20 py-1"
                         aria-label={t.allowanceFor(who)}
                       />
-                      <span className="opacity-60">{t.daysPerYear}</span>
+                      <span className="text-muted">{t.daysPerYear}</span>
                     </label>
                     {regions.length > 0 && (
                       <select
@@ -302,7 +193,7 @@ export default async function MembersPage({
                     )}
                     {noEmail && (
                       <label className="flex w-full flex-wrap items-center gap-2">
-                        <span className="opacity-60">{t.noEmail.emailLabel}</span>
+                        <span className="text-muted">{t.noEmail.emailLabel}</span>
                         <input
                           name="email"
                           type="email"
@@ -311,7 +202,7 @@ export default async function MembersPage({
                           aria-label={t.noEmail.emailFor(who)}
                           aria-describedby={`no-email-${m.id}`}
                         />
-                        <span id={`no-email-${m.id}`} className="basis-full text-xs opacity-60">
+                        <span id={`no-email-${m.id}`} className="basis-full text-xs text-muted">
                           {t.noEmail.emailHint}
                         </span>
                       </label>
@@ -366,7 +257,7 @@ export default async function MembersPage({
                           ))}
                         </fieldset>
                         <label className="flex flex-wrap items-center gap-2">
-                          <span className="opacity-60">{t.startedOn}</span>
+                          <span className="text-muted">{t.startedOn}</span>
                           <input
                             name="employmentStart"
                             type="date"
@@ -375,9 +266,9 @@ export default async function MembersPage({
                             aria-label={t.firstDayOf(who)}
                           />
                         </label>
-                        <p className="text-xs opacity-60">{t.workDaysHint}</p>
+                        <p className="text-xs text-muted">{t.workDaysHint}</p>
                         <label className="flex flex-wrap items-center gap-2">
-                          <span className="opacity-60">{t.carriedLabel(year - 1)}</span>
+                          <span className="text-muted">{t.carriedLabel(year - 1)}</span>
                           <input
                             name="carriedOver"
                             type="number"
@@ -390,7 +281,7 @@ export default async function MembersPage({
                             aria-label={t.carriedFor(who, year - 1)}
                           />
                         </label>
-                        <p className="text-xs opacity-60">{t.carriedHint}</p>
+                        <p className="text-xs text-muted">{t.carriedHint}</p>
                         {carryOverExpiry && (
                           <>
                             <input type="hidden" name="keepCarriedShown" value="1" />
@@ -403,7 +294,7 @@ export default async function MembersPage({
                               />
                               <span>{t.keepCarriedLabel(year - 1, carryOverExpiry)}</span>
                             </label>
-                            <p className="text-xs opacity-60">{t.keepCarriedHint}</p>
+                            <p className="text-xs text-muted">{t.keepCarriedHint}</p>
                           </>
                         )}
                       </div>
@@ -415,7 +306,7 @@ export default async function MembersPage({
                       confirm={t.removeConfirm(who)}
                     >
                       <button
-                        className="rounded-lg px-2 py-1 text-sm text-red-600 dark:text-red-400 hover:bg-red-500/10"
+                        className="rounded-lg px-2 py-1 text-sm text-danger hover:bg-red-500/10"
                         aria-label={t.removeLabel(who)}
                       >
                         {t.remove}
@@ -427,13 +318,128 @@ export default async function MembersPage({
             );
           })}
         </ul>
-        <p className="text-xs opacity-60">{t.allowanceHint}</p>
+        <p className="text-xs text-muted">{t.allowanceHint}</p>
       </section>
+
+      <section className="card space-y-3 sm:p-6">
+        <h2 className="text-lg">{t.inviteHeading}</h2>
+        {usingTestSender() && (
+          <p
+            role="alert"
+            className="rounded-md bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200"
+          >
+            {t.testSender} <code>EMAIL_FROM</code> {t.testSenderEnd}
+          </p>
+        )}
+        <ActionForm
+          action={inviteAction.bind(null, slug)}
+          className="space-y-3"
+          resetOnSuccess
+        >
+          <textarea
+            name="emails"
+            aria-label={t.emailsLabel}
+            className="input"
+            rows={3}
+            required
+            placeholder={t.emailsPlaceholder}
+          />
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              name="role"
+              className="input w-auto"
+              defaultValue="MEMBER"
+              aria-label={t.inviteAs}
+            >
+              <option value="MEMBER">{t.asMembers}</option>
+              <option value="ADMIN">{t.asAdmins}</option>
+            </select>
+            <button className="btn">{t.sendInvites}</button>
+          </div>
+        </ActionForm>
+        <p className="text-xs text-muted">{t.inviteHint}</p>
+        <details className="rounded-lg border border-border px-3 py-2">
+          <summary className="cursor-pointer py-1 text-sm font-medium">
+            {t.noEmail.toggle}
+          </summary>
+          <ActionForm
+            action={addWithoutEmailAction.bind(null, slug)}
+            className="mt-2 space-y-2"
+            resetOnSuccess
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                name="name"
+                required
+                maxLength={100}
+                autoComplete="off"
+                aria-label={t.noEmail.nameLabel}
+                placeholder={t.noEmail.namePlaceholder}
+                className="input w-auto min-w-0 flex-1"
+              />
+              <button className="btn">{t.noEmail.add}</button>
+            </div>
+            <p className="text-xs text-muted">{t.noEmail.hint}</p>
+          </ActionForm>
+        </details>
+        <p className="text-sm">
+          <Link
+            href={`/w/${slug}/import`}
+            className="font-medium text-primary hover:underline"
+          >
+            {importer.link} →
+          </Link>
+          <span className="block text-xs text-muted">{importer.linkHint}</span>
+        </p>
+        <SampleTeamButton slug={slug} samples={samples} />
+      </section>
+
+      {invites.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-lg font-semibold">{t.pendingHeading}</h2>
+          <ul className="divide-y divide-black/5 dark:divide-white/10">
+            {invites.map((i) => (
+              <li
+                key={i.id}
+                className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
+              >
+                <span>
+                  {i.email}{" "}
+                  <span className="text-muted">
+                    · {i.role === "ADMIN" ? t.roleAdmin : t.roleMember}
+                  </span>
+                  {i.expiresAt < now && (
+                    <span className="ml-2 text-danger">
+                      {t.expired}
+                    </span>
+                  )}
+                </span>
+                <span className="flex gap-3">
+                  <ActionForm
+                    action={resendInviteAction.bind(null, slug, i.id)}
+                  >
+                    <button className="text-primary hover:underline">
+                      {t.resend}
+                    </button>
+                  </ActionForm>
+                  <ActionForm
+                    action={revokeInviteAction.bind(null, slug, i.id)}
+                  >
+                    <button className="text-danger hover:underline">
+                      {t.revoke}
+                    </button>
+                  </ActionForm>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {removed.length > 0 && (
         <section className="card space-y-2">
           <h2 className="font-medium">{t.removedHeading}</h2>
-          <p className="text-xs opacity-60">{t.removedHint}</p>
+          <p className="text-xs text-muted">{t.removedHint}</p>
           <ul className="divide-y divide-border">
             {removed.map((m) => {
               const who = m.user.name ?? m.user.email;

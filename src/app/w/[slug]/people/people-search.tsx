@@ -42,20 +42,20 @@ export function PeopleSearch({ people }: { people: PersonRow[] }) {
         aria-label={t.searchLabel}
       />
       {shown.length === 0 ? (
-        <p className="opacity-70">{t.noMatch(query)}</p>
+        <p className="text-muted">{t.noMatch(query)}</p>
       ) : (
         <ul className="grid gap-3 md:grid-cols-2">
           {shown.map((p) => (
             <li key={p.id} className="card space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2.5">
-                  <Avatar label={p.name} seed={p.email} className="size-9 text-sm" />
+                  <Avatar label={p.name} className="size-9 text-sm" />
                   <div className="min-w-0">
                     <div className="truncate font-medium">
                       {p.name}
                       {p.sample && <SampleBadge label={common.sample} />}
                     </div>
-                    {p.name !== p.email && !p.sample && !p.noEmail && <div className="truncate text-xs opacity-60">{p.email}</div>}
+                    {p.name !== p.email && !p.sample && !p.noEmail && <div className="truncate text-xs text-muted">{p.email}</div>}
                   </div>
                 </div>
                 <span
@@ -74,7 +74,7 @@ export function PeopleSearch({ people }: { people: PersonRow[] }) {
                     <li key={u.id} className="flex items-center gap-2">
                       <span className={`inline-block h-2.5 w-2.5 rounded-full ${u.color}`} />
                       <span className="font-medium">{u.label}</span>
-                      <span className="opacity-70">
+                      <span className="text-muted">
                         {u.detail}
                         {u.pending && t.pending}
                       </span>
@@ -82,7 +82,7 @@ export function PeopleSearch({ people }: { people: PersonRow[] }) {
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm opacity-60">{t.noTimeOff}</p>
+                <p className="text-sm text-muted">{t.noTimeOff}</p>
               )}
             </li>
           ))}

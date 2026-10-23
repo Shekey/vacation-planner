@@ -1,10 +1,11 @@
+import { Ban, Check, Clock3, X } from "lucide-react";
 import type { SpecialReason } from "@/generated/prisma/enums";
 import { messagesFor, type Locale } from "@/lib/i18n";
 
 const typeStyles = {
-  VACATION: { className: "bg-sky-500" },
+  VACATION: { className: "bg-success" },
   SICK: { className: "bg-amber-500" },
-  SPECIAL: { className: "bg-emerald-500" },
+  SPECIAL: { className: "bg-accent" },
   OTHER: { className: "bg-violet-500" },
 } as const;
 
@@ -31,15 +32,22 @@ export function typeLabel(type: BookingTypeKey, locale: Locale, specialReason?: 
 }
 
 const statusStyles = {
-  PENDING: "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200",
-  APPROVED: "bg-green-100 text-green-900 dark:bg-green-900/40 dark:text-green-200",
-  REJECTED: "bg-red-100 text-red-900 dark:bg-red-900/40 dark:text-red-200",
-  CANCELLED: "bg-black/5 text-black/60 dark:bg-white/10 dark:text-white/60",
+  PENDING: { className: "bg-warning-soft text-warning", Icon: Clock3 },
+  APPROVED: { className: "bg-success-soft text-success", Icon: Check },
+  REJECTED: { className: "bg-danger-soft text-danger", Icon: X },
+  CANCELLED: { className: "bg-surface-muted text-muted", Icon: Ban },
 } as const;
 
+/** Status as icon + label, never colour alone (design guidance). */
 export function StatusBadge({ status, locale }: { status: keyof typeof statusStyles; locale: Locale }) {
   const label = messagesFor(locale).common.status[status];
-  return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[status]}`}>{label}</span>;
+  const { className, Icon } = statusStyles[status];
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${className}`}>
+      <Icon aria-hidden className="size-3" strokeWidth={2.5} />
+      {label}
+    </span>
+  );
 }
 
 /** `withSick` for admins, the only ones who see colleagues' sick days as sick. */
@@ -54,7 +62,7 @@ export function Legend({ locale, withSick }: { locale: Locale; withSick?: boolea
         </span>
       ))}
       <span className="flex items-center gap-1.5">
-        <span className="pending-stripes inline-block h-2.5 w-4 rounded-sm bg-sky-500" /> {t.legend.pending}
+        <span className="pending-stripes inline-block h-2.5 w-4 rounded-sm bg-success" /> {t.legend.pending}
       </span>
       <span className="flex items-center gap-1.5">
         <span className="inline-block h-2.5 w-4 rounded-sm bg-rose-500/20" /> {t.legend.holiday}

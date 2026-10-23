@@ -11,7 +11,7 @@ export function BottomNav({ items, label }: { items: Item[]; label: string }) {
   return (
     <nav
       aria-label={label}
-      className="bottom-nav fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/90 px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:hidden"
+      className="bottom-nav fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/90 px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-md lg:hidden"
     >
       <ul className="grid grid-cols-5">
         {items.map((item) => {

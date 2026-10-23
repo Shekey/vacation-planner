@@ -96,7 +96,7 @@ export default async function BillingPage({
         <p className="text-sm">{status}</p>
         {access.kind !== "beta" && (
           <p
-            className={`text-sm ${isOverLimit(access, members) ? "font-medium text-red-600 dark:text-red-400" : "text-muted"}`}
+            className={`text-sm ${isOverLimit(access, members) ? "font-medium text-danger" : "text-muted"}`}
           >
             {t.peopleCount(members, access.maxMembers)}
             {isOverLimit(access, members) && t.overLimit}

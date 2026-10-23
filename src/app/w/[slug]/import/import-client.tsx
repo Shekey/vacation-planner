@@ -259,7 +259,7 @@ export function ImportClient({ slug }: { slug: string }) {
 
       <div aria-live="polite" role="status" className="space-y-2">
         {error && (
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          <p className="text-sm text-danger">{error}</p>
         )}
         {done !== null && (
           <div className="card space-y-2 border-green-500/40 bg-green-50 text-sm dark:bg-green-900/20">
@@ -296,7 +296,7 @@ export function ImportClient({ slug }: { slug: string }) {
             )}
           </p>
           <p
-            className={`text-sm ${people.room.fits ? "text-muted" : "font-medium text-red-600 dark:text-red-400"}`}
+            className={`text-sm ${people.room.fits ? "text-muted" : "font-medium text-danger"}`}
           >
             {t.room(people.room.max, people.room.current, people.counts.new)}
             {!people.room.fits && t.roomOver}

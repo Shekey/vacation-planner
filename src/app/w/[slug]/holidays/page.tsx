@@ -86,7 +86,7 @@ export default async function HolidaysPage({
           →
         </Link>
       </div>
-      <p className="text-sm opacity-70">
+      <p className="text-sm text-muted">
         {t.intro}
         {country && t.publicFor(countryName(country, locale))}
       </p>
@@ -140,7 +140,7 @@ export default async function HolidaysPage({
       )}
 
       {holidays.length === 0 ? (
-        <p className="opacity-70">
+        <p className="text-muted">
           {t.none(year)}
           {isAdmin && t.noneAdminHint}
         </p>
@@ -151,7 +151,7 @@ export default async function HolidaysPage({
             return (
               <li
                 key={h.id}
-                className={`flex items-center justify-between gap-3 py-2 ${iso < today ? "opacity-60" : ""}`}
+                className={`flex items-center justify-between gap-3 py-2 ${iso < today ? "text-muted" : ""}`}
               >
                 <span className="flex flex-wrap items-baseline gap-x-2">
                   <span className="inline-block w-36 font-medium">
@@ -163,7 +163,7 @@ export default async function HolidaysPage({
                   </span>
                   <span>{holidayName(h, locale)}</span>
                   {h.region && (
-                    <span className="text-xs opacity-60">
+                    <span className="text-xs text-muted">
                       {t.regionOnly(regionName(h.region))}
                     </span>
                   )}
@@ -172,7 +172,7 @@ export default async function HolidaysPage({
                   <ActionForm
                     action={deleteHolidayAction.bind(null, slug, h.id)}
                   >
-                    <button className="rounded-lg px-2 py-1 text-sm text-red-600 dark:text-red-400 hover:bg-red-500/10">
+                    <button className="rounded-lg px-2 py-1 text-sm text-danger hover:bg-red-500/10">
                       {t.remove}
                     </button>
                   </ActionForm>
@@ -194,7 +194,7 @@ export default async function HolidaysPage({
               region={settings.holidayRegion ?? ""}
               year={year}
             />
-            <p className="text-xs opacity-60">{t.importNote}</p>
+            <p className="text-xs text-muted">{t.importNote}</p>
           </section>
           <section className="card space-y-3">
             <h3 className="font-medium">{t.addHeading}</h3>

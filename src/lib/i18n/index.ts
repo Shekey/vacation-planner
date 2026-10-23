@@ -1,5 +1,6 @@
 import type { Locale } from "./config";
 import { account } from "./messages/account";
+import { adminOverview } from "./messages/adminOverview";
 import { approvals } from "./messages/approvals";
 import { audit } from "./messages/audit";
 import { billing } from "./messages/billing";
@@ -30,6 +31,7 @@ export * from "./config";
 
 const NAMESPACES = {
   account,
+  adminOverview,
   approvals,
   audit,
   billing,

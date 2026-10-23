@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Caveat } from "next/font/google";
+import { Bricolage_Grotesque, Caveat, Inter } from "next/font/google";
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
 import { Analytics } from "@/components/analytics";
@@ -12,6 +12,12 @@ import { getLocale, getMessages } from "@/lib/i18n/server";
 import "./globals.css";
 
 // Self-hosted at build time by next/font: visitors' browsers never contact Google.
+const sans = Inter({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-inter",
+  display: "swap",
+});
+// The landing page keeps its headings and handwriting until it moves to the new design (#110).
 const display = Bricolage_Grotesque({
   subsets: ["latin", "latin-ext"],
   variable: "--font-bricolage",
@@ -35,8 +41,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f5f7fa" },
-    { media: "(prefers-color-scheme: dark)", color: "#0c0f14" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f7f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f1719" },
   ],
 };
 
@@ -48,7 +54,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang={locale}
-      className={`h-full antialiased ${display.variable} ${hand.variable}`}
+      className={`h-full antialiased ${sans.variable} ${display.variable} ${hand.variable}`}
     >
       <body className="min-h-full flex flex-col">
         <I18nProvider locale={locale}>
@@ -105,7 +111,6 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                     >
                       <Avatar
                         label={label}
-                        seed={session.user.email ?? label}
                       />
                       <span className="hidden max-w-48 truncate sm:inline">
                         {label}

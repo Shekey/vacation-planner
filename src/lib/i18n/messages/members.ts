@@ -3,6 +3,7 @@ import { defineMessages } from "../define";
 export const members = defineMessages({
   en: {
     title: "Members",
+    subtitle: (n: number) => `${n} ${n === 1 ? "person" : "people"} in this workspace. Manage access and time-off details.`,
     weekdays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
     inviteHeading: "Invite people",
     testSender:
@@ -124,6 +125,7 @@ export const members = defineMessages({
   },
   de: {
     title: "Mitglieder",
+    subtitle: (n: number) => `${n} ${n === 1 ? "Person" : "Personen"} in diesem Workspace. Zugang und Urlaubsdaten verwalten.`,
     weekdays: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
     inviteHeading: "Leute einladen",
     testSender:

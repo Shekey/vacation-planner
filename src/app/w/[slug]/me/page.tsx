@@ -73,7 +73,7 @@ export default async function MyTimeOffPage({
             </span>
             <StatusBadge status={b.status} locale={locale} />
           </div>
-          <div className="text-sm opacity-70">
+          <div className="text-sm text-muted">
             {typeLabel(b.type, locale, b.specialReason)} ·{" "}
             {common.days(formatNumber(b.days, locale))}
             {half && ` · ${half}`}
@@ -103,7 +103,7 @@ export default async function MyTimeOffPage({
               action={cancelBookingAction.bind(null, slug, b.id)}
               confirm={t.cancelConfirm}
             >
-              <button className="rounded-lg px-2 py-1 text-red-600 dark:text-red-400 hover:bg-red-500/10">
+              <button className="rounded-lg px-2 py-1 text-danger hover:bg-red-500/10">
                 {t.cancel}
               </button>
             </ActionForm>
@@ -153,7 +153,7 @@ export default async function MyTimeOffPage({
         <h2 className="font-medium">{t.feedTitle}</h2>
         {feedUrl ? (
           <>
-            <p className="text-sm opacity-70">{t.feedBody}</p>
+            <p className="text-sm text-muted">{t.feedBody}</p>
             <CopyField value={feedUrl} />
             <div className="flex gap-4 text-sm">
               <ActionForm
@@ -163,7 +163,7 @@ export default async function MyTimeOffPage({
                 <button className="underline">{t.newLink}</button>
               </ActionForm>
               <ActionForm action={disableCalendarFeedAction.bind(null, slug)}>
-                <button className="text-red-600 dark:text-red-400 underline">
+                <button className="text-danger underline">
                   {t.turnOff}
                 </button>
               </ActionForm>
@@ -174,7 +174,7 @@ export default async function MyTimeOffPage({
             action={resetCalendarFeedAction.bind(null, slug)}
             className="flex flex-wrap items-center gap-3"
           >
-            <p className="text-sm opacity-70">{t.feedPitch}</p>
+            <p className="text-sm text-muted">{t.feedPitch}</p>
             <button className="btn">{t.getLink}</button>
           </ActionForm>
         )}

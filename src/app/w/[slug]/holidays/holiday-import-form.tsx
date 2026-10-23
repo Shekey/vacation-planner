@@ -48,7 +48,7 @@ export function HolidayImportForm(props: {
               </option>
             ))}
           </select>
-          <span className="block text-xs opacity-60">{t.mainRegionHint}</span>
+          <span className="block text-xs text-muted">{t.mainRegionHint}</span>
         </label>
       )}
       <button className="btn">{t.import}</button>
