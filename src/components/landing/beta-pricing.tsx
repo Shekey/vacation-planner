@@ -1,9 +1,9 @@
+import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
 import { FOUNDER_DISCOUNT_PERCENT, founderPrice } from "@/lib/beta";
 import type { Locale } from "@/lib/i18n";
 import { intlLocale, messagesFor } from "@/lib/i18n";
 import { PLANS } from "@/lib/plans";
-import { icons } from "./icons";
 
 /**
  * Pricing while the free beta runs: free access now, the regular prices in the open, and the founder discount
@@ -18,51 +18,75 @@ export function BetaPricing({ locale }: { locale: Locale }) {
       minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
       maximumFractionDigits: 2,
     }).format(n);
+  const later = [
+    { name: t.later.team, people: PLANS.TEAM.maxMembers, price: PLANS.TEAM.monthly },
+    { name: t.later.business, people: PLANS.BUSINESS.maxMembers, price: PLANS.BUSINESS.monthly },
+  ];
 
   return (
-    <div className="space-y-8">
-      <div className="mx-auto max-w-2xl space-y-3 text-center">
-        <p className="inline-block rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 dark:bg-amber-900/40 dark:text-amber-200">
-          {t.badge}
-        </p>
-        <h2 id="pricing-title" className="font-display text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-          {t.title}
-        </h2>
-        <p className="text-lg text-muted">{t.subtitle}</p>
+    <div className="space-y-12">
+      <div className="grid gap-6 lg:grid-cols-2 lg:gap-16">
+        <div className="space-y-4">
+          <p className="text-[11px] font-semibold tracking-wide text-primary-ink uppercase">{t.eyebrow}</p>
+          <h2 id="pricing-title" className="text-[30px] leading-[1.14] font-medium sm:text-[42px]">
+            {t.title[0]} <span className="block">{t.title[1]}</span>
+          </h2>
+        </div>
+        <p className="self-center text-base leading-[1.55] text-muted">{t.subtitle}</p>
       </div>
 
-      <div className="mx-auto grid max-w-4xl gap-4 md:grid-cols-2">
-        <div className="flex flex-col gap-4 rounded-2xl border border-foreground bg-surface p-6 shadow-lg">
-          <h3 className="font-display text-lg font-semibold">{t.now.title}</h3>
-          <p>
-            <span className="text-4xl font-semibold tracking-tight">{euro(0)}</span>
+      <div className="grid items-center gap-10 lg:grid-cols-[440px_minmax(0,1fr)] lg:gap-16">
+        <div className="space-y-6 rounded-2xl border border-primary bg-background p-6 sm:p-8">
+          <p className="text-[11px] font-semibold text-primary-ink">{t.now.available}</p>
+          <p className="text-2xl">{t.now.name}</p>
+          <p className="flex items-baseline gap-2.5">
+            <span className="text-6xl leading-none font-medium">{euro(0)}</span>
             <span className="text-sm text-muted">{t.now.perMonth}</span>
           </p>
-          <ul className="flex-1 space-y-2 text-sm">
+          <ul className="space-y-3 text-sm">
             {t.now.features.map((f) => (
-              <li key={f} className="flex gap-2">
-                <icons.check className="mt-0.5 size-4 shrink-0 text-green-600 dark:text-green-400" />
-                {f}
+              <li key={f} className="flex items-center gap-2.5">
+                <Check aria-hidden className="size-4 shrink-0 text-success" strokeWidth={2.5} /> {f}
               </li>
             ))}
           </ul>
-          <Link href="/sign-in" className="btn w-full">
-            {t.now.cta}
+          <Link href="/sign-in" className="btn min-h-[50px] w-full gap-3.5 rounded-[10px] text-sm">
+            {t.now.cta} <ArrowRight aria-hidden className="size-[18px]" />
           </Link>
+          <p className="text-center text-[11px] text-muted">{t.now.note}</p>
         </div>
 
-        <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface/60 p-6">
-          <h3 className="font-display text-lg font-semibold">{t.later.title}</h3>
-          <ul className="space-y-3 text-sm">
-            <li>{t.later.team(PLANS.TEAM.maxMembers, euro(PLANS.TEAM.monthly))}</li>
-            <li>{t.later.business(PLANS.BUSINESS.maxMembers, euro(PLANS.BUSINESS.monthly))}</li>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold text-muted">{t.later.eyebrow}</p>
+            <p className="text-[21px] font-medium">{t.later.title}</p>
+          </div>
+          <ul className="divide-y divide-border border-y border-border">
+            {later.map((p) => (
+              <li key={p.name} className="flex items-center justify-between gap-4 py-5">
+                <div className="space-y-1.5">
+                  <p className="text-xl font-medium">{p.name}</p>
+                  <p className="text-[13px] text-muted">{t.later.upTo(p.people)}</p>
+                </div>
+                <div className="space-y-1 text-right">
+                  <p className="text-[30px] leading-none font-medium">{euro(p.price)}</p>
+                  <p className="text-[11px] text-muted">{t.later.flat}</p>
+                </div>
+              </li>
+            ))}
           </ul>
-          <p className="mt-auto rounded-xl border border-amber-400/60 bg-amber-50 p-4 text-sm font-medium text-balance dark:bg-amber-900/20">
-            {t.founder(FOUNDER_DISCOUNT_PERCENT, euro(founderPrice(PLANS.TEAM.monthly)))}
-          </p>
+          <div className="space-y-2 rounded-[10px] bg-primary-soft p-5 text-primary-ink">
+            <p className="text-base font-semibold">{t.founder.title(FOUNDER_DISCOUNT_PERCENT)}</p>
+            <p className="text-[13px] leading-[1.55]">{t.founder.body(FOUNDER_DISCOUNT_PERCENT, euro(founderPrice(PLANS.TEAM.monthly)))}</p>
+          </div>
+          <p className="text-[13px] leading-[1.55] text-muted">{t.footnote}</p>
         </div>
       </div>
-      <p className="text-center text-sm text-muted">{t.footnote}</p>
+
+      <div className="space-y-2 border-t border-border pt-6">
+        <p className="text-[15px] font-medium">{t.control.title}</p>
+        <p className="text-[13px] leading-[1.55] text-muted">{t.control.body}</p>
+      </div>
     </div>
   );
 }

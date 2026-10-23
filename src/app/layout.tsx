@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Caveat, Inter } from "next/font/google";
+import { Inter } from "next/font/google";
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
 import { Analytics } from "@/components/analytics";
@@ -17,18 +17,6 @@ const sans = Inter({
   variable: "--font-inter",
   display: "swap",
 });
-// The landing page keeps its headings and handwriting until it moves to the new design (#110).
-const display = Bricolage_Grotesque({
-  subsets: ["latin", "latin-ext"],
-  variable: "--font-bricolage",
-  display: "swap",
-});
-const hand = Caveat({
-  subsets: ["latin", "latin-ext"],
-  variable: "--font-caveat",
-  display: "swap",
-});
-
 export async function generateMetadata(): Promise<Metadata> {
   const t = (await getMessages()).common;
   return {
@@ -54,7 +42,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang={locale}
-      className={`h-full antialiased ${sans.variable} ${display.variable} ${hand.variable}`}
+      className={`h-full antialiased ${sans.variable}`}
     >
       <body className="min-h-full flex flex-col">
         <I18nProvider locale={locale}>
