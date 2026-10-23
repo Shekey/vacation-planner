@@ -49,8 +49,7 @@
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
-  --font-hand: var(--font-caveat), "Comic Sans MS", cursive;
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* The design has no dark version; these keep its hues on a deep blue-green ground. */
@@ -94,10 +93,13 @@ label:has(> input[type="radio"]) {
 
 /* Workspace pages bring their own sidebar, top bar and footer (src/app/w/[slug]/layout.tsx), so the site header, footer and page padding step aside. */
 body:has(.app-shell) > header,
-body:has(.app-shell) > footer {
+body:has(.app-shell) > footer,
+body:has(.landing) > header,
+body:has(.landing) > footer {
   display: none;
 }
-body:has(.app-shell) > main {
+body:has(.app-shell) > main,
+body:has(.landing) > main {
   max-width: none;
   padding: 0;
 }
@@ -178,34 +180,6 @@ input[type="radio"]:focus-visible {
   }
 }
 
-/* ---------- Landing page motion. Everything here is off with reduced motion (rule above). ---------- */
-
-/* Sections fade up once they scroll into view; `Reveal` only sets data-reveal after hydration, so nothing hides without JavaScript. */
-[data-reveal] {
-  transition:
-    opacity 0.7s ease,
-    transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-[data-reveal="hidden"] {
-  opacity: 0;
-  transform: translateY(24px);
-}
-
-/* A hand-drawn yellow line under the hero's second line; it follows each wrapped line and draws in once. */
-@keyframes scribble {
-  to {
-    background-size: 100% 0.32em;
-  }
-}
-.scribble {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 16' preserveAspectRatio='none'%3E%3Cpath d='M3 11C60 4 120 3 180 6s90 4 117-1' fill='none' stroke='%23fbbf24' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E")
-    no-repeat left bottom / 0% 0.32em;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-  padding-bottom: 0.08em;
-  animation: scribble 1s 0.4s cubic-bezier(0.6, 0, 0.3, 1) forwards;
-}
-
 @keyframes pop-in {
   from {
     opacity: 0;
@@ -218,17 +192,6 @@ input[type="radio"]:focus-visible {
 }
 .pop-in {
   animation: pop-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-@keyframes sun-turn {
-  to {
-    transform: rotate(360deg);
-  }
-}
-.sun-turn {
-  animation: sun-turn 60s linear infinite;
-  transform-origin: center;
-  transform-box: fill-box;
 }
 
 /* Diagonal stripes mark bookings still waiting for approval. */
