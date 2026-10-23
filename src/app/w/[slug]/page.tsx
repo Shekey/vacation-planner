@@ -49,7 +49,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
     db.booking.findFirst({
       where: { membershipId: membership.id, status: { in: ["PENDING", "APPROVED"] }, endDate: { gte: fromISO(today) } },
       orderBy: { startDate: "asc" },
-      select: { startDate: true, endDate: true, type: true, status: true },
+      select: { startDate: true, endDate: true, type: true, status: true, leaveType: { select: { name: true, color: true } } },
     }),
     db.holiday.findFirst({
       where: { workspaceId: workspace.id, date: { gte: fromISO(today) }, region: { in: [...new Set(["", myRegion])] } },
@@ -201,12 +201,12 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
                           <div className="flex items-center gap-1.5 font-semibold">
                             <span className="truncate">{name(b)}</span>
                             {b.membership.isSample && <SampleBadge label={common.sample} />}
-                            <TypeDot type={b.type} decorative locale={locale} />
+                            <TypeDot type={b.type} decorative locale={locale} leaveType={b.leaveType} />
                           </div>
                           <div className="text-xs text-muted">
                             {portion === "AM" ? common.dayPart.AM : portion === "PM" ? common.dayPart.PM : t.awayUntil(formatDate(spanOf(b).end, { day: "numeric", month: "short" }, locale))}
                             {" · "}
-                            {typeLabel(b.type, locale)}
+                            {typeLabel(b.type, locale, null, b.leaveType)}
                           </div>
                         </div>
                         <StatusBadge status={b.status} locale={locale} />
@@ -279,7 +279,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
               <div className="flex items-start justify-between gap-3">
                 <span className="flex items-center gap-2.5 text-sm text-muted">
                   <Sun aria-hidden className="size-5" />
-                  {typeLabel(nextOff.type, locale)}
+                  {typeLabel(nextOff.type, locale, null, nextOff.leaveType)}
                 </span>
                 <StatusBadge status={nextOff.status} locale={locale} />
               </div>

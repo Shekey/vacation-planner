@@ -28,6 +28,8 @@ export const book = defineMessages({
     overBlocked: "Your team doesn't allow booking more days than you have left. Ask an admin if you need more.",
     overNeedsApproval: "This is more than you have left, so an admin or approver has to approve it.",
     daysLeftAfter: (n: string, year: number) => `${n} vacation ${n === "1" ? "day" : "days"} left in ${year} after this.`,
+    typeDaysLeftAfter: (type: string, n: string, year: number) => `${n} ${n === "1" ? "day" : "days"} of ${type} left in ${year} after this.`,
+    overTypeAllowance: (type: string, n: string, year: number) => `This is ${n} ${n === "1" ? "day" : "days"} over the ${year} allowance for ${type}.`,
     holidaysList: (list: string) => `Holidays: ${list}`,
     understaffed: (present: number, total: number, days: string, more: number, min: number | null) =>
       `Only ${present} of ${total} would be in on ${days}${more > 0 ? ` and ${more} more day${more === 1 ? "" : "s"}` : ""}. The team wants at least ${min} in.`,
@@ -73,6 +75,8 @@ export const book = defineMessages({
     overNeedsApproval: "Das ist mehr, als du übrig hast. Deshalb muss ein Admin oder eine Genehmiger:in zustimmen.",
     daysLeftAfter: (n: string, year: number) =>
       n === "1" ? `Danach bleibt dir 1 Urlaubstag für ${year}.` : `Danach bleiben dir ${n} Urlaubstage für ${year}.`,
+    typeDaysLeftAfter: (type: string, n: string, year: number) => `Danach ${n === "1" ? "bleibt" : "bleiben"} ${year} noch ${n} ${n === "1" ? "Tag" : "Tage"} ${type}.`,
+    overTypeAllowance: (type: string, n: string, year: number) => `Das sind ${n} ${n === "1" ? "Tag" : "Tage"} mehr als ${year} für ${type} vorgesehen.`,
     holidaysList: (list: string) => `Feiertage: ${list}`,
     understaffed: (present: number, total: number, days: string, more: number, min: number | null) =>
       `Nur ${present} von ${total} wären am ${days}${

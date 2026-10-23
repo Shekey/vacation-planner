@@ -141,7 +141,7 @@ test.describe.serial("a team's first week", () => {
   });
 });
 
-const pages = ["", "/calendar", "/book", "/me", "/approvals", "/members"];
+const pages = ["", "/calendar", "/book", "/me", "/approvals", "/members", "/leave-types"];
 const looks = [
   { lang: "en", scheme: "light" },
   { lang: "de", scheme: "dark" },

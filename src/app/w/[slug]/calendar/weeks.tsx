@@ -254,7 +254,7 @@ export async function TeamWeeks({ slug, query }: { slug: string; query: Record<s
                           const pending = b.status === "PENDING";
                           const vacation = b.type === "VACATION";
                           const style = { left: `calc(${left * 100}% + 3px)`, width: `calc(${width * 100}% - 6px)` };
-                          const name = typeLabel(b.type, locale, b.specialReason);
+                          const name = typeLabel(b.type, locale, b.specialReason, b.leaveType);
                           const title = t.booking(label(m), name, null, pending) + (b.note ? ` – ${b.note}` : "");
                           const body: ReactNode = (
                             <>
@@ -263,7 +263,7 @@ export async function TeamWeeks({ slug, query }: { slug: string; query: Record<s
                               ) : vacation ? (
                                 <Check aria-hidden className="size-3 shrink-0" strokeWidth={2.5} />
                               ) : (
-                                <TypeDot type={b.type} decorative locale={locale} />
+                                <TypeDot type={b.type} decorative locale={locale} leaveType={b.leaveType} />
                               )}
                               <span className="truncate">
                                 {fmt(b.days)}

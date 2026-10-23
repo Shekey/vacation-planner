@@ -41,7 +41,7 @@ export default async function EditBookingPage({ params }: PageProps<"/w/[slug]/b
     );
   }
 
-  const data = await loadBookingFormData(ctx);
+  const data = await loadBookingFormData(ctx, booking.leaveTypeId);
   const t = (await getMessages()).book;
   const span = spanOf(booking);
   const member = data.members.find((m) => m.id === booking.membershipId);
@@ -69,11 +69,14 @@ export default async function EditBookingPage({ params }: PageProps<"/w/[slug]/b
         team={data.team}
         holidays={data.holidays}
         memberCount={data.memberCount}
+        leaveTypes={data.leaveTypes}
+        leaveTypeUsed={data.leaveTypeUsed}
         initial={{
           bookingId: booking.id,
           ownDaysThisYear,
           membershipId: booking.membershipId,
-          type: booking.type,
+          type: booking.leaveTypeId ? `lt:${booking.leaveTypeId}` : booking.type,
+          ownTypeDaysThisYear: booking.leaveTypeId && booking.startDate.getUTCFullYear() === data.currentYear ? Number(booking.daysCount) : 0,
           specialReason: booking.specialReason,
           start: span.start,
           end: span.end,

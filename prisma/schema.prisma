@@ -132,6 +132,7 @@ model Workspace {
   invitations Invitation[]
   bookings    Booking[]
   holidays    Holiday[]
+  leaveTypes  LeaveType[]
   auditEvents AuditEvent[]
   coldMails   ColdMail[]
 }
@@ -347,6 +348,9 @@ model Booking {
   type          BookingType    @default(VACATION)
   // Only for SPECIAL, and optional.
   specialReason SpecialReason?
+  // An admin-defined type (#34), shown instead of the built-in name. `type` is then VACATION when the leave type counts
+  // as vacation and OTHER otherwise, so allowance, approvals and sick-day privacy work as before.
+  leaveTypeId   String?
   note          String?
   status        BookingStatus
   daysCount     Decimal        @db.Decimal(4, 1)
@@ -370,9 +374,33 @@ model Booking {
   membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
   createdBy  User?      @relation("BookingCreator", fields: [createdById], references: [id], onDelete: SetNull)
   decidedBy  User?      @relation("BookingDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+  leaveType  LeaveType? @relation(fields: [leaveTypeId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, startDate])
   @@index([membershipId])
+}
+
+// Leave types an admin adds next to the built-in ones (#34), like Überstundenabbau or Fortbildung. A label to pick, no
+// free text on the booking. Archived types stay on their bookings but can't be picked any more.
+model LeaveType {
+  id               String    @id @default(cuid())
+  workspaceId      String
+  name             String
+  // A key of LEAVE_COLORS in src/components/badges.tsx.
+  color            String
+  // Taken from the vacation allowance, like vacation.
+  countsAsVacation Boolean   @default(false)
+  // Its own days per year, for types that don't count as vacation; null means no limit.
+  allowanceDays    Decimal?  @db.Decimal(4, 1)
+  // Off: booked straight away even with approvals on.
+  needsApproval    Boolean   @default(true)
+  archivedAt       DateTime?
+  createdAt        DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  bookings  Booking[]
+
+  @@index([workspaceId])
 }
 
 // Who did what in a workspace, shown to admins and deleted after AUDIT_RETENTION_MONTHS. No free text, no health data.

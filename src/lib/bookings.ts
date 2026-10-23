@@ -72,7 +72,7 @@ export function forViewer<T extends { type: BookingType; note: string | null; me
   if (can(viewer.role, "sick:see")) return bookings;
   return bookings.map((b) => {
     if (b.membershipId === viewer.membershipId) return b;
-    if (b.type === "SICK") return { ...b, type: "OTHER" as const, note: null };
+    if (b.type === "SICK") return { ...b, type: "OTHER" as const, note: null, ...("leaveType" in b ? { leaveType: null } : {}) };
     return b.specialReason ? { ...b, specialReason: null } : b;
   });
 }
@@ -142,7 +142,30 @@ export function isOverlapError(e: unknown) {
 
 type Actor = { userId: string; membershipId: string; role: Role };
 
-type BookingInput = BookingSpan & { type: BookingType; note: string | null; specialReason?: SpecialReason | null };
+type BookingInput = BookingSpan & {
+  type: BookingType;
+  note: string | null;
+  specialReason?: SpecialReason | null;
+  /** The admin's own leave type (#34); `type` is then taken from it. */
+  leaveTypeId?: string | null;
+};
+
+type LeaveTypeRow = { id: string; name: string; countsAsVacation: boolean; needsApproval: boolean };
+
+/**
+ * The leave type a booking asks for, from this workspace, and the built-in type it is stored as. Archived types can only
+ * stay on a booking that already has them (`keep`), not be picked anew.
+ */
+async function withLeaveType(workspaceId: string, input: BookingInput, t: Messages["errors"], keep?: string | null) {
+  if (!input.leaveTypeId) return { input: { ...input, leaveTypeId: null }, leaveType: null };
+  const leaveType: LeaveTypeRow | null = await db.leaveType.findFirst({
+    where: { id: input.leaveTypeId, workspaceId, ...(input.leaveTypeId === keep ? {} : { archivedAt: null }) },
+    select: { id: true, name: true, countsAsVacation: true, needsApproval: true },
+  });
+  if (!leaveType) throw new BookingError(t.leaveTypeGone);
+  const type: BookingType = leaveType.countsAsVacation ? "VACATION" : "OTHER";
+  return { input: { ...input, type, specialReason: null }, leaveType };
+}
 
 function prepare(input: BookingInput, settings: Settings, rules: DayRules, t: Messages["errors"]) {
   const error = validateSpan(input, settings);
@@ -157,16 +180,24 @@ function prepare(input: BookingInput, settings: Settings, rules: DayRules, t: Me
     type: input.type,
     note: input.note,
     specialReason: input.type === "SPECIAL" ? (input.specialReason ?? null) : null,
+    leaveTypeId: input.leaveTypeId ?? null,
     daysCount,
   };
 }
 
 /**
  * Pending when approvals are on, unless an admin made it, or an approver for someone else (they could approve it
- * anyway). An approver's own time off waits for someone else to decide. Sick days are never asked for.
+ * anyway). An approver's own time off waits for someone else to decide. Sick days are never asked for, and neither are
+ * leave types the admin set to need no approval (#34).
  */
-function initialStatus(actor: Actor, settings: Settings, type: BookingType | undefined, membershipId: string): BookingStatus {
-  if (!settings.approvalsEnabled || type === "SICK" || actor.role === "ADMIN") return "APPROVED";
+function initialStatus(
+  actor: Actor,
+  settings: Settings,
+  type: BookingType | undefined,
+  membershipId: string,
+  leaveType?: { needsApproval: boolean } | null,
+): BookingStatus {
+  if (!settings.approvalsEnabled || type === "SICK" || actor.role === "ADMIN" || leaveType?.needsApproval === false) return "APPROVED";
   return membershipId !== actor.membershipId && can(actor.role, "bookings:decide") ? "APPROVED" : "PENDING";
 }
 
@@ -283,6 +314,7 @@ async function giveBackVacation(
           workspaceId: b.workspaceId,
           membershipId: b.membershipId,
           type: b.type,
+          leaveTypeId: b.leaveTypeId,
           status: b.status,
           createdById: b.createdById,
           decidedById: b.decidedById,
@@ -317,8 +349,9 @@ export async function createBooking(opts: {
   input: BookingInput;
   origin: string;
 }) {
-  const { workspace, settings, actor, membershipId, input } = opts;
+  const { workspace, settings, actor, membershipId } = opts;
   const t = (await getMessages()).errors;
+  const { input, leaveType } = await withLeaveType(workspace.id, opts.input, t);
   assertMayBook(actor, membershipId, input.type, t, t.onlyAdminsBookForOthers);
   await assertWithinPlan(workspace.id);
   const target = await db.membership.findFirst({
@@ -331,7 +364,7 @@ export async function createBooking(opts: {
   const rules = rulesFor(target, settings, holidays);
   const data = prepare(input, settings, rules, t);
   const today = todayIn(workspace.timezone ?? "UTC");
-  const status = await applyOverAllowance(initialStatus(actor, settings, input.type, membershipId), {
+  const status = await applyOverAllowance(initialStatus(actor, settings, input.type, membershipId, leaveType), {
     actor,
     membershipId,
     settings,
@@ -368,7 +401,7 @@ export async function createBooking(opts: {
       workspace.id,
       settings,
       target.user,
-      booking,
+      { ...booking, leaveType },
       status === "PENDING" ? "requested" : "off",
       `${opts.origin}/w/${workspace.slug}/calendar`,
       status === "PENDING" ? reviewUrl(opts.origin, workspace.slug, booking.id) : undefined,
@@ -390,7 +423,7 @@ async function announce(
   workspaceId: string,
   settings: Settings,
   person: { name: string | null; email: string },
-  booking: { startDate: Date; endDate: Date; daysCount: Prisma.Decimal | number; type: BookingType },
+  booking: { startDate: Date; endDate: Date; daysCount: Prisma.Decimal | number; type: BookingType; leaveType?: { name: string } | null },
   verb: keyof Messages["chat"]["verb"],
   calendarUrl: string,
   /** Set for a pending request: the button opens it on Approvals instead of the calendar. */
@@ -409,7 +442,7 @@ async function announce(
       chat.verb[verb],
       formatRange(toISO(booking.startDate), toISO(booking.endDate), locale),
       common.days(formatNumber(Number(booking.daysCount), locale)),
-      chat.kind[type],
+      booking.leaveType?.name ?? chat.kind[type],
     ),
     review
       ? { title: chat.reviewRequest, url: review }
@@ -426,13 +459,14 @@ export async function updateBooking(opts: {
   input: BookingInput;
   origin: string;
 }) {
-  const { workspace, settings, actor, input } = opts;
+  const { workspace, settings, actor } = opts;
   const t = (await getMessages()).errors;
   const existing = await db.booking.findFirst({
     where: { id: opts.bookingId, workspaceId: workspace.id, status: { in: ACTIVE_STATUSES } },
     include: { membership: { include: { user: true } } },
   });
   if (!existing) throw new BookingError(t.bookingNotFound);
+  const { input, leaveType } = await withLeaveType(workspace.id, opts.input, t, existing.leaveTypeId);
   await assertWithinPlan(workspace.id);
   assertMayBook(actor, existing.membershipId, input.type, t, t.onlyOwnChange);
   // Someone else's sick days stay with those who may see them, whatever they are changed into.
@@ -444,7 +478,7 @@ export async function updateBooking(opts: {
   const rules = rulesFor(existing.membership, settings, holidays);
   const data = prepare(input, settings, rules, t);
   // A member changing dates sends the booking back for approval.
-  const status = await applyOverAllowance(initialStatus(actor, settings, input.type, existing.membershipId), {
+  const status = await applyOverAllowance(initialStatus(actor, settings, input.type, existing.membershipId, leaveType), {
     actor,
     membershipId: existing.membershipId,
     settings,
@@ -484,7 +518,7 @@ export async function updateBooking(opts: {
       workspace.id,
       settings,
       existing.membership.user,
-      booking,
+      { ...booking, leaveType },
       status === "PENDING" ? "changedRequest" : "changed",
       `${opts.origin}/w/${workspace.slug}/calendar`,
       status === "PENDING" ? reviewUrl(opts.origin, workspace.slug, booking.id) : undefined,
@@ -531,7 +565,11 @@ export async function restoreBooking(opts: {
   const t = (await getMessages()).errors;
   const booking = await db.booking.findFirst({
     where: { id: opts.bookingId, workspaceId: opts.workspace.id, status: "CANCELLED", cancelReason: null, membership: { removedAt: null } },
-    include: { membership: { include: { user: { select: { name: true, email: true } } } }, workspace: { select: { timezone: true } } },
+    include: {
+      membership: { include: { user: { select: { name: true, email: true } } } },
+      workspace: { select: { timezone: true } },
+      leaveType: { select: { needsApproval: true } },
+    },
   });
   if (!booking) throw new BookingError(t.bookingNotFound);
   assertMayBook(opts.actor, booking.membershipId, booking.type, t, t.onlyOwnChange);
@@ -541,7 +579,7 @@ export async function restoreBooking(opts: {
   const { count } = await write(() =>
     db.booking.updateMany({
       where: { id: booking.id, status: "CANCELLED" },
-      data: { status: booking.cancelledFrom ?? initialStatus(opts.actor, opts.settings, booking.type, booking.membershipId), cancelledAt: null, cancelledFrom: null },
+      data: { status: booking.cancelledFrom ?? initialStatus(opts.actor, opts.settings, booking.type, booking.membershipId, booking.leaveType), cancelledAt: null, cancelledFrom: null },
     }),
   );
   if (count === 0) throw new BookingError(t.bookingNotFound);
@@ -722,9 +760,46 @@ export function activeBookingsBetween(workspaceId: string, from: ISODate, to: IS
       endDate: { gte: fromISO(from) },
       membership: { removedAt: null },
     },
-    include: { membership: { include: { user: { select: { name: true, email: true } } } } },
+    include: { membership: { include: { user: { select: { name: true, email: true } } } }, leaveType: { select: { name: true, color: true } } },
     orderBy: { startDate: "asc" },
   });
+}
+
+/**
+ * Days each person booked of the leave types with their own allowance (#34), in `year` by start date, keyed by
+ * membership id and then leave type id. Uses the stored day count, like the request list does.
+ */
+export async function leaveTypeUsage(workspaceId: string, year: number, membershipIds?: string[]) {
+  const rows = await db.booking.groupBy({
+    by: ["membershipId", "leaveTypeId"],
+    where: {
+      workspaceId,
+      ...(membershipIds ? { membershipId: { in: membershipIds } } : {}),
+      leaveType: { allowanceDays: { not: null } },
+      status: { in: ACTIVE_STATUSES },
+      startDate: { gte: fromISO(`${year}-01-01`), lte: fromISO(`${year}-12-31`) },
+    },
+    _sum: { daysCount: true },
+  });
+  const used: Record<string, Record<string, number>> = {};
+  for (const r of rows) (used[r.membershipId] ??= {})[r.leaveTypeId!] = Number(r._sum.daysCount ?? 0);
+  return used;
+}
+
+/** The leave types to pick from when booking: the workspace's current ones, plus `keep` when a booking still has it. */
+export async function pickableLeaveTypes(workspaceId: string, keep?: string | null) {
+  const rows = await db.leaveType.findMany({
+    where: { workspaceId, OR: [{ archivedAt: null }, ...(keep ? [{ id: keep }] : [])] },
+    orderBy: { createdAt: "asc" },
+  });
+  return rows.map((l) => ({
+    id: l.id,
+    name: l.name,
+    color: l.color,
+    countsAsVacation: l.countsAsVacation,
+    allowanceDays: l.allowanceDays === null ? null : Number(l.allowanceDays),
+    needsApproval: l.needsApproval,
+  }));
 }
 
 export type AllowanceSummary = {

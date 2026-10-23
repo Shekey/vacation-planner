@@ -50,7 +50,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/calendar/[token
         uid: b.id,
         start: span.start,
         end: span.end,
-        summary: `${who}: ${t.type[b.type]}${half ? ` (${half})` : ""}${b.status === "PENDING" ? ` – ${t.pending}` : ""}`,
+        summary: `${who}: ${b.leaveType?.name ?? t.type[b.type]}${half ? ` (${half})` : ""}${b.status === "PENDING" ? ` – ${t.pending}` : ""}`,
         description: b.note ?? undefined,
       };
     }),
