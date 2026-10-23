@@ -22,6 +22,7 @@ import { recordAudit, bookingDetail } from "@/lib/audit";
 import { isSampleEmail } from "@/lib/sample-team";
 import { canRestore } from "@/lib/undo";
 import { afterResponse } from "@/lib/background";
+import { approveLinkUrl } from "@/lib/approve-link";
 
 export const ACTIVE_STATUSES: BookingStatus[] = ["PENDING", "APPROVED"];
 
@@ -279,9 +280,25 @@ export async function createBooking(opts: {
   await afterResponse(async () => {
     if (status === "PENDING") await notifyAdminsOfRequest(workspace, settings, target.user, booking, opts.origin);
     if (input.type === "SICK" && actor.role !== "ADMIN") await notifyAdminsOfSickDays(workspace, settings, target.user, booking, opts.origin);
-    await announce(workspace.id, settings, target.user, booking, status === "PENDING" ? "requested" : "off", `${opts.origin}/w/${workspace.slug}/calendar`);
+    await announce(
+      workspace.id,
+      settings,
+      target.user,
+      booking,
+      status === "PENDING" ? "requested" : "off",
+      `${opts.origin}/w/${workspace.slug}/calendar`,
+      status === "PENDING" ? reviewUrl(opts.origin, workspace.slug, booking.id) : undefined,
+    );
   });
   return booking;
+}
+
+/**
+ * Where a chat post about a request sends admins: the request on Approvals. The channel is shared with everyone, so it
+ * carries no approve link; Approvals asks for a sign-in and lets only admins decide.
+ */
+function reviewUrl(origin: string, slug: string, bookingId: string) {
+  return `${origin}/w/${slug}/approvals#request-${bookingId}`;
 }
 
 /** Posts a one-line summary to the workspace's Teams and Slack channels, in the workspace's language. */
@@ -292,6 +309,8 @@ async function announce(
   booking: { startDate: Date; endDate: Date; daysCount: Prisma.Decimal | number; type: BookingType },
   verb: keyof Messages["chat"]["verb"],
   calendarUrl: string,
+  /** Set for a pending request: the button opens it on Approvals instead of the calendar. */
+  review?: string,
 ) {
   // Sample people are made up, so the team's channel never hears about them.
   if ((!settings.teamsWebhookUrl && !settings.slackWebhookUrl) || isSampleEmail(person.email)) return;
@@ -308,7 +327,9 @@ async function announce(
       common.days(formatNumber(Number(booking.daysCount), locale)),
       chat.kind[type],
     ),
-    { title: chat.openCalendar, url: `${calendarUrl}?month=${toISO(booking.startDate).slice(0, 7)}` },
+    review
+      ? { title: chat.reviewRequest, url: review }
+      : { title: chat.openCalendar, url: `${calendarUrl}?month=${toISO(booking.startDate).slice(0, 7)}` },
     workspaceId,
   );
 }
@@ -360,6 +381,7 @@ export async function updateBooking(opts: {
       booking,
       status === "PENDING" ? "changedRequest" : "changed",
       `${opts.origin}/w/${workspace.slug}/calendar`,
+      status === "PENDING" ? reviewUrl(opts.origin, workspace.slug, booking.id) : undefined,
     );
   });
   return booking;
@@ -502,28 +524,32 @@ async function notifyAdminsOfRequest(
   workspace: { id: string; name: string; slug: string },
   settings: Settings,
   requester: { name: string | null; email: string },
-  booking: { startDate: Date; endDate: Date; daysCount: Prisma.Decimal | number },
+  booking: { id: string; startDate: Date; endDate: Date; daysCount: Prisma.Decimal | number },
   origin: string,
 ) {
   const admins = await db.membership.findMany({
     where: { workspaceId: workspace.id, role: "ADMIN", removedAt: null },
-    select: { user: { select: { email: true, locale: true } } },
+    select: { id: true, user: { select: { email: true, locale: true } } },
   });
   const who = requester.name ?? requester.email;
-  // One email per language, so every admin reads it in theirs.
-  for (const locale of LOCALES) {
-    const to = admins.filter((a) => recipientLocale(a.user, settings) === locale).map((a) => a.user.email);
-    if (to.length === 0) continue;
+  // One email per admin, in their language: the approve and decline links are signed for that admin (#33).
+  for (const admin of admins) {
+    const locale = recipientLocale(admin.user, settings);
     const { email, common } = messagesFor(locale);
+    const link = { bookingId: booking.id, membershipId: admin.id };
     await sendEmail({
-      to,
+      to: admin.user.email,
       subject: email.request.subject(who),
       text: email.request.text(
         who,
         common.days(formatNumber(Number(booking.daysCount), locale)),
         formatRange(toISO(booking.startDate), toISO(booking.endDate), locale),
         workspace.name,
-        `${origin}/w/${workspace.slug}/approvals`,
+        {
+          approve: approveLinkUrl(origin, link, "approve"),
+          decline: approveLinkUrl(origin, link, "decline"),
+          all: `${origin}/w/${workspace.slug}/approvals`,
+        },
       ),
     });
   }
