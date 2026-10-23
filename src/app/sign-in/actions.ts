@@ -10,7 +10,9 @@ import { checkSignInAttempt, clientIp } from "@/lib/sign-in-limit";
 /** Emails a sign-in link, then shows "check your email" with the address it went to. */
 export async function sendSignInLinkAction(formData: FormData) {
   const address = String(formData.get("email") ?? "").trim();
-  const callbackUrl = safeRedirectPath(formData.get("callbackUrl"));
+  // Without a specific page to return to (an invite link, say), a fresh sign-in lands on the welcome screen.
+  const requested = safeRedirectPath(formData.get("callbackUrl"));
+  const callbackUrl = requested === "/" ? "/welcome" : requested;
   const decision = await checkSignInAttempt(address, clientIp(await headers()));
   if (decision === "refused") redirect(`/sign-in?${new URLSearchParams({ error: "RateLimited", email: address, callbackUrl })}`);
   // The links sent in the last minutes still work, so the person sees "check your email", not an error.
