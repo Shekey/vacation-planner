@@ -88,8 +88,8 @@ export const SUBPROCESSORS = [
     name: "Microsoft Ireland Operations Ltd.",
     dpa: true,
     purpose: {
-      en: "Microsoft Teams posts, only when a workspace connects Teams; sign-in with Microsoft, only for people who choose it",
-      de: "Nachrichten in Microsoft Teams, nur wenn ein Workspace Teams verbindet; Anmeldung mit Microsoft, nur wenn jemand sie wählt",
+      en: "Microsoft Teams posts, only when a workspace connects Teams; sign-in with Microsoft, only for people who choose it; reading names and email addresses from a company's Microsoft 365, only when its admin connects it",
+      de: "Nachrichten in Microsoft Teams, nur wenn ein Workspace Teams verbindet; Anmeldung mit Microsoft, nur wenn jemand sie wählt; Lesen von Namen und E-Mail-Adressen aus dem Microsoft 365 einer Firma, nur wenn deren Admin es verbindet",
     },
     location: { en: "Ireland, EU", de: "Irland, EU" },
   },

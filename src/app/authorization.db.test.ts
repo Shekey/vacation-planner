@@ -154,6 +154,11 @@ const matrix: Record<string, Entry> = {
 
   // Not a Sheets link, so nothing is fetched; admins get "not a Google Sheets link" back.
   "w/[slug]/import/actions.ts#loadSheetAction": { allowed: "admin", call: (_w, slug) => importer.loadSheetAction(slug, "https://example.com/sheet") },
+  // Microsoft isn't configured in tests and no tenant is connected, so admins get a message back and nothing is fetched.
+  "w/[slug]/import/actions.ts#connectDirectoryAction": { allowed: "admin", call: (_w, slug) => importer.connectDirectoryAction(slug) },
+  "w/[slug]/import/actions.ts#disconnectDirectoryAction": { allowed: "admin", call: (_w, slug) => importer.disconnectDirectoryAction(slug) },
+  "w/[slug]/import/actions.ts#directoryGroupsAction": { allowed: "admin", call: (_w, slug) => importer.directoryGroupsAction(slug) },
+  "w/[slug]/import/actions.ts#loadDirectoryAction": { allowed: "admin", call: (_w, slug) => importer.loadDirectoryAction(slug, null, null) },
 
   "w/[slug]/leave-types/actions.ts#createLeaveTypeAction": {
     allowed: "admin",

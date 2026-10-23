@@ -27,7 +27,7 @@ export const importer = defineMessages({
         },
         directory: {
           title: "Microsoft 365 or Google users",
-          how: "Microsoft 365 admin center: Users → Active users → Export users. Google Admin: Directory → Users → Download users. Everyone comes in with their email.",
+          how: "Microsoft 365: connect it below and pick who belongs in the team. Or export the list: Microsoft 365 admin center → Users → Active users → Export users; Google Admin → Directory → Users → Download users. Everyone comes in with their email.",
         },
         paper: { title: "Paper, or nowhere yet", how: "Type or paste names below, one per line. People without an email are fine: you book their time off." },
       },
@@ -169,7 +169,7 @@ export const importer = defineMessages({
         },
         directory: {
           title: "Benutzer aus Microsoft 365 oder Google",
-          how: "Microsoft 365 Admin Center: Benutzer → Aktive Benutzer → Benutzer exportieren. Google Admin: Verzeichnis → Nutzer → Nutzer herunterladen. Alle kommen mit ihrer E-Mail rein.",
+          how: "Microsoft 365: unten verbinden und auswählen, wer zum Team gehört. Oder die Liste exportieren: Microsoft 365 Admin Center → Benutzer → Aktive Benutzer → Benutzer exportieren; Google Admin → Verzeichnis → Nutzer → Nutzer herunterladen. Alle kommen mit ihrer E-Mail rein.",
         },
         paper: { title: "Papier, oder noch gar nicht", how: "Tipp oder füge unten Namen ein, einen pro Zeile. Personen ohne E-Mail gehen auch: Du buchst ihren Urlaub." },
       },

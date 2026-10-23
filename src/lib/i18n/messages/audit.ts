@@ -42,6 +42,10 @@ export const audit = defineMessages({
           return `${actor} imported ${detail} ${detail === "1" ? "person" : "people"} from a list`;
         case "import.timeoff":
           return `${actor} imported ${detail} ${detail === "1" ? "booking" : "bookings"} from a list`;
+        case "directory.connected":
+          return `${actor} connected Microsoft 365 to bring in people`;
+        case "directory.disconnected":
+          return `${actor} disconnected Microsoft 365`;
         case "support.access_granted":
           return `${actor} allowed support access (24 hours)`;
         case "support.access_revoked":
@@ -128,6 +132,10 @@ export const audit = defineMessages({
           return `${actor} hat ${detail} ${detail === "1" ? "Person" : "Personen"} aus einer Liste importiert`;
         case "import.timeoff":
           return `${actor} hat ${detail} ${detail === "1" ? "Buchung" : "Buchungen"} aus einer Liste importiert`;
+        case "directory.connected":
+          return `${actor} hat Microsoft 365 verbunden, um Personen zu übernehmen`;
+        case "directory.disconnected":
+          return `${actor} hat die Verbindung zu Microsoft 365 getrennt`;
         case "support.access_granted":
           return `${actor} hat den Support-Zugriff erlaubt (24 Stunden)`;
         case "support.access_revoked":

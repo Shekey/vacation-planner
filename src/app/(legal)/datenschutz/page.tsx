@@ -36,6 +36,11 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
             with them. Every use is recorded in the workspace&apos;s activity log.
           </li>
           <li>
+            Microsoft 365 directory, only if an admin of your workspace connects your company&apos;s Microsoft 365: we read the names and email
+            addresses of your organisation (or of one group) when an admin loads them and once a night, to suggest who should be added or
+            removed. We store your organisation&apos;s tenant id and the chosen group; people only become members when an admin adds them.
+          </li>
+          <li>
             Cookies: only technically necessary ones (§ 25(2) no. 2 TDDDG): the session cookie that keeps you signed in, two cookies that
             protect the sign-in form (CSRF protection and return address), and a cookie with your chosen language.
           </li>
@@ -89,6 +94,10 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
         <h2>3. Purposes and legal bases</h2>
         <ul>
           <li>Providing the service and sign-in via email link, Microsoft or Google: Art. 6(1)(b) GDPR (contract).</li>
+          <li>
+            Reading a company&apos;s Microsoft 365 directory to add people and suggest leavers: Art. 6(1)(b) GDPR for the workspace that
+            connects it, and Art. 6(1)(f) GDPR (its legitimate interest in an up-to-date team list) for the people in it.
+          </li>
           <li>Billing and retention of invoices: Art. 6(1)(c) GDPR (legal obligations under the HGB and AO).</li>
           <li>Security, abuse prevention and troubleshooting: Art. 6(1)(f) GDPR (legitimate interest).</li>
           <li>
@@ -154,6 +163,12 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
           Ihrem Vertrag mit ihm. Jede Nutzung wird im Verlauf des Workspaces festgehalten.
         </li>
         <li>
+          Microsoft-365-Verzeichnis, nur wenn ein Admin Ihres Workspaces das Microsoft 365 Ihrer Firma verbindet: Wir lesen Namen und
+          E-Mail-Adressen Ihrer Organisation (oder einer Gruppe), wenn ein Admin sie lädt, und einmal pro Nacht, um vorzuschlagen, wer
+          hinzugefügt oder entfernt werden sollte. Wir speichern die Tenant-ID Ihrer Organisation und die gewählte Gruppe; Mitglied wird
+          nur, wen ein Admin hinzufügt.
+        </li>
+        <li>
           Cookies: nur technisch notwendige (§ 25 Abs. 2 Nr. 2 TDDDG): das Sitzungs-Cookie, das Sie angemeldet hält, zwei Cookies, die das
           Anmeldeformular schützen (CSRF-Schutz und Rücksprungadresse), und ein Cookie mit der gewählten Sprache.
         </li>
@@ -212,6 +227,11 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
       <h2>3. Zwecke und Rechtsgrundlagen</h2>
       <ul>
         <li>Bereitstellung des Dienstes und Anmeldung per E-Mail-Link, Microsoft oder Google: Art. 6 Abs. 1 lit. b DSGVO (Vertrag).</li>
+        <li>
+          Lesen des Microsoft-365-Verzeichnisses einer Firma, um Personen hinzuzufügen und Abgänge vorzuschlagen: Art. 6 Abs. 1 lit. b DSGVO für
+          den Workspace, der es verbindet, und Art. 6 Abs. 1 lit. f DSGVO (sein berechtigtes Interesse an einer aktuellen Teamliste) für die
+          Personen darin.
+        </li>
         <li>Abrechnung und Aufbewahrung von Rechnungen: Art. 6 Abs. 1 lit. c DSGVO (gesetzliche Pflichten nach HGB und AO).</li>
         <li>Sicherheit, Missbrauchsschutz und Fehlersuche: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse).</li>
         <li>
