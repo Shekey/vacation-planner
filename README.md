@@ -59,6 +59,11 @@ Register `https://urlaubflow.de` as the site in both. Until the domain is live, 
 
 Redeploy, then try both buttons with an account that is already in a workspace. You should land in that workspace and not get a new, empty account.
 
+**People from Microsoft 365** (#57, same Microsoft app registration, about 10 minutes more): admins can then connect their company's Microsoft 365 on *Bring your team over* → *Microsoft 365 or Google users*, pick everyone or a group, and add people from it. The app reads names and email addresses only, with its own credentials; nothing is written to Microsoft 365 and nobody is added or removed without an admin pressing the button. Each night the admins get one email when joiners or leavers change.
+1. Under *Authentication*, add a second *Web* redirect URI: `https://urlaubflow.de/api/directory/microsoft/callback` (and the Vercel and localhost ones while testing).
+2. Under *API permissions* → *Add a permission* → *Microsoft Graph* → **Application permissions**, add `User.Read.All` and `GroupMember.Read.All`. Don't press *Grant admin consent* for your own tenant unless you want to test with it: each customer's Microsoft 365 admin approves these for their own company when they connect.
+3. Nothing else to set: it uses `AUTH_MICROSOFT_ENTRA_ID_ID` and `_SECRET`. When the client secret expires, the nightly check and loading people stop too.
+
 ### Beta mode (free beta) and how to end it
 
 The app starts in **beta mode**: `NEXT_PUBLIC_ENABLE_BETA_MODE` is unset or anything except `false`. In beta mode:

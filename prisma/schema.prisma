@@ -195,6 +195,14 @@ model WorkspaceSettings {
   onboardingDismissedAt DateTime?
   // Kind of team picked at setup (keys of TEAM_TYPES in src/lib/team-types.ts); null for older workspaces.
   teamType              String?
+  // Microsoft 365 directory (#57): the tenant whose admin approved read-only access, and the group that makes up the
+  // team (null: everyone). Only ids are kept; people are read from Microsoft Graph when needed.
+  directoryTenantId     String?
+  directoryGroupId      String?
+  directoryGroupName    String?
+  directoryConnectedAt  DateTime?
+  // The joiners and leavers last emailed to the admins, so the nightly check emails once per change.
+  directoryNoticeKey    String?
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
