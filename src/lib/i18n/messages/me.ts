@@ -31,6 +31,8 @@ export const me = defineMessages({
     awaySaved: "Saved. The others get new requests until then.",
     awayCleared: "Welcome back. New requests reach you again.",
     awayInvalid: "Pick a day from today on, or leave it empty.",
+    otherAllowances: (year: number) => `Other days in ${year}`,
+    typeUsed: (used: string, of: string) => `${used} of ${of} days used`,
   },
   de: {
     title: "Mein Urlaub",
@@ -61,5 +63,7 @@ export const me = defineMessages({
     awaySaved: "Gespeichert. Bis dahin bekommen die anderen neue Anträge.",
     awayCleared: "Willkommen zurück. Neue Anträge erreichen dich wieder.",
     awayInvalid: "Wähle einen Tag ab heute oder lass das Feld leer.",
+    otherAllowances: (year: number) => `Weitere Tage ${year}`,
+    typeUsed: (used: string, of: string) => `${used} von ${of} Tagen genommen`,
   },
 });
