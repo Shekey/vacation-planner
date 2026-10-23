@@ -26,6 +26,11 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
         <ul>
           <li>Account: email address, name, preferred language, time of sign-in, session data.</li>
           <li>
+            Sign-in with Microsoft or Google, only if you choose it: the provider sends us your name, your email address and an id for your
+            account there, which we store to recognise you next time. We receive no access to your Microsoft or Google account and no profile
+            photo. During the sign-in, three short-lived cookies protect it against misuse.
+          </li>
+          <li>
             AI assistants, only if you connect one: the token&apos;s name, a hash of the token, when it was made, last used and expires. What the
             assistant looks up (your balance, who is away, your bookings) goes to the assistant&apos;s provider you chose, under your agreement
             with them. Every use is recorded in the workspace&apos;s activity log.
@@ -83,7 +88,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
 
         <h2>3. Purposes and legal bases</h2>
         <ul>
-          <li>Providing the service and sign-in via email link: Art. 6(1)(b) GDPR (contract).</li>
+          <li>Providing the service and sign-in via email link, Microsoft or Google: Art. 6(1)(b) GDPR (contract).</li>
           <li>Billing and retention of invoices: Art. 6(1)(c) GDPR (legal obligations under the HGB and AO).</li>
           <li>Security, abuse prevention and troubleshooting: Art. 6(1)(f) GDPR (legitimate interest).</li>
           <li>
@@ -138,6 +143,11 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
       <h2>2. Welche Daten wir verarbeiten</h2>
       <ul>
         <li>Konto: E-Mail-Adresse, Name, bevorzugte Sprache, Zeitpunkt der Anmeldung, Sitzungsdaten.</li>
+        <li>
+          Anmeldung mit Microsoft oder Google, nur wenn Sie sie wählen: Der Anbieter übermittelt uns Ihren Namen, Ihre E-Mail-Adresse und eine
+          Kennung Ihres Kontos dort, die wir speichern, um Sie wiederzuerkennen. Wir erhalten keinen Zugriff auf Ihr Microsoft- oder Google-Konto
+          und kein Profilbild. Während der Anmeldung schützen drei kurzlebige Cookies sie vor Missbrauch.
+        </li>
         <li>
           KI-Assistenten, nur wenn Sie einen verbinden: Name des Tokens, ein Hashwert des Tokens, Erstellung, letzte Nutzung und Ablauf. Was der
           Assistent abruft (Ihr Kontingent, wer abwesend ist, Ihre Buchungen), geht an den von Ihnen gewählten Anbieter des Assistenten, nach
@@ -201,7 +211,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
 
       <h2>3. Zwecke und Rechtsgrundlagen</h2>
       <ul>
-        <li>Bereitstellung des Dienstes und Anmeldung per E-Mail-Link: Art. 6 Abs. 1 lit. b DSGVO (Vertrag).</li>
+        <li>Bereitstellung des Dienstes und Anmeldung per E-Mail-Link, Microsoft oder Google: Art. 6 Abs. 1 lit. b DSGVO (Vertrag).</li>
         <li>Abrechnung und Aufbewahrung von Rechnungen: Art. 6 Abs. 1 lit. c DSGVO (gesetzliche Pflichten nach HGB und AO).</li>
         <li>Sicherheit, Missbrauchsschutz und Fehlersuche: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse).</li>
         <li>

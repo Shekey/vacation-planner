@@ -37,6 +37,28 @@ The app reports errors to **Sentry**, counts visits with **PostHog**, and has a 
 
 A GitHub Action makes a nightly encrypted copy of the database in an EU storage bucket, outside Neon, and checks every day that the newest copy is less than 26 hours old. It needs you for things only an owner can do: a Neon plan with 7 or more days of history, the bucket and its keys as GitHub secrets, and an `age` key pair whose private half stays offline with you. Step by step, plus the restore drill and what to do when something goes wrong: [`docs/backups.md`](docs/backups.md). Once the bucket is chosen, add its provider to the subprocessor list (`src/lib/legal.ts`) and the backup to the DPA's security measures, and show both to your lawyer.
 
+### Sign in with Microsoft and Google (about 30 minutes)
+
+The *Continue with Microsoft* and *Continue with Google* buttons on the sign-in page appear once a provider's two variables are set; until then only the email link shows. People are matched to their account by email, so invites and existing accounts keep working. The app only accepts an email the provider has confirmed, and it keeps no Microsoft or Google tokens and no profile photo.
+
+Register `https://urlaubflow.de` as the site in both. Until the domain is live, also add the redirect address on `vacation-planner-lyart.vercel.app`, and for local testing `http://localhost:3000`.
+
+**Microsoft** (entra.microsoft.com → *App registrations* → *New registration*):
+1. Name *Urlaubflow*. Under *Supported account types*, choose *Accounts in any organizational directory and personal Microsoft accounts*. Add a *Web* redirect URI: `https://urlaubflow.de/api/auth/callback/microsoft-entra-id`.
+2. Go to *Token configuration* → *Add optional claim* → *ID*, and tick `email` and `xms_edov`. **This one is required.** `xms_edov` tells the app that the company owns the email's domain. Without it, everyone with a work account is turned away with "no confirmed email address".
+3. Under *API permissions*, the app only needs `openid`, `profile` and `email`, and none of them needs an admin to approve. You can remove `User.Read`.
+4. Under *Certificates & secrets*, create a client secret valid for 24 months. Set a calendar reminder to renew it, because sign-in with Microsoft stops when it expires.
+5. Optional, but customers' IT will ask for it: do the *Publisher verification* (*Branding & properties*, with a Microsoft Partner Network ID). Some companies block apps that aren't verified.
+6. In Vercel, set `AUTH_MICROSOFT_ENTRA_ID_ID` to the *Application (client) ID* and `AUTH_MICROSOFT_ENTRA_ID_SECRET` to the secret's *Value*.
+
+**Google** (console.cloud.google.com → new project *Urlaubflow* → *Google Auth Platform*):
+1. On *Branding*, fill in the app name, support email, logo, home page `https://urlaubflow.de`, privacy policy `https://urlaubflow.de/datenschutz`, and authorised domain `urlaubflow.de`.
+2. On *Audience*, choose *External*, then *Publish app*. The app only asks for name and email, so Google doesn't need to review it.
+3. On *Clients* → *Create client* → *Web application*, add the redirect URI `https://urlaubflow.de/api/auth/callback/google`.
+4. In Vercel, set `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`.
+
+Redeploy, then try both buttons with an account that is already in a workspace. You should land in that workspace and not get a new, empty account.
+
 ### Beta mode (free beta) and how to end it
 
 The app starts in **beta mode**: `NEXT_PUBLIC_ENABLE_BETA_MODE` is unset or anything except `false`. In beta mode:
@@ -195,6 +217,7 @@ Without `AUTH_RESEND_KEY`, sign-in links are printed to the dev server console i
    | `AUTH_SECRET` | output of `npx auth secret` (or any long random string) |
    | `AUTH_RESEND_KEY` | API key from resend.com |
    | `EMAIL_FROM` | e.g. `Urlaubflow <hallo@urlaubflow.de>` (a domain verified in Resend) |
+   | `AUTH_MICROSOFT_ENTRA_ID_ID`, `AUTH_MICROSOFT_ENTRA_ID_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` | optional: sign in with Microsoft and Google, see the to-do list above |
    | `CRON_SECRET` | any long random string (enables the weekday Teams/Slack digest and the emails to admins before their trial ends) |
    Don't set `AUTH_URL` on Vercel: sign-in works on whatever domain the request came in on. For the public domain set `NEXT_PUBLIC_SITE_URL` (e.g. `https://urlaubflow.de`) once the domain is live; it switches email links and turns on the redirect from the old Vercel address. A wrong value sends links to another site.
 4. **Redeploy** so the variables apply. Open the site, sign in with your email and create your workspace.

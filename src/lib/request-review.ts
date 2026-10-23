@@ -9,7 +9,11 @@ export async function reviewRequests(workspace: { id: string }, settings: Settin
   const year = Number(today.slice(0, 4));
   const saved = await db.booking.findMany({
     where: { workspaceId: workspace.id, status: "PENDING", membership: { removedAt: null }, ...where },
-    include: { membership: { include: { user: { select: { name: true, email: true } } } }, leaveType: { select: { name: true, color: true } } },
+    include: {
+      membership: { include: { user: { select: { name: true, email: true } } } },
+      leaveType: { select: { name: true, color: true } },
+      standIn: { select: { user: { select: { name: true, email: true } } } },
+    },
     orderBy: { startDate: "asc" },
   });
 

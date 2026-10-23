@@ -59,6 +59,7 @@ export default async function EditBookingPage({ params }: PageProps<"/w/[slug]/b
         memberCount={data.memberCount}
         leaveTypes={data.leaveTypes}
         leaveTypeUsed={data.leaveTypeUsed}
+        colleagues={data.colleagues}
         initial={{
           bookingId: booking.id,
           ownDaysThisYear,
@@ -66,6 +67,7 @@ export default async function EditBookingPage({ params }: PageProps<"/w/[slug]/b
           type: booking.leaveTypeId ? `lt:${booking.leaveTypeId}` : booking.type,
           ownTypeDaysThisYear: booking.leaveTypeId && booking.startDate.getUTCFullYear() === data.currentYear ? Number(booking.daysCount) : 0,
           specialReason: booking.specialReason,
+          standInId: booking.standInId,
           start: span.start,
           end: span.end,
           startPart: span.startPart === "PM" ? "PM" : "FULL",

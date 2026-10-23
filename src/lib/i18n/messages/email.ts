@@ -35,6 +35,11 @@ export const email = defineMessages({
       text: (who: string, days: string, range: string, workspace: string, urls: { approve: string; decline: string; all: string }) =>
         `${who} requested ${days} off, ${range}, in ${workspace}.\n\nApprove: ${urls.approve}\n\nDecline: ${urls.decline}\n\nBoth links show who else is off first and work for 7 days without signing in. Don't forward this email.\n\nAll open requests: ${urls.all}`,
     },
+    standIn: {
+      subject: (who: string) => `You're covering for ${who}`,
+      text: (who: string, range: string, workspace: string, url: string) =>
+        `${who} is off ${range} in ${workspace}, and you're their stand-in. Talk to them before they go if anything needs handing over.\n\nTeam calendar: ${url}`,
+    },
     sick: {
       subject: (who: string) => `${who} is off sick`,
       text: (who: string, range: string, workspace: string, url: string) =>
@@ -96,6 +101,11 @@ export const email = defineMessages({
       subject: (who: string) => `${who} hat frei beantragt`,
       text: (who: string, days: string, range: string, workspace: string, urls: { approve: string; decline: string; all: string }) =>
         `${who} hat ${days} frei beantragt, ${range}, in ${workspace}.\n\nGenehmigen: ${urls.approve}\n\nAblehnen: ${urls.decline}\n\nBeide Links zeigen erst, wer sonst abwesend ist, und gelten 7 Tage ohne Anmeldung. Leite diese E-Mail nicht weiter.\n\nAlle offenen Anträge: ${urls.all}`,
+    },
+    standIn: {
+      subject: (who: string) => `Du vertrittst ${who}`,
+      text: (who: string, range: string, workspace: string, url: string) =>
+        `${who} ist ${range} in ${workspace} nicht da, und du bist die Vertretung. Sprecht euch vorher ab, falls etwas übergeben werden muss.\n\nTeamkalender: ${url}`,
     },
     sick: {
       subject: (who: string) => `${who} ist krank`,
