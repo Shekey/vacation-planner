@@ -3,7 +3,7 @@ import { ActionForm } from "@/components/action-form";
 import { AllowanceCard } from "@/components/allowance-card";
 import { StatusBadge, TypeDot, typeLabel } from "@/components/badges";
 import { halfDayLabel } from "@/lib/booking-days";
-import { allowanceSummary, spanOf, withDays } from "@/lib/bookings";
+import { allowanceSummary, leaveTypeUsage, spanOf, withDays } from "@/lib/bookings";
 import { formatDate, formatRange, fromISO, toISO, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { formatNumber } from "@/lib/i18n";
@@ -32,16 +32,19 @@ export default async function MyTimeOffPage({
   const today = todayIn(workspace.timezone);
   const year = Number(today.slice(0, 4));
 
-  const [summary, nextYear, saved] = await Promise.all([
+  const [summary, nextYear, saved, typeUsed, ownAllowanceTypes] = await Promise.all([
     allowanceSummary(membership, settings, year, undefined, today),
     allowanceSummary(membership, settings, year + 1, undefined, today),
     db.booking.findMany({
       where: { membershipId: membership.id },
-      include: { decidedBy: { select: { name: true, email: true } } },
+      include: { decidedBy: { select: { name: true, email: true } }, leaveType: { select: { name: true, color: true } } },
       // Same-day half days: afternoon sorts first here, so the reversed upcoming list shows morning first.
       orderBy: [{ startDate: "desc" }, { startPart: "desc" }],
       take: 100,
     }),
+    leaveTypeUsage(workspace.id, year, [membership.id]),
+    // Leave types with their own days per year (#34).
+    db.leaveType.findMany({ where: { workspaceId: workspace.id, allowanceDays: { not: null }, archivedAt: null }, orderBy: { createdAt: "asc" } }),
   ]);
   // Counted like the allowance card above, so the list and "days left" agree.
   const bookings = await withDays(
@@ -69,14 +72,14 @@ export default async function MyTimeOffPage({
       >
         <div className="space-y-0.5">
           <div className="flex items-center gap-2">
-            <TypeDot type={b.type} locale={locale} />
+            <TypeDot type={b.type} locale={locale} leaveType={b.leaveType} />
             <span className="font-medium">
               {formatRange(span.start, span.end, locale)}
             </span>
             <StatusBadge status={b.status} locale={locale} />
           </div>
           <div className="text-sm text-muted">
-            {typeLabel(b.type, locale, b.specialReason)} ·{" "}
+            {typeLabel(b.type, locale, b.specialReason, b.leaveType)} ·{" "}
             {common.days(formatNumber(b.days, locale))}
             {half && ` · ${half}`}
             {b.note && ` · ${b.note}`}
@@ -129,6 +132,22 @@ export default async function MyTimeOffPage({
         />
         {(nextYear.used > 0 || nextYear.pending > 0) && (
           <AllowanceCard summary={nextYear} locale={locale} />
+        )}
+        {ownAllowanceTypes.length > 0 && (
+          <section className="card space-y-2">
+            <h2 className="font-medium">{t.otherAllowances(year)}</h2>
+            <ul className="space-y-1.5 text-sm">
+              {ownAllowanceTypes.map((l) => (
+                <li key={l.id} className="flex items-center gap-2">
+                  <TypeDot type="OTHER" leaveType={l} decorative locale={locale} />
+                  <span className="flex-1">{l.name}</span>
+                  <span className="text-muted">
+                    {t.typeUsed(formatNumber(typeUsed[membership.id]?.[l.id] ?? 0, locale), formatNumber(Number(l.allowanceDays), locale))}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
       </div>
 

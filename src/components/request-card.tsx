@@ -38,8 +38,8 @@ export function RequestCard({
               {b.membership.isSample && <SampleBadge label={messages.common.sample} />}
             </p>
             <p className="flex items-center gap-1.5 text-xs text-muted">
-              <TypeDot type={b.type} locale={locale} />
-              {typeLabel(b.type, locale, b.specialReason)}
+              <TypeDot type={b.type} locale={locale} leaveType={b.leaveType} />
+              {typeLabel(b.type, locale, b.specialReason, b.leaveType)}
               {half && ` · ${half}`}
             </p>
           </div>

@@ -12,7 +12,8 @@ import { appOrigin } from "@/lib/url";
 
 const schema = z.object({
   membershipId: z.string().min(1),
-  type: z.enum(["VACATION", "SICK", "SPECIAL", "OTHER"]),
+  // A built-in type, or "lt:<id>" for one of the admin's own leave types (#34).
+  type: z.union([z.enum(["VACATION", "SICK", "SPECIAL", "OTHER"]), z.string().regex(/^lt:[\w-]+$/)]),
   // "" when the person doesn't say.
   specialReason: z.enum(["WEDDING", "BIRTH", "BEREAVEMENT", "MOVING", "OTHER", ""]).optional(),
   start: z.string().refine(isISODate),
@@ -30,8 +31,11 @@ export async function saveBooking(slug: string, bookingId: string | null, _prev:
     return { error: field === "start" ? t.pickStart : field === "end" ? t.pickEnd : t.invalid };
   }
   // Bookings carry no free text, so nothing personal ends up in notes (and no diagnosis next to sick days).
-  const { membershipId, specialReason, ...rest } = parsed.data;
-  const input = { ...rest, specialReason: specialReason || null, note: null };
+  const { membershipId, specialReason, type, ...rest } = parsed.data;
+  const leaveTypeId = type.startsWith("lt:") ? type.slice(3) : null;
+  // A leave type's own built-in type is set from it in createBooking and updateBooking.
+  const builtIn = leaveTypeId ? "OTHER" : (type as "VACATION" | "SICK" | "SPECIAL" | "OTHER");
+  const input = { ...rest, type: builtIn, leaveTypeId, specialReason: specialReason || null, note: null };
   const common = {
     workspace: ctx.workspace,
     settings: settingsOf(ctx.workspace),
