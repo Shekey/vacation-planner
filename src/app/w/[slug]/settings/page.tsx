@@ -323,6 +323,14 @@ export default async function SettingsPage({
                 />
                 <p className={hint}>{t.slackHint}</p>
               </div>
+              <Toggle
+                name="assistantAccess"
+                label={t.assistantAccess}
+                hint={t.assistantAccessHint}
+                defaultChecked={workspace.settings?.assistantAccess ?? true}
+                on={t.on}
+                off={t.off}
+              />
             </section>
           </div>
         </div>

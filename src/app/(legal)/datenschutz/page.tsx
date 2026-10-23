@@ -26,6 +26,11 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
         <ul>
           <li>Account: email address, name, preferred language, time of sign-in, session data.</li>
           <li>
+            AI assistants, only if you connect one: the token's name, a hash of the token, when it was made, last used and expires. What the
+            assistant looks up (your balance, who is away, your bookings) goes to the assistant's provider you chose, under your agreement
+            with them. Every use is recorded in the workspace's activity log.
+          </li>
+          <li>
             Cookies: only technically necessary ones (§ 25(2) no. 2 TDDDG): the session cookie that keeps you signed in, two cookies that
             protect the sign-in form (CSRF protection and return address), and a cookie with your chosen language.
           </li>
@@ -133,6 +138,11 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/datensch
       <h2>2. Welche Daten wir verarbeiten</h2>
       <ul>
         <li>Konto: E-Mail-Adresse, Name, bevorzugte Sprache, Zeitpunkt der Anmeldung, Sitzungsdaten.</li>
+        <li>
+          KI-Assistenten, nur wenn Sie einen verbinden: Name des Tokens, ein Hashwert des Tokens, Erstellung, letzte Nutzung und Ablauf. Was der
+          Assistent abruft (Ihr Kontingent, wer abwesend ist, Ihre Buchungen), geht an den von Ihnen gewählten Anbieter des Assistenten, nach
+          Ihrem Vertrag mit ihm. Jede Nutzung wird im Verlauf des Workspaces festgehalten.
+        </li>
         <li>
           Cookies: nur technisch notwendige (§ 25 Abs. 2 Nr. 2 TDDDG): das Sitzungs-Cookie, das Sie angemeldet hält, zwei Cookies, die das
           Anmeldeformular schützen (CSRF-Schutz und Rücksprungadresse), und ein Cookie mit der gewählten Sprache.

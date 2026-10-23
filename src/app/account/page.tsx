@@ -5,7 +5,10 @@ import { isLocale, LOCALE_NAMES, LOCALES } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
 import { setLanguage } from "../language/actions";
 import { requireUser } from "@/lib/session";
-import { deleteAccountAction, saveNameAction } from "./actions";
+import { tokensOfUser } from "@/lib/personal-tokens";
+import { appOrigin } from "@/lib/url";
+import { deleteAccountAction, revokeAssistantTokenAction, saveNameAction } from "./actions";
+import { AssistantTokenForm } from "./assistant-token-form";
 
 export async function generateMetadata() {
   return { title: (await getMessages()).account.title };
@@ -16,17 +19,29 @@ export default async function AccountPage({
 }: PageProps<"/account">) {
   const { id } = await requireUser();
   const { next } = await searchParams;
-  const [user, plan] = await Promise.all([
+  const [user, plan, memberships, tokens, origin] = await Promise.all([
     db.user.findUniqueOrThrow({
       where: { id },
       select: { name: true, email: true, locale: true },
     }),
     accountDeletionPlan(id),
+    db.membership.findMany({
+      where: { userId: id, removedAt: null, isSample: false, workspace: { deletedAt: null } },
+      select: { id: true, workspace: { select: { name: true, settings: { select: { assistantAccess: true } } } } },
+      orderBy: { joinedAt: "asc" },
+    }),
+    tokensOfUser(id),
+    appOrigin(),
   ]);
   const locale = await getLocale();
   // No saved choice means the app follows the browser's language.
   const saved = isLocale(user.locale) ? user.locale : null;
-  const t = (await getMessages()).account;
+  const messages = await getMessages();
+  const t = messages.account;
+  const ta = messages.assistant;
+  const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const assistantOn = memberships.filter((m) => m.workspace.settings?.assistantAccess ?? true);
+  const assistantOff = memberships.filter((m) => !(m.workspace.settings?.assistantAccess ?? true));
 
   return (
     <div className="mx-auto max-w-md space-y-4">
@@ -87,6 +102,53 @@ export default async function AccountPage({
 
       {user.name && (
         <>
+          {memberships.length > 0 && (
+            <section className="card space-y-3" aria-labelledby="assistant-title">
+              <h2 id="assistant-title" className="font-medium">
+                {ta.heading}
+              </h2>
+              <p className="text-sm text-muted">{ta.intro}</p>
+              <p className="text-sm text-muted">{ta.privacy}</p>
+              {assistantOff.map((m) => (
+                <p key={m.id} className="text-sm text-muted">
+                  {ta.turnedOff(m.workspace.name)}
+                </p>
+              ))}
+              {assistantOn.length > 0 && (
+                <AssistantTokenForm
+                  workspaces={assistantOn.map((m) => ({ membershipId: m.id, name: m.workspace.name }))}
+                  endpoint={`${origin}/api/mcp`}
+                />
+              )}
+              <h3 className="pt-2 text-sm font-medium">{ta.yourTokens}</h3>
+              {tokens.length === 0 ? (
+                <p className="text-sm text-muted">{ta.none}</p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {tokens.map((k) => (
+                    <li key={k.id} className="flex items-start justify-between gap-3 py-2">
+                      <div className="min-w-0 text-sm">
+                        <p className="font-medium break-words">{k.name}</p>
+                        <p className="text-muted">
+                          {[
+                            memberships.length > 1 ? k.membership.workspace.name : null,
+                            k.lastUsedAt ? ta.lastUsed(date.format(k.lastUsedAt)) : ta.neverUsed,
+                            k.expiresAt < new Date() ? ta.expired : ta.expiresOn(date.format(k.expiresAt)),
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                      </div>
+                      <ActionForm action={revokeAssistantTokenAction.bind(null, k.id)} confirm={ta.revokeConfirm}>
+                        <button className="btn-secondary px-3 py-1 text-sm">{ta.revoke}</button>
+                      </ActionForm>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+
           <section className="card space-y-2">
             <h2 className="font-medium">{t.yourData}</h2>
             <p className="text-sm text-muted">{t.yourDataBody}</p>

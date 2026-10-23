@@ -158,7 +158,7 @@ function prepare(input: BookingInput, settings: Settings, rules: DayRules, t: Me
  * Pending when approvals are on, unless an admin made it, or an approver for someone else (they could approve it
  * anyway). An approver's own time off waits for someone else to decide. Sick days are never asked for.
  */
-function initialStatus(actor: Actor, settings: Settings, type: BookingType | undefined, membershipId: string): BookingStatus {
+export function initialStatus(actor: Actor, settings: Settings, type: BookingType | undefined, membershipId: string): BookingStatus {
   if (!settings.approvalsEnabled || type === "SICK" || actor.role === "ADMIN") return "APPROVED";
   return membershipId !== actor.membershipId && can(actor.role, "bookings:decide") ? "APPROVED" : "PENDING";
 }

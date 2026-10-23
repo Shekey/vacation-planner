@@ -50,6 +50,8 @@ export const audit = defineMessages({
           return `Support (${actor}) extended the trial${detail ? ` by ${detail} days` : ""}`;
         case "support.workspace_restored":
           return `Support (${actor}) restored the workspace`;
+        case "assistant.call":
+          return `${actor} used an AI assistant (${detail})`;
         default:
           return `${actor}: ${action}`;
       }
@@ -132,6 +134,8 @@ export const audit = defineMessages({
           return `Support (${actor}) hat die Testphase${detail ? ` um ${detail} Tage` : ""} verlängert`;
         case "support.workspace_restored":
           return `Support (${actor}) hat den Workspace wiederhergestellt`;
+        case "assistant.call":
+          return `${actor} hat einen KI-Assistenten genutzt (${detail})`;
         default:
           return `${actor}: ${action}`;
       }

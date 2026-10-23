@@ -91,6 +91,12 @@ async function makeWorld() {
 
 const matrix: Record<string, Entry> = {
   "account/actions.ts#saveNameAction": { allowed: "self", call: () => account.saveNameAction({}, form({ name: "Changed" })) },
+  // Only for one's own memberships and tokens; personal-tokens.db.test.ts tries someone else's.
+  "account/actions.ts#createAssistantTokenAction": {
+    allowed: "self",
+    call: (w) => account.createAssistantTokenAction({}, form({ name: "Claude", days: "30", membershipId: w.ours.member.id })),
+  },
+  "account/actions.ts#revokeAssistantTokenAction": { allowed: "self", call: () => account.revokeAssistantTokenAction("any") },
   "account/actions.ts#deleteAccountAction": { allowed: "self", call: () => account.deleteAccountAction({}, form({ confirmEmail: "nobody@test.invalid" })) },
 
   "admin/actions.ts#extendTrialAction": { allowed: "operator", call: (w) => operator.extendTrialAction(w.ours.workspace.id, {}, form({ days: "30" })) },
