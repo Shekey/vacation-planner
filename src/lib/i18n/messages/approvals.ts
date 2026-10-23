@@ -13,6 +13,7 @@ export const approvals = defineMessages({
     advisory: "Coverage advisory",
     empty: "You're all caught up. Nothing is waiting for you.",
     daysLeft: (left: string, total: string, year: number) => `${left} of ${total} days left in ${year} incl. this`,
+    overBy: (n: string, year: number) => `This goes ${n} ${n === "1" ? "day" : "days"} over the ${year} allowance.`,
     understaffed: (present: number, total: number, days: string, more: number, min: number | null) =>
       `Approving leaves only ${present} of ${total} in on ${days}${more > 0 ? ` and ${more} more day${more === 1 ? "" : "s"}` : ""} (minimum ${min}).`,
     alsoOff: (names: string) => `Also off then: ${names}`,
@@ -44,6 +45,7 @@ export const approvals = defineMessages({
     advisory: "Hinweis zur Besetzung",
     empty: "Alles erledigt. Gerade wartet nichts auf dich.",
     daysLeft: (left: string, total: string, year: number) => `${left} von ${total} Tagen für ${year} übrig, inkl. dieser Anfrage`,
+    overBy: (n: string, year: number) => `Damit sind es ${n} ${n === "1" ? "Tag" : "Tage"} mehr als der Anspruch für ${year}.`,
     understaffed: (present: number, total: number, days: string, more: number, min: number | null) =>
       `Wenn du genehmigst, sind am ${days}${
         more > 0 ? ` und an ${more === 1 ? "einem weiteren Tag" : `${more} weiteren Tagen`}` : ""

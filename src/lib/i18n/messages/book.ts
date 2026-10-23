@@ -25,6 +25,8 @@ export const book = defineMessages({
     weekendsNotCounted: " (weekends not counted)",
     holidaysNotCounted: " (holidays not counted)",
     overAllowance: (n: string, year: number) => `This is ${n} ${n === "1" ? "day" : "days"} over the ${year} allowance.`,
+    overBlocked: "Your team doesn't allow booking more days than you have left. Ask an admin if you need more.",
+    overNeedsApproval: "This is more than you have left, so an admin or approver has to approve it.",
     daysLeftAfter: (n: string, year: number) => `${n} vacation ${n === "1" ? "day" : "days"} left in ${year} after this.`,
     holidaysList: (list: string) => `Holidays: ${list}`,
     understaffed: (present: number, total: number, days: string, more: number, min: number | null) =>
@@ -67,6 +69,8 @@ export const book = defineMessages({
     holidaysNotCounted: " (Feiertage nicht gezählt)",
     overAllowance: (n: string, year: number) =>
       `Damit liegst du ${n} ${n === "1" ? "Tag" : "Tage"} über deinem Urlaubsanspruch für ${year}.`,
+    overBlocked: "In deinem Team kannst du nicht mehr Tage buchen, als du übrig hast. Frag einen Admin, wenn du mehr brauchst.",
+    overNeedsApproval: "Das ist mehr, als du übrig hast. Deshalb muss ein Admin oder eine Genehmiger:in zustimmen.",
     daysLeftAfter: (n: string, year: number) =>
       n === "1" ? `Danach bleibt dir 1 Urlaubstag für ${year}.` : `Danach bleiben dir ${n} Urlaubstage für ${year}.`,
     holidaysList: (list: string) => `Feiertage: ${list}`,
