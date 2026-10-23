@@ -1,103 +1,204 @@
 # Moving from Vercel to Cloudflare
 
-Status: proposal. Tracks the GitHub issue "Migrate hosting from Vercel to Cloudflare".
+Status: **proposal**. Tracked in [#148](https://github.com/Shekey/vacation-planner/issues/148).
 
-## TL;DR
+This document gives **suggestions, not decisions**. Every open choice is marked **DECISION** with options and a leaning; every known hazard is marked **RISK**. Whoever implements this (person or agent) should verify the facts marked *(verify)* against current vendor docs, decide each DECISION, and record the choice and reason in the "Decision log" at the bottom.
 
-Moving the **hosting** to Cloudflare Workers (via OpenNext) is reasonable. Moving the **database** to D1 + Drizzle is not worth it right now.
+## Context
 
-| Piece | Suggested stack | Recommendation |
+- The app is in beta with **no real users and no production data to keep**. That makes a database rewrite much cheaper than it would be later.
+- The goals are **long-term efficiency and low running cost**, plus **GDPR compliance with data in Germany where possible**, and a `develop` (staging) + `main` (production) workflow.
+- Ease of staying on Vercel is explicitly *not* a goal.
+
+## Suggested target stack
+
+| Area | Suggestion | Alternatives |
 | --- | --- | --- |
-| Next.js hosting | OpenNext for Cloudflare Workers (`@opennextjs/cloudflare`) | **Do it** |
-| Database | Keep Postgres (Neon) + Prisma, connect through **Cloudflare Hyperdrive** | **Keep**, don't move to D1 |
-| File uploads | R2 | **Not needed yet**: the app stores no uploaded files (CSV import is parsed in memory). Use R2 later, and optionally now as the backup bucket |
-| Outbound email | Resend | **Keep as is**: `src/lib/email.ts` uses plain `fetch`, which works on Workers unchanged |
-| Inbound email | Cloudflare Email Routing | Fine, free, only if we actually need to receive mail (e.g. `support@`) |
-| Crons | Workers Cron Triggers | Replace `vercel.json` crons |
-| Branches | `develop` → staging Worker, `main` → production Worker | **Do it** |
+| Hosting | Cloudflare Workers via `@opennextjs/cloudflare`, Workers Paid ($5/month) | Stay on Vercel; Hetzner VPS (Germany) with Docker |
+| Database | Cloudflare D1 (SQLite), EU jurisdiction | Neon Postgres in Frankfurt + Hyperdrive (keeps Prisma) |
+| ORM | Drizzle | Prisma with `@prisma/adapter-d1` |
+| Files / backups | R2, EU jurisdiction | Hetzner Object Storage (Germany) |
+| Outbound email | Resend (EU region if available) | A German/EU provider |
+| Inbound email | Cloudflare Email Routing, only if needed | Mail provider's forwarding |
+| Scheduled jobs | Workers Cron Triggers | — |
+| Errors / analytics | Sentry EU region; PostHog EU (already `eu.i.posthog.com`) | Self-host |
 
-## Why not D1 + Drizzle
+## What $5/month buys on Cloudflare *(verify current numbers)*
 
-The app is built on Postgres + Prisma: a 528-line `prisma/schema.prisma`, 32 migrations, Postgres enums, `@auth/prisma-adapter`, and DB tests in `*.db.test.ts`. Moving to D1 means:
+- **Workers Paid:** 10M requests and 30M CPU-ms per month, up to 5 minutes of CPU per request, 10 MB bundle, and 1000 subrequests per request.
+- **D1:** 25B rows read and 50M rows written per month, 5 GB storage included (10 GB maximum per database), and 30 days of Time Travel restore.
+- **Also included:** Cron Triggers, KV, Queues, Durable Objects and Hyperdrive.
+- **R2 (billed separately):** 10 GB free and no egress fees.
 
-- Rewriting every query from Prisma to Drizzle and swapping the Auth.js adapter.
-- Converting Postgres to SQLite: no native enums, different date/JSON handling, no `ILIKE`, weaker transactions (D1 has no interactive transactions, only `batch()`).
-- Migrating production data and rewriting the backup workflow (`docs/backups.md`).
-- Hard limits: **10 GB per D1 database** (paid), 500 MB on free; one D1 database is single-region with read replicas only.
+For a leave-planning app this is far above expected load. Resend's free plan (100 emails/day, 3,000/month) is the first limit we're likely to hit.
 
-That's weeks of risk for no user-visible gain. Prisma 7 with `@prisma/adapter-pg` already runs on Workers when it talks to Postgres through Hyperdrive. Revisit D1 only if Neon cost becomes a problem.
+## GDPR and "data in Germany"
 
-## Things on Cloudflare that are *not* generous (read before deciding)
+Facts to work from *(verify all)*:
 
-**Workers free plan is not enough for this app; budget the $5/month Workers Paid plan.**
+- **Cloudflare can't pin data to Germany specifically** on self-serve plans.
+  - D1 offers an **EU jurisdiction** and location hints such as `weur` (Western Europe).
+  - R2 offers an **EU jurisdiction**.
+  - The jurisdiction guarantees the EU, not Germany.
+- **Workers compute runs in every Cloudflare data centre worldwide.** A request from the US is processed in the US, even when the stored data stays in the EU. Keeping processing inside the EU needs the Data Localization Suite (Enterprise only).
+- **Cloudflare, Resend, Sentry and Stripe are US companies.** They rely on the EU–US Data Privacy Framework plus a DPA/SCCs. That's legal today but has been struck down twice before (Safe Harbor, Privacy Shield).
+- **German-company options** (Hetzner for servers/storage, German email providers) would give "everything in Germany" but give up most of the Cloudflare efficiency.
 
-- **CPU time**: free = **10 ms CPU per request**. Next.js server rendering + Prisma + Auth.js routinely exceeds that. Paid = 30 s default (configurable up to 5 min).
-- **Bundle size**: free = **3 MB** compressed Worker, paid = **10 MB**. Next.js + Prisma client + Sentry + Stripe + MCP SDK is close to the free limit; check `opennextjs-cloudflare build` output.
-- **Requests**: free 100k/day; paid 10M/month included, then $0.30/million.
-- **Cron Triggers**: free 5 per account; we use 3, fine. They count against CPU limits, so the daily digest must finish within the paid CPU limit.
-- **Subrequests**: 50 per request on free, 1000 on paid. A cron that emails many people one by one can hit 50.
-- **Hyperdrive**: included on free and paid but free has a daily query cap (100k/day); paid is unlimited.
-- **Next.js support lag**: OpenNext supports Next 15/16 but usually trails new Next releases by weeks. We're on Next 16.4.2; check the OpenNext compatibility table first. Some features (e.g. `next/image` optimisation, ISR revalidation) need extra bindings (Images, KV/R2 for the incremental cache, Durable Objects for tag revalidation).
-- **Node APIs**: needs `nodejs_compat`. `child_process`, real filesystem and long-lived TCP pools don't exist; `pg` works only through Hyperdrive/sockets.
-- **Sentry**: `@sentry/nextjs` isn't fully supported on Workers. Plan to use `@sentry/cloudflare` on the server side or accept reduced server error reporting.
-- **Preview deployments**: no automatic per-PR preview URLs like Vercel with a database per branch. Workers "preview URLs"/versions exist but share bindings unless you configure a separate env. That's why the `develop` → staging setup below matters.
-- **Email Routing**: receive only. It forwards to verified addresses or to an Email Worker; it **cannot send** (keep Resend for that). Only works when the domain's DNS is on Cloudflare.
+**DECISION G1 — how strict is "Germany"?**
 
-**Resend (unchanged) limits worth knowing**: free = 3,000 emails/month **and 100/day**, 1 domain. The daily digest cron plus magic links could hit 100/day once there are a few teams; Pro is $20/month for 50k.
+- **(a) EU data residency with US processors under DPF + DPA.** Cloudflare D1/R2 in the EU jurisdiction, Resend/Sentry/PostHog EU regions. *Leaning: (a).* This is common practice and compatible with the Cloudflare plan.
+- **(b) Stored data in Germany.** Neon in Frankfurt plus Hetzner storage. Hosting can still be on Cloudflare.
+- **(c) Everything at German companies.** Hetzner VPS plus a German email provider. This means no Cloudflare.
 
-**R2 is generous**: 10 GB storage free, no egress fees. Good choice for backups even today.
+**GDPR tasks, whatever is chosen:**
 
-**Neon (unchanged)**: free plan only keeps hours of history and 0.5 GB; see `docs/backups.md`.
+- [ ] Sign/accept a DPA with every processor (Cloudflare, Resend, Sentry, PostHog, Stripe, Neon if kept).
+- [ ] List every processor, with location and transfer mechanism, in the privacy policy and in the record of processing activities.
+- [ ] Create D1 databases with the EU jurisdiction and R2 buckets EU-only. Note: the jurisdiction can't be changed after creation *(verify)*.
+- [ ] Keep Sentry PII scrubbing (`src/lib/sentry-scrub*`) working on the new runtime. Keep PostHog on the EU host.
+- [ ] Keep retention/deletion (`src/lib/retention.ts`) and account deletion working. Check that D1 Time Travel and backups expire within the documented retention period.
+- [ ] Turn off or anonymise Cloudflare Web Analytics/logging that stores IPs, or mention it in the privacy policy.
 
-## Rough cost
+## DECISION D1 — database
 
-| Item | Vercel today | Cloudflare |
-| --- | --- | --- |
-| Hosting | Hobby free (not allowed for commercial use) / Pro $20 per seat | Workers Paid $5/month |
-| DB | Neon | Neon (same) |
-| Email | Resend | Resend (same) |
+**Options:**
 
-## Branch / environment setup
+- **(a) D1 + Drizzle.**
+  - For: most efficient, no connection management, no extra vendor, backups built in, staging database for free.
+  - Against: biggest rewrite.
+  - *Leaning: (a), because there's no data to migrate now.*
+- **(b) D1 + Prisma adapter.** Less rewriting, but a larger bundle and a clumsier migration flow.
+- **(c) Neon in Frankfurt + Hyperdrive + Prisma.** Smallest change and data in Germany, but a second vendor and bill, plus network hops to the database.
 
-- `main` → production Worker (`vacation-planner`), production Neon branch.
-- `develop` → staging Worker (`vacation-planner-staging`), separate Neon branch (Neon branching is free), separate Hyperdrive config, Resend test sender or a staging domain, Stripe test keys.
-- Feature branches → PRs into `develop`; `develop` → PR into `main` to release.
+**Measured in the current code** (`src/`, excluding tests), to size the rewrite:
 
-`wrangler.jsonc` with two environments:
+| Item | Count |
+| --- | --- |
+| Files importing the db client | 66 |
+| `$transaction` call sites | 14 in 10 files |
+| Interactive transactions (`$transaction(async …)`) | 5 |
+| Raw SQL | 1 |
+| Case-insensitive queries (`mode: "insensitive"`) | 2 |
+| Prisma enums (`Role`, `Plan`, `DayPart`, `OverAllowance`, `BookingType`, …) | several |
+| Migrations | 32 |
+
+The migrations get replaced, not converted: start D1 from a fresh schema.
+
+**RISK D1-1 — no interactive transactions in D1.** The 5 interactive transactions have to become `db.batch([...])` or single conditional statements. Look closely at the allowance check before booking in `src/lib/bookings.ts`. A read-then-write split into two requests can race and double-book an allowance. Possible fixes:
+
+- a conditional `INSERT … SELECT … WHERE` inside one batch;
+- a unique constraint;
+- serialising per workspace through a Durable Object.
+
+**RISK D1-2 — data types.**
+
+- **Dates:** SQLite has no date type, so store timestamps as integers (ms) or ISO text consistently. Day-only leave dates should stay `YYYY-MM-DD` text to avoid timezone bugs.
+- **Enums:** use text plus a check constraint, or Drizzle's `text({ enum })`.
+- **Case-insensitive search:** use `COLLATE NOCASE` or `lower()`.
+
+**RISK D1-3 — limits.**
+
+- 10 GB per database and a single primary for writes, which should be placed in `weur`.
+- Fine for years. If ever exceeded: shard per tenant/region.
+
+**RISK D1-4 — Auth.js adapter.** Swap `@auth/prisma-adapter` for `@auth/drizzle-adapter`, keeping table/column names so existing sessions don't matter (there are no users anyway).
+
+**RISK D1-5 — tests.** `*.db.test.ts` and `src/test/db.ts` assume Postgres. Run them against local D1 (Miniflare / `wrangler d1 execute --local`) or `better-sqlite3`, using the same migrations.
+
+## Hosting risks
+
+- **RISK H1 — Next.js version support.** The app is on Next 16.4.2. OpenNext usually trails new Next releases. Check the OpenNext compatibility table before anything else; if it's unsupported, wait or pin Next.
+- **RISK H2 — bundle size.** The limit is 10 MB on paid. Next + Sentry + Stripe + MCP SDK (+ Prisma, if kept) could get close. Measure in the spike.
+- **RISK H3 — Sentry on Workers.** `@sentry/nextjs` server-side has limited support on Workers. **DECISION H3:** use `@sentry/cloudflare` on the server, or accept client-only error reporting during beta.
+- **RISK H4 — Vercel-specific code.** `process.env.VERCEL*` is used in `src/lib/db.ts`, `src/lib/url.ts`, `src/lib/domain.ts`, `src/sentry.options.ts`, `scripts/vercel-build.mjs` and `vercel.json`. Suggest replacing it with explicit `APP_ENV` (`production`/`staging`/`development`) and `APP_URL`.
+- **RISK H5 — Node APIs.** Needs the `nodejs_compat` flag. There's no filesystem and no `child_process`. Check `qrcode`, `stripe` and the MCP SDK in the spike.
+- **RISK H6 — image optimisation and ISR.** These need extra bindings (Cloudflare Images, an R2/KV incremental cache). Check which the app actually uses before adding them.
+
+## Security notes
+
+1. **Database access:** D1 is reachable only through the Worker binding, with no public connection string. That's an improvement.
+2. **Cloudflare account:**
+   - Turn on 2FA.
+   - Give CI a scoped API token (this Worker + its D1/R2 only), never the global key.
+   - Limit who has account access.
+3. **Secrets:**
+   - Store them with `wrangler secret put` for each environment.
+   - Never put them in `vars` in `wrangler.jsonc` (that file is committed).
+4. **Separate environments:** staging and production each get their own D1 database, R2 bucket, secrets, Stripe *test* keys and email sender.
+5. **SQL injection:** use only parameterised queries (Drizzle's default). Review any `sql\`\`` raw usage.
+6. **Crons:** prefer a `scheduled` handler (not reachable over HTTP). If `/api/cron/*` routes stay, keep the `CRON_SECRET` check.
+7. **Off-site backup:** Time Travel lives in the same account. **DECISION S7:** add a weekly encrypted `wrangler d1 export` to storage in another account/provider (reuse the age-encryption flow from `docs/backups.md`).
+8. **Inbound email (if used):** it's untrusted input. Cap the size, never render it as HTML, and validate the sender.
+9. **Stripe webhooks:** confirm that signature verification works with the Workers request body (raw body handling).
+
+## Environments and branches
+
+Suggested setup:
+
+| Branch | Worker | D1 | Notes |
+| --- | --- | --- | --- |
+| `main` | `vacation-planner` | `vacation-planner-prod` (EU) | Live keys, crons on |
+| `develop` | `vacation-planner-staging` | `vacation-planner-staging` (EU) | Stripe test keys, Resend test sender or staging domain, crons off or on a test schedule |
+| feature branches | — | local D1 | PR into `develop`, then `develop` → `main` to release |
+
+Sketch only; the implementer decides the details:
 
 ```jsonc
 {
   "name": "vacation-planner",
   "main": ".open-next/worker.js",
-  "compatibility_date": "2026-10-01",
+  "compatibility_date": "<current date>",
   "compatibility_flags": ["nodejs_compat"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
-  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "<prod-hyperdrive-id>" }],
+  "d1_databases": [{ "binding": "DB", "database_name": "vacation-planner-prod", "database_id": "<id>", "migrations_dir": "drizzle" }],
   "triggers": { "crons": ["0 2 * * *", "0 3 * * *", "0 6 * * *"] },
   "env": {
     "staging": {
       "name": "vacation-planner-staging",
-      "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "<staging-hyperdrive-id>" }],
+      "d1_databases": [{ "binding": "DB", "database_name": "vacation-planner-staging", "database_id": "<id>", "migrations_dir": "drizzle" }],
       "triggers": { "crons": [] }
     }
   }
 }
 ```
 
-Deploy from GitHub Actions (`cloudflare/wrangler-action`): on push to `develop` run `wrangler deploy --env staging`, on push to `main` run `wrangler deploy`. Run `prisma migrate deploy` against the matching database **after** the build succeeds, before deploy, same rule as `scripts/vercel-build.mjs` (build first, additive migrations only). Add `develop` to `ci.yml`'s branch list.
+**Deploys:** use GitHub Actions with `cloudflare/wrangler-action`.
 
-## Migration steps
+- Push to `develop`: build, then `wrangler d1 migrations apply --env staging --remote`, then `wrangler deploy --env staging`.
+- Push to `main`: the same, without `--env`.
+- Keep the existing rules:
+  - build before migrating;
+  - migrations additive only (the old version keeps serving during the deploy).
 
-1. **Spike** (half a day): `npm i -D @opennextjs/cloudflare wrangler`, add `open-next.config.ts` and `wrangler.jsonc`, run `opennextjs-cloudflare build && opennextjs-cloudflare preview`. Check bundle size, that sign-in, Stripe webhooks and the MCP route work. Stop here if Next 16.4 isn't supported yet.
-2. **Database connection**: create a Hyperdrive config per environment pointing at Neon's direct (non-pooled) URL. In `src/lib/db.ts`, read the connection string from the Hyperdrive binding (`getCloudflareContext().env.HYPERDRIVE.connectionString`) and create the client per request instead of a global singleton (Workers can't reuse sockets across requests).
-3. **Remove Vercel specifics**: `process.env.VERCEL*` in `src/lib/db.ts`, `src/lib/url.ts`, `src/lib/domain.ts`, `src/sentry.options.ts`, `scripts/vercel-build.mjs`, `vercel.json`. Replace with an explicit `APP_ENV` (`production`/`staging`) and `APP_URL`.
-4. **Crons**: add a `scheduled` handler in a custom worker entry that calls the existing `/api/cron/*` logic (or `fetch`es the routes with `CRON_SECRET`). Map each cron expression to its route.
-5. **Secrets**: `wrangler secret put` for `AUTH_SECRET`, `AUTH_RESEND_KEY`, `EMAIL_FROM`, Stripe keys, Sentry DSN, etc., per environment.
-6. **Sentry**: switch server instrumentation to `@sentry/cloudflare`, keep client-side `@sentry/nextjs`.
-7. **CI/CD**: create the `develop` branch, add the deploy workflow, add `develop` to `ci.yml` and `migrations.yml`.
-8. **DNS**: move the domain to Cloudflare DNS (needed for Email Routing anyway), set up Resend's DNS records there, then point the domain at the production Worker. Keep Vercel running until production is verified, then delete the Vercel project.
-9. **Optional**: move the backup bucket (`docs/backups.md`) to R2; enable Email Routing for `support@`.
+Add `develop` to `ci.yml` and `migrations.yml`.
 
-## Rollback
+**RISK E1 — no automatic per-PR previews like Vercel.** `wrangler versions upload` gives preview URLs, but they share the staging bindings. That's acceptable for a single developer.
 
-Until step 8 is done, Vercel keeps serving production, and the database is unchanged, so rollback is just pointing DNS back to Vercel.
+## Suggested order of work
+
+1. **Spike (½–1 day).** OpenNext build of the current app on Workers. Answers H1, H2, H5. Stop and reassess if it fails.
+2. **Decide G1 and D1**, and record them in the decision log.
+3. **Data layer:** Drizzle schema, rewrite of the queries and the 5 interactive transactions (RISK D1-1 first), Auth.js adapter, tests on local D1.
+4. **Platform glue:** `APP_ENV`/`APP_URL`, `scheduled` handler for the crons, Sentry (H3), secrets.
+5. **Environments:** create the `develop` branch, staging resources and deploy workflow.
+6. **GDPR checklist and privacy policy update.**
+7. **DNS:** move the domain to Cloudflare, add Resend's DNS records, cut over, delete the Vercel project and Neon (if no longer used).
+8. **Backups:** off-site export (S7); update `docs/backups.md`.
+
+## Rough cost (verify)
+
+| Item | Vercel Pro today | Suggested Cloudflare stack |
+| --- | --- | --- |
+| Hosting | $20 per member per month + usage | $5/month + low overage |
+| Database | Neon (free → paid for PITR) | Included in $5 |
+| Storage / backups | External bucket | R2, free up to 10 GB |
+| Email | Resend | Resend (same) |
+
+## Decision log
+
+| ID | Decision | Chosen | Why | Date |
+| --- | --- | --- | --- | --- |
+| G1 | How strict is "Germany" | | | |
+| D1 | Database / ORM | | | |
+| H3 | Sentry on Workers | | | |
+| S7 | Off-site backup | | | |
