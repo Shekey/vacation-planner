@@ -85,8 +85,12 @@ test.describe.serial("a team's first week", () => {
     slug = new URL(admin.url()).pathname.split("/")[2];
 
     await admin.goto(`/w/${slug}/settings`);
-    await admin.getByLabel("Require approval").check();
-    await admin.getByRole("button", { name: "Save settings" }).click();
+    // The switch draws over its checkbox (and the bottom bar can cover it at phone width), so use it like a keyboard user.
+    const approvals = admin.getByLabel("Require approval");
+    await approvals.focus();
+    await admin.keyboard.press("Space");
+    await expect(approvals).toBeChecked();
+    await admin.getByRole("button", { name: "Save changes" }).first().click();
     await expect(admin.getByRole("status").filter({ hasText: /saved/i }).first()).toBeVisible();
   });
 
