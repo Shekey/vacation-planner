@@ -8,6 +8,7 @@ import {
   History,
   House,
   Inbox,
+  LayoutDashboard,
   Plus,
   Settings2,
   Sun,
@@ -62,6 +63,7 @@ export default async function WorkspaceLayout({
     activity: t.nav.activity,
     settings: t.nav.settings,
     billing: t.nav.billing,
+    admin: t.shell.adminOverview,
   };
   const userLabel = user.name ?? user.email;
 
@@ -116,6 +118,11 @@ export default async function WorkspaceLayout({
             <div className="space-y-2 border-t border-border pt-5">
               <p className="px-3 text-[11px] font-semibold tracking-wide text-muted uppercase">{t.shell.tools}</p>
               <ul className="space-y-0.5">
+                <li>
+                  <SidebarLink href={`${base}/admin`} exact icon={<LayoutDashboard aria-hidden />}>
+                    {t.shell.adminOverview}
+                  </SidebarLink>
+                </li>
                 {settings.approvalsEnabled && (
                   <li>
                     <SidebarLink href={`${base}/approvals`} icon={<Inbox aria-hidden />}>
@@ -195,6 +202,7 @@ export default async function WorkspaceLayout({
             <NavLink href={`${base}/holidays`}>{t.nav.holidays}</NavLink>
             {isAdmin && (
               <>
+                <NavLink href={`${base}/admin`}>{t.shell.adminOverview}</NavLink>
                 {settings.approvalsEnabled && (
                   <NavLink href={`${base}/approvals`}>
                     {t.nav.approvals}

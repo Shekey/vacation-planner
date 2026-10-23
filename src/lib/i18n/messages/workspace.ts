@@ -24,6 +24,7 @@ export const workspace = defineMessages({
     shell: {
       members: (n: number) => `${n} team ${n === 1 ? "member" : "members"}`,
       home: "Home",
+      adminOverview: "Overview",
       teamCalendar: "Team calendar",
       tools: "Workspace tools",
       profile: "Profile & preferences",
@@ -103,6 +104,7 @@ export const workspace = defineMessages({
     shell: {
       members: (n: number) => `${n} ${n === 1 ? "Teammitglied" : "Teammitglieder"}`,
       home: "Start",
+      adminOverview: "Übersicht",
       teamCalendar: "Teamkalender",
       tools: "Workspace-Verwaltung",
       profile: "Profil & Einstellungen",
