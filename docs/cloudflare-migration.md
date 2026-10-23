@@ -174,6 +174,23 @@ Add `develop` to `ci.yml` and `migrations.yml`.
 
 **RISK E1 — no automatic per-PR previews like Vercel.** `wrangler versions upload` gives preview URLs, but they share the staging bindings. That's acceptable for a single developer.
 
+## Disaster recovery
+
+The app is code in GitHub and can always be redeployed (to Cloudflare or elsewhere). What can't be recreated is the **data**: customers can only continue if a recent copy of the database is reachable.
+
+| Scenario | App | Data | Customers continue? |
+| --- | --- | --- | --- |
+| Bad migration, bug or accidental delete of rows | Keeps running | D1 Time Travel restore to any minute in the last 30 days | Yes, within minutes; changes after the restore point are lost |
+| D1 database deleted | Down until a new database is bound | Time Travel likely can't restore a deleted database *(verify)*; import the latest R2 export | Yes; changes since the last export are lost |
+| Cloudflare outage | Down | Safe | Yes, once Cloudflare recovers |
+| Cloudflare account lost, suspended or compromised | Redeployable from GitHub | Database **and** in-account backups gone | **No**, unless a copy exists outside Cloudflare |
+
+**Before the first paying customer:**
+
+- [ ] Add an off-Cloudflare copy: a GitHub Action (like `backup.yml`) pulls the D1 export daily, encrypts it with age, and uploads it to an EU bucket outside Cloudflare (e.g. Hetzner Object Storage, Germany, ~€1/month).
+- [ ] Write and test a restore runbook: new account/database, import the dump, `wrangler deploy`, point DNS.
+- [ ] Practise one restore and record the time it took.
+
 ## Suggested order of work
 
 1. **Spike (½–1 day).** OpenNext build of the current app on Workers. Answers H1, H2, H5. Stop and reassess if it fails.
@@ -201,4 +218,4 @@ Add `develop` to `ci.yml` and `migrations.yml`.
 | G1 | How strict is "Germany" | (a) EU data residency, US processors under DPF + DPA | Common practice for EU SaaS; keeps the Cloudflare stack | 2026-10-23 |
 | D1 | Database / ORM | D1 (EU jurisdiction, `weur`) + Drizzle | No data to migrate during beta; most efficient long term | 2026-10-23 |
 | H3 | Sentry on Workers | `@sentry/cloudflare` on the server, `@sentry/nextjs` on the client, Sentry EU (Frankfurt) region | Official Sentry SDK for Workers; keep `sentry-scrub` | 2026-10-23 |
-| S7 | Off-site backup | Stay inside Cloudflare: D1 Time Travel (30 days) + scheduled encrypted `d1 export` to a separate EU R2 bucket with a retention lock | Simple, no extra vendor. Accepted risk: losing or compromising the Cloudflare account loses backups too; revisit before first paying customer | 2026-10-23 |
+| S7 | Off-site backup | Stay inside Cloudflare: D1 Time Travel (30 days) + scheduled encrypted `d1 export` to a separate EU R2 bucket with a retention lock | Simple, no extra vendor. Accepted risk: losing or compromising the Cloudflare account loses backups too; off-Cloudflare copy required before first paying customer (see Disaster recovery) | 2026-10-23 |
