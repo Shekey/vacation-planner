@@ -30,6 +30,8 @@ export const audit = defineMessages({
           return `${actor} declined the request of ${target}${on}`;
         case "booking.auto_approved":
           return `The request of ${target} was approved automatically after nobody answered${on}`;
+        case "booking.past_changed":
+          return `${actor} changed time off of ${target} that had already ended${on}`;
         case "booking.vacation_returned":
           return `${actor} gave ${target} vacation days back for sick days${on}`;
         case "workspace.deleted":
@@ -116,6 +118,8 @@ export const audit = defineMessages({
           return `${actor} hat den Antrag von ${target} abgelehnt${on}`;
         case "booking.auto_approved":
           return `Der Antrag von ${target} wurde automatisch genehmigt, weil niemand geantwortet hat${on}`;
+        case "booking.past_changed":
+          return `${actor} hat eine schon vergangene Abwesenheit von ${target} geändert${on}`;
         case "booking.vacation_returned":
           return `${actor} hat ${target} Urlaubstage für Krankheitstage zurückgegeben${on}`;
         case "workspace.deleted":

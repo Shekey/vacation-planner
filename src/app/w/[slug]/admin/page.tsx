@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { StatusBadge } from "@/components/badges";
 import { Avatar } from "@/components/ui";
-import { activeBookingsBetween, allowanceSummary, loadHolidays, regionOf, spanOf, withDays } from "@/lib/bookings";
+import { activeBookingsBetween, allowanceSummary, approvalsInUse, loadHolidays, regionOf, spanOf, withDays } from "@/lib/bookings";
 import { addDays, formatDate, formatRange, isoWeekday, partOfDay, todayIn } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { formatNumber } from "@/lib/i18n";
@@ -33,7 +33,7 @@ export default async function AdminOverviewPage({ params }: PageProps<"/w/[slug]
   const access = accessOf(workspace);
 
   const [pendingRaw, members, weekBookings, summary] = await Promise.all([
-    settings.approvalsEnabled
+    approvalsInUse(settings)
       ? db.booking.findMany({
           where: { workspaceId: workspace.id, status: "PENDING", membership: { removedAt: null } },
           include: { membership: { include: { user: { select: { name: true, email: true } } } } },
@@ -101,8 +101,8 @@ export default async function AdminOverviewPage({ params }: PageProps<"/w/[slug]
       <div className="grid gap-4 md:grid-cols-3">
         {stat(
           t.pending,
-          settings.approvalsEnabled ? fmt(pending.length) : "–",
-          !settings.approvalsEnabled ? t.approvalsOff : pending.length === 0 ? t.nothingToReview : `${t.toReview(pending.length - own)}${own ? ` · ${own} ${locale === "de" ? "von dir" : "is yours"}` : ""}`,
+          approvalsInUse(settings) ? fmt(pending.length) : "–",
+          !approvalsInUse(settings) ? t.approvalsOff : pending.length === 0 ? t.nothingToReview : `${t.toReview(pending.length - own)}${own ? ` · ${own} ${locale === "de" ? "von dir" : "is yours"}` : ""}`,
           <Clock3 />,
         )}
         {stat(t.membersTitle, fmt(members), t.manageDirectory, <Users />)}
@@ -115,7 +115,7 @@ export default async function AdminOverviewPage({ params }: PageProps<"/w/[slug]
             <h2 id="queue" className="text-lg">
               {t.queue}
             </h2>
-            {settings.approvalsEnabled && (
+            {approvalsInUse(settings) && (
               <Link href={`${base}/approvals`} className={link}>
                 {t.allApprovals} <ArrowRight aria-hidden />
               </Link>

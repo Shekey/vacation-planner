@@ -158,6 +158,9 @@ model Holiday {
 model WorkspaceSettings {
   workspaceId           String    @id
   approvalsEnabled      Boolean   @default(false)
+  // Booking more vacation than is left (#82): allow with a warning, ask for approval (even with approvals off), or block.
+  // Admins can always book over.
+  overAllowance         OverAllowance @default(WARN)
   countWeekends         Boolean   @default(false)
   allowHalfDays         Boolean   @default(true)
   // Yearly allowance given to new members; null means allowances are not tracked by default.
@@ -309,6 +312,12 @@ enum DayPart {
   FULL
   AM
   PM
+}
+
+enum OverAllowance {
+  WARN
+  APPROVAL
+  BLOCK
 }
 
 enum BookingType {

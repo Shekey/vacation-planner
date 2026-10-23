@@ -53,6 +53,9 @@ export function RequestCard({
           {summary.remaining !== null &&
             ` · ${t.daysLeft(formatNumber(summary.remaining, locale), formatNumber(summary.allowance ?? 0, locale), summary.year)}`}
         </p>
+        {summary.remaining !== null && summary.remaining < 0 && (
+          <p className="text-sm font-medium text-danger">{t.overBy(formatNumber(-summary.remaining, locale), summary.year)}</p>
+        )}
         {b.standIn && <p className="text-sm text-muted">{messages.common.standIn(b.standIn.user.name ?? b.standIn.user.email)}</p>}
         {b.note && <p className="text-sm text-muted">“{b.note}”</p>}
       </div>
