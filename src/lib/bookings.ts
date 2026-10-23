@@ -148,6 +148,8 @@ type BookingInput = BookingSpan & {
   specialReason?: SpecialReason | null;
   /** The admin's own leave type (#34); `type` is then taken from it. */
   leaveTypeId?: string | null;
+  /** Who covers while the person is away (#34): a colleague's membership id, or null. */
+  standInId?: string | null;
 };
 
 type LeaveTypeRow = { id: string; name: string; countsAsVacation: boolean; needsApproval: boolean };
@@ -167,6 +169,14 @@ async function withLeaveType(workspaceId: string, input: BookingInput, t: Messag
   return { input: { ...input, type, specialReason: null }, leaveType };
 }
 
+/** The stand-in must be someone else in this workspace who is still in it. */
+async function assertStandIn(workspaceId: string, membershipId: string, standInId: string | null | undefined, t: Messages["errors"]) {
+  if (!standInId) return;
+  if (standInId === membershipId) throw new BookingError(t.standInSelf);
+  const found = await db.membership.findFirst({ where: { id: standInId, workspaceId, removedAt: null }, select: { id: true } });
+  if (!found) throw new BookingError(t.standInNotInWorkspace);
+}
+
 function prepare(input: BookingInput, settings: Settings, rules: DayRules, t: Messages["errors"]) {
   const error = validateSpan(input, settings);
   if (error) throw new BookingError(t[error]);
@@ -181,6 +191,7 @@ function prepare(input: BookingInput, settings: Settings, rules: DayRules, t: Me
     note: input.note,
     specialReason: input.type === "SPECIAL" ? (input.specialReason ?? null) : null,
     leaveTypeId: input.leaveTypeId ?? null,
+    standInId: input.standInId ?? null,
     daysCount,
   };
 }
@@ -359,6 +370,7 @@ export async function createBooking(opts: {
     include: { user: true },
   });
   if (!target) throw new BookingError(t.memberNotInWorkspace);
+  await assertStandIn(workspace.id, membershipId, input.standInId, t);
 
   const holidays = await loadHolidays(workspace.id, regionOf(target, settings));
   const rules = rulesFor(target, settings, holidays);
@@ -396,6 +408,7 @@ export async function createBooking(opts: {
   // The booking is saved: emails and chat posts go out after the response, so a slow provider doesn't hold the person up.
   await afterResponse(async () => {
     if (status === "PENDING") await notifyAdminsOfRequest(workspace, settings, target.user, booking, opts.origin);
+    if (status === "APPROVED") await notifyStandIn(workspace, settings, target.user, booking, opts.origin);
     if (input.type === "SICK" && !can(actor.role, "sick:see")) await notifyAdminsOfSickDays(workspace, settings, target.user, booking, opts.origin);
     await announce(
       workspace.id,
@@ -471,6 +484,7 @@ export async function updateBooking(opts: {
   assertMayBook(actor, existing.membershipId, input.type, t, t.onlyOwnChange);
   // Someone else's sick days stay with those who may see them, whatever they are changed into.
   if (existing.type === "SICK") assertMayBook(actor, existing.membershipId, "SICK", t, t.onlyOwnChange);
+  await assertStandIn(workspace.id, existing.membershipId, input.standInId, t);
 
   const today = todayIn(workspace.timezone ?? "UTC");
   assertNotPast(actor, existing.endDate, today, t);
@@ -514,6 +528,13 @@ export async function updateBooking(opts: {
   }
   await afterResponse(async () => {
     if (status === "PENDING") await notifyAdminsOfRequest(workspace, settings, existing.membership.user, booking, opts.origin);
+    // A new stand-in, or new dates, or newly approved: the stand-in hears what they cover now.
+    const changedForStandIn =
+      booking.standInId !== existing.standInId ||
+      existing.status !== "APPROVED" ||
+      toISO(booking.startDate) !== toISO(existing.startDate) ||
+      toISO(booking.endDate) !== toISO(existing.endDate);
+    if (status === "APPROVED" && changedForStandIn) await notifyStandIn(workspace, settings, existing.membership.user, booking, opts.origin);
     await announce(
       workspace.id,
       settings,
@@ -646,6 +667,7 @@ export async function decideBooking(opts: {
       ].join("\n\n"),
     });
     if (opts.approve) {
+      await notifyStandIn(opts.workspace, opts.settings, booking.membership.user, booking, opts.origin);
       await announce(opts.workspace.id, opts.settings, booking.membership.user, booking, "off", `${opts.origin}/w/${opts.workspace.slug}/calendar`);
     }
   });
@@ -710,6 +732,33 @@ export function availableDeciders<T extends { awayUntil: Date | null }>(deciders
   return here.length > 0 ? here : deciders;
 }
 
+/**
+ * Tells the stand-in (#34) whom they cover and when, once the time off is approved. It never says what kind of time off
+ * it is, so a colleague's sick days stay private.
+ */
+async function notifyStandIn(
+  workspace: { name: string; slug: string },
+  settings: Settings,
+  person: { name: string | null; email: string },
+  booking: { startDate: Date; endDate: Date; standInId: string | null },
+  origin: string,
+) {
+  if (!booking.standInId) return;
+  const standIn = await db.membership.findFirst({
+    where: { id: booking.standInId, removedAt: null, isSample: false },
+    select: { user: { select: { email: true, locale: true } } },
+  });
+  if (!standIn || isSampleEmail(standIn.user.email) || isSampleEmail(person.email)) return;
+  const locale = recipientLocale(standIn.user, settings);
+  const t = messagesFor(locale).email.standIn;
+  const who = person.name ?? person.email;
+  await sendEmail({
+    to: standIn.user.email,
+    subject: t.subject(who),
+    text: t.text(who, formatRange(toISO(booking.startDate), toISO(booking.endDate), locale), workspace.name, `${origin}/w/${workspace.slug}/calendar?month=${toISO(booking.startDate).slice(0, 7)}`),
+  });
+}
+
 /** Tells admins in their language that someone reported sick; the email says nothing beyond the dates. */
 async function notifyAdminsOfSickDays(
   workspace: { id: string; name: string; slug: string },
@@ -760,7 +809,11 @@ export function activeBookingsBetween(workspaceId: string, from: ISODate, to: IS
       endDate: { gte: fromISO(from) },
       membership: { removedAt: null },
     },
-    include: { membership: { include: { user: { select: { name: true, email: true } } } }, leaveType: { select: { name: true, color: true } } },
+    include: {
+      membership: { include: { user: { select: { name: true, email: true } } } },
+      leaveType: { select: { name: true, color: true } },
+      standIn: { select: { user: { select: { name: true, email: true } } } },
+    },
     orderBy: { startDate: "asc" },
   });
 }

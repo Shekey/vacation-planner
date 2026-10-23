@@ -106,6 +106,7 @@ const matrix: Record<string, Entry> = {
 
   "language/actions.ts#setLanguage": { allowed: "public" },
   "sign-in/actions.ts#sendSignInLinkAction": { allowed: "public" },
+  "sign-in/actions.ts#signInWithProviderAction": { allowed: "public" },
   "workspaces/new/actions.ts#createWorkspaceAction": { allowed: "self", call: () => newWorkspace.createWorkspaceAction({}, form({ name: "New team" })) },
   // Only for admins of the deleted workspace; ours isn't deleted and the others aren't its admins.
   "workspaces/restore-actions.ts#restoreWorkspaceAction": { allowed: "self", call: (w) => restoreWorkspace.restoreWorkspaceAction(w.ours.workspace.id) },

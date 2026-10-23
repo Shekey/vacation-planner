@@ -21,6 +21,7 @@ export const me = defineMessages({
     feedPitch: "See the team's time off and holidays next to your meetings.",
     getLink: "Get a calendar link",
     past: "Past",
+    covering: "You're the stand-in for",
     awayTitle: "Away from approvals",
     awayHint:
       "Going on holiday? Until this day, new requests and reminders go to the other admins and approvers. If everyone is away, they still reach you.",
@@ -53,6 +54,7 @@ export const me = defineMessages({
     feedPitch: "Sieh Urlaube und Feiertage des Teams direkt neben deinen Terminen.",
     getLink: "Kalenderlink holen",
     past: "Vergangen",
+    covering: "Du vertrittst",
     awayTitle: "Abwesend bei Freigaben",
     awayHint:
       "Gehst du in Urlaub? Bis zu diesem Tag gehen neue Anträge und Erinnerungen an die anderen Admins und Genehmiger:innen. Sind alle weg, bekommst du sie trotzdem.",
