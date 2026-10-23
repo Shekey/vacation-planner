@@ -127,7 +127,7 @@ The migrations get replaced, not converted: start D1 from a fresh schema.
 4. **Separate environments:** staging and production each get their own D1 database, R2 bucket, secrets, Stripe *test* keys and email sender.
 5. **SQL injection:** use only parameterised queries (Drizzle's default). Review any `sql\`\`` raw usage.
 6. **Crons:** prefer a `scheduled` handler (not reachable over HTTP). If `/api/cron/*` routes stay, keep the `CRON_SECRET` check.
-7. **Off-site backup:** Time Travel lives in the same account. **DECISION S7:** add a weekly encrypted `wrangler d1 export` to storage in another account/provider (reuse the age-encryption flow from `docs/backups.md`).
+7. **Off-site backup:** Time Travel lives in the same account. **Decided (S7):** keep backups in Cloudflare. A cron exports D1 daily or weekly, encrypts the dump with age (reuse the flow from `docs/backups.md`) and writes it to a separate EU R2 bucket with a bucket lock/retention rule *(verify)*, so a leaked app token can't delete it. The Worker gets write-only access to that bucket. Accepted risk: losing the account means losing the backups too.
 8. **Inbound email (if used):** it's untrusted input. Cap the size, never render it as HTML, and validate the sender.
 9. **Stripe webhooks:** confirm that signature verification works with the Workers request body (raw body handling).
 
@@ -198,7 +198,7 @@ Add `develop` to `ci.yml` and `migrations.yml`.
 
 | ID | Decision | Chosen | Why | Date |
 | --- | --- | --- | --- | --- |
-| G1 | How strict is "Germany" | | | |
-| D1 | Database / ORM | | | |
-| H3 | Sentry on Workers | | | |
-| S7 | Off-site backup | | | |
+| G1 | How strict is "Germany" | (a) EU data residency, US processors under DPF + DPA | Common practice for EU SaaS; keeps the Cloudflare stack | 2026-10-23 |
+| D1 | Database / ORM | D1 (EU jurisdiction, `weur`) + Drizzle | No data to migrate during beta; most efficient long term | 2026-10-23 |
+| H3 | Sentry on Workers | `@sentry/cloudflare` on the server, `@sentry/nextjs` on the client, Sentry EU (Frankfurt) region | Official Sentry SDK for Workers; keep `sentry-scrub` | 2026-10-23 |
+| S7 | Off-site backup | Stay inside Cloudflare: D1 Time Travel (30 days) + scheduled encrypted `d1 export` to a separate EU R2 bucket with a retention lock | Simple, no extra vendor. Accepted risk: losing or compromising the Cloudflare account loses backups too; revisit before first paying customer | 2026-10-23 |
