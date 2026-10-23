@@ -1,3 +1,4 @@
+import { Check, ChevronRight, Hash, Info, MessageSquare, TriangleAlert } from "lucide-react";
 import { ActionForm } from "@/components/action-form";
 import Link from "next/link";
 import { intlLocale, isLocale, LOCALE_NAMES, LOCALES } from "@/lib/i18n";
@@ -17,27 +18,42 @@ function Toggle({
   label,
   hint,
   defaultChecked,
+  on,
+  off,
 }: {
   name: string;
   label: string;
   hint: string;
   defaultChecked: boolean;
+  on: string;
+  off: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-3">
-      <input
-        type="checkbox"
-        name={name}
-        defaultChecked={defaultChecked}
-        className="mt-0.5"
-      />
-      <span>
-        <span className="font-medium">{label}</span>
-        <span className="block text-sm text-muted">{hint}</span>
+    <label className="flex cursor-pointer items-center gap-4">
+      <span className="min-w-0 flex-1 space-y-1">
+        <span className="block text-sm font-semibold">{label}</span>
+        <span className="block text-xs text-muted">{hint}</span>
+      </span>
+      <span className="flex w-11 shrink-0 flex-col items-center gap-1">
+        <input type="checkbox" name={name} defaultChecked={defaultChecked} className="peer sr-only" />
+        <span className="relative h-6 w-10 rounded-full bg-border transition-colors after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:bg-primary peer-checked:after:translate-x-4 peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2" />
+        <span aria-hidden className="text-[10px] font-semibold text-muted peer-checked:hidden">
+          {off}
+        </span>
+        <span aria-hidden className="hidden text-[10px] font-semibold text-primary-ink peer-checked:block">
+          {on}
+        </span>
       </span>
     </label>
   );
 }
+
+const card = "space-y-4 rounded-[18px] border border-border bg-surface p-5 sm:p-6";
+const cardTitle = "text-[17px] font-semibold";
+const field = "block space-y-1.5";
+const label = "text-xs font-semibold";
+const hint = "block text-xs text-muted";
+const input = "input min-h-11 rounded-[10px] text-sm";
 
 export async function generateMetadata() {
   return { title: (await getMessages()).settings.title };
@@ -72,200 +88,234 @@ export default async function SettingsPage({
   ];
 
   return (
-    <div className="max-w-xl space-y-6">
-      <ActionForm
-        action={saveSettingsAction.bind(null, slug)}
-        className="space-y-6"
-      >
-        <section className="space-y-3">
-          <label className="block space-y-1">
-            <span className="text-sm font-medium">{t.workspaceName}</span>
-            <input
-              name="name"
-              className="input"
-              defaultValue={workspace.name}
-              required
-              minLength={2}
-              maxLength={60}
-            />
-          </label>
-          <label className="block space-y-1">
-            <span className="text-sm font-medium">{t.timezone}</span>
-            <select
-              name="timezone"
-              className="input"
-              defaultValue={workspace.timezone}
-            >
-              {timezones.map((tz) => (
-                <option key={tz}>{tz}</option>
-              ))}
-            </select>
-            <span className="block text-xs text-muted">{t.timezoneHint}</span>
-          </label>
-          <label className="block space-y-1">
-            <span className="text-sm font-medium">{t.language}</span>
-            <select
-              name="locale"
-              className="input"
-              defaultValue={isLocale(locale) ? locale : "en"}
-            >
-              {LOCALES.map((l) => (
-                <option key={l} value={l}>
-                  {LOCALE_NAMES[l]}
-                </option>
-              ))}
-            </select>
-            <span className="block text-xs text-muted">{t.languageHint}</span>
-          </label>
-          <label className="block space-y-1">
-            <span className="text-sm font-medium">{t.defaultAllowance}</span>
-            <input
-              name="defaultAllowance"
-              type="number"
-              min={0}
-              max={365}
-              step={0.5}
-              className="input w-32"
-              defaultValue={
-                defaultAllowance == null ? "" : Number(defaultAllowance)
-              }
-            />
-            <span className="block text-xs text-muted">
-              {t.defaultAllowanceHint}
-            </span>
-          </label>
-          <label className="flex cursor-pointer items-center gap-2 text-sm">
-            <input type="checkbox" name="applyAllowanceToAll" />
-            {t.applyToAll}
-          </label>
-          <label className="block space-y-1">
-            <span className="text-sm font-medium">{t.carryOver}</span>
-            <input
-              name="maxCarryOver"
-              type="number"
-              min={0}
-              max={365}
-              step={0.5}
-              className="input w-32"
-              defaultValue={settings.maxCarryOverDays ?? ""}
-              placeholder={t.carryOverPlaceholder}
-            />
-            <span className="block text-xs text-muted">{t.carryOverHint}</span>
-          </label>
-          <fieldset className="space-y-1">
-            <legend className="text-sm font-medium">{t.expiry.legend}</legend>
-            <div className="flex gap-2">
-              <label className="sr-only" htmlFor="carryOverExpiryDay">
-                {t.expiry.day}
+    <div className="space-y-6">
+      <ActionForm action={saveSettingsAction.bind(null, slug)} className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0 space-y-2">
+            <p className="text-[11px] font-semibold tracking-wide text-muted uppercase">{t.eyebrow}</p>
+            <h1 className="text-[28px] leading-tight font-medium sm:text-[32px]">{t.title}</h1>
+            <p className="text-sm text-muted">{t.subtitle}</p>
+          </div>
+          <button className="btn min-h-11 gap-2 rounded-[10px] px-4 text-[13px]">
+            <Check aria-hidden className="size-4" /> {t.saveChanges}
+          </button>
+        </div>
+
+        <div className="flex gap-2.5 rounded-[10px] bg-primary-soft p-4 text-primary-ink">
+          <Info aria-hidden className="mt-0.5 size-[18px] shrink-0" />
+          <div className="space-y-1">
+            <p className="text-[13px] font-semibold">{t.notice.title}</p>
+            <p className="text-xs">{t.notice.body(workspace.name)}</p>
+          </div>
+        </div>
+
+        <div className="grid items-start gap-6 lg:grid-cols-2">
+          <div className="min-w-0 space-y-6">
+            <section className={card} aria-labelledby="ws-title">
+              <h2 id="ws-title" className={cardTitle}>
+                {t.cards.workspace}
+              </h2>
+              <label className={field}>
+                <span className={label}>{t.workspaceName}</span>
+                <input name="name" className={input} defaultValue={workspace.name} required minLength={2} maxLength={60} />
               </label>
-              <input
-                id="carryOverExpiryDay"
-                name="carryOverExpiryDay"
-                type="number"
-                min={1}
-                max={31}
-                step={1}
-                className="input w-20"
-                defaultValue={expiryDay ? Number(expiryDay) : ""}
-                placeholder="31"
-              />
-              <label className="sr-only" htmlFor="carryOverExpiryMonth">
-                {t.expiry.month}
+              <label className={field}>
+                <span className={label}>{t.timezone}</span>
+                <select name="timezone" className={input} defaultValue={workspace.timezone}>
+                  {timezones.map((tz) => (
+                    <option key={tz}>{tz}</option>
+                  ))}
+                </select>
+                <span className={hint}>{t.timezoneHint}</span>
               </label>
-              <select
-                id="carryOverExpiryMonth"
-                name="carryOverExpiryMonth"
-                className="input w-auto"
-                defaultValue={expiryMonth}
+              <label className={field}>
+                <span className={label}>{t.language}</span>
+                <select name="locale" className={input} defaultValue={isLocale(locale) ? locale : "en"}>
+                  {LOCALES.map((l) => (
+                    <option key={l} value={l}>
+                      {LOCALE_NAMES[l]}
+                    </option>
+                  ))}
+                </select>
+                <span className={hint}>{t.languageHint}</span>
+              </label>
+            </section>
+
+            <section className={card} aria-labelledby="allowance-title">
+              <h2 id="allowance-title" className={cardTitle}>
+                {t.cards.allowance}
+              </h2>
+              <label className={field}>
+                <span className={label}>{t.defaultAllowance}</span>
+                <input
+                  name="defaultAllowance"
+                  type="number"
+                  min={0}
+                  max={365}
+                  step={0.5}
+                  className={input}
+                  defaultValue={defaultAllowance == null ? "" : Number(defaultAllowance)}
+                />
+                <span className={hint}>{t.defaultAllowanceHint}</span>
+              </label>
+              <label className="flex cursor-pointer items-start gap-2.5 text-[13px]">
+                <input type="checkbox" name="applyAllowanceToAll" className="mt-0.5" />
+                {t.applyToAll}
+              </label>
+              <hr className="border-border" />
+              <label className={field}>
+                <span className={label}>{t.carryOver}</span>
+                <input
+                  name="maxCarryOver"
+                  type="number"
+                  min={0}
+                  max={365}
+                  step={0.5}
+                  className={input}
+                  defaultValue={settings.maxCarryOverDays ?? ""}
+                  placeholder={t.carryOverPlaceholder}
+                />
+                <span className={hint}>{t.carryOverHint}</span>
+              </label>
+              <fieldset className="space-y-1.5">
+                <legend className={label}>{t.expiry.legend}</legend>
+                <div className="flex gap-2">
+                  <label className="sr-only" htmlFor="carryOverExpiryDay">
+                    {t.expiry.day}
+                  </label>
+                  <input
+                    id="carryOverExpiryDay"
+                    name="carryOverExpiryDay"
+                    type="number"
+                    min={1}
+                    max={31}
+                    step={1}
+                    className={`${input} w-24`}
+                    defaultValue={expiryDay ? Number(expiryDay) : ""}
+                    placeholder="31"
+                  />
+                  <label className="sr-only" htmlFor="carryOverExpiryMonth">
+                    {t.expiry.month}
+                  </label>
+                  <select id="carryOverExpiryMonth" name="carryOverExpiryMonth" className={`${input} flex-1`} defaultValue={expiryMonth}>
+                    <option value="">{t.expiry.never}</option>
+                    {months.map((m, i) => (
+                      <option key={m} value={String(i + 1).padStart(2, "0")}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <span className={hint}>{t.expiry.hint}</span>
+              </fieldset>
+              <Link
+                href={`/w/${slug}/members`}
+                className="flex min-h-11 items-center justify-between gap-3 border-t border-border pt-3 hover:text-primary-ink"
               >
-                <option value="">{t.expiry.never}</option>
-                {months.map((m, i) => (
-                  <option key={m} value={String(i + 1).padStart(2, "0")}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <span className="block text-xs text-muted">{t.expiry.hint}</span>
-          </fieldset>
-          <label className="block space-y-1">
-            <span className="text-sm font-medium">{t.minPeople}</span>
-            <input
-              name="minPeoplePresent"
-              type="number"
-              min={1}
-              step={1}
-              className="input w-32"
-              defaultValue={settings.minPeoplePresent ?? ""}
-              placeholder={t.minPeoplePlaceholder}
-            />
-            <span className="block text-xs text-muted">{t.minPeopleHint}</span>
-          </label>
-        </section>
+                <span className="space-y-1">
+                  <span className="block text-[13px] font-semibold">{t.individual.title}</span>
+                  <span className="block text-xs text-muted">{t.individual.body}</span>
+                </span>
+                <ChevronRight aria-hidden className="size-4 shrink-0 text-muted" />
+              </Link>
+            </section>
+          </div>
 
-        <section className="card space-y-4">
-          <h2 className="font-medium">{t.features}</h2>
-          <Toggle
-            name="approvalsEnabled"
-            label={t.approvals}
-            hint={t.approvalsHint}
-            defaultChecked={settings.approvalsEnabled}
-          />
-          <Toggle
-            name="allowHalfDays"
-            label={t.halfDays}
-            hint={t.halfDaysHint}
-            defaultChecked={settings.allowHalfDays}
-          />
-          <Toggle
-            name="countWeekends"
-            label={t.weekends}
-            hint={t.weekendsHint}
-            defaultChecked={settings.countWeekends}
-          />
-        </section>
+          <div className="min-w-0 space-y-6">
+            <section className={card} aria-labelledby="rules-title">
+              <h2 id="rules-title" className={cardTitle}>
+                {t.cards.rules}
+              </h2>
+              <Toggle
+                name="approvalsEnabled"
+                label={t.approvals}
+                hint={t.approvalsHint}
+                defaultChecked={settings.approvalsEnabled}
+                on={t.on}
+                off={t.off}
+              />
+              {settings.approvalsEnabled && (
+                <div className="flex gap-2.5 rounded-[10px] bg-warning-soft p-4 text-warning">
+                  <TriangleAlert aria-hidden className="mt-0.5 size-[18px] shrink-0" />
+                  <div className="space-y-1">
+                    <p className="text-[13px] font-semibold">{t.approvalsWarn.title}</p>
+                    <p className="text-xs">{t.approvalsWarn.body}</p>
+                  </div>
+                </div>
+              )}
+              <hr className="border-border" />
+              <Toggle name="allowHalfDays" label={t.halfDays} hint={t.halfDaysHint} defaultChecked={settings.allowHalfDays} on={t.on} off={t.off} />
+              <hr className="border-border" />
+              <Toggle name="countWeekends" label={t.weekends} hint={t.weekendsHint} defaultChecked={settings.countWeekends} on={t.on} off={t.off} />
+              <hr className="border-border" />
+              <label className={field}>
+                <span className={label}>{t.minPeople}</span>
+                <input
+                  name="minPeoplePresent"
+                  type="number"
+                  min={1}
+                  step={1}
+                  className={input}
+                  defaultValue={settings.minPeoplePresent ?? ""}
+                  placeholder={t.minPeoplePlaceholder}
+                />
+                <span className={hint}>{t.minPeopleHint}</span>
+              </label>
+            </section>
 
-        {!chat && (
-          <p className="card border-amber-400/60 bg-amber-50 text-sm dark:bg-amber-900/20">
-            {t.chatUpsell}{" "}
-            <Link
-              href={`/w/${slug}/billing`}
-              className="font-medium text-primary hover:underline"
-            >
-              {t.seePlans}
-            </Link>
-          </p>
-        )}
+            <section className={card} aria-labelledby="integrations-title">
+              <h2 id="integrations-title" className={cardTitle}>
+                {t.cards.integrations}
+              </h2>
+              <p className="text-xs text-muted">{t.integrationsBody}</p>
+              {!chat && (
+                <p className="rounded-[10px] bg-warning-soft p-4 text-sm text-warning">
+                  {t.chatUpsell}{" "}
+                  <Link href={`/w/${slug}/billing`} className="font-semibold underline">
+                    {t.seePlans}
+                  </Link>
+                </p>
+              )}
+              <div className="space-y-3">
+                <p className="flex items-center gap-2.5 text-sm font-semibold">
+                  <MessageSquare aria-hidden className="size-5" /> Microsoft Teams
+                </p>
+                <input
+                  name="teamsWebhookUrl"
+                  type="url"
+                  aria-label={t.teamsUrl}
+                  className={input}
+                  defaultValue={teamsWebhookUrl}
+                  placeholder="https://…logic.azure.com/workflows/…"
+                />
+                <p className={hint}>{t.teamsHint}</p>
+              </div>
+              <hr className="border-border" />
+              <div className="space-y-3">
+                <p className="flex items-center gap-2.5 text-sm font-semibold">
+                  <Hash aria-hidden className="size-5" /> Slack
+                </p>
+                <input
+                  name="slackWebhookUrl"
+                  type="url"
+                  aria-label={t.slackUrl}
+                  className={input}
+                  defaultValue={slackWebhookUrl}
+                  placeholder="https://hooks.slack.com/services/…"
+                />
+                <p className={hint}>{t.slackHint}</p>
+              </div>
+            </section>
+          </div>
+        </div>
 
-        <section className="card space-y-2">
-          <h2 className="font-medium">Microsoft Teams</h2>
-          <input
-            name="teamsWebhookUrl"
-            type="url"
-            aria-label={t.teamsUrl}
-            className="input"
-            defaultValue={teamsWebhookUrl}
-            placeholder="https://…logic.azure.com/workflows/…"
-          />
-          <p className="text-xs text-muted">{t.teamsHint}</p>
-        </section>
-
-        <section className="card space-y-2">
-          <h2 className="font-medium">Slack</h2>
-          <input
-            name="slackWebhookUrl"
-            type="url"
-            aria-label={t.slackUrl}
-            className="input"
-            defaultValue={slackWebhookUrl}
-            placeholder="https://hooks.slack.com/services/…"
-          />
-          <p className="text-xs text-muted">{t.slackHint}</p>
-        </section>
-
-        <button className="btn">{t.save}</button>
+        <div className="flex items-center justify-between gap-4 border-t border-border pt-5">
+          <p className="text-xs text-muted">{t.saveNote}</p>
+          <button className="btn min-h-11 rounded-[10px] px-4 text-[13px]">{t.saveChanges}</button>
+        </div>
       </ActionForm>
 
+      <div className="max-w-2xl space-y-6">
       {chat && (teamsWebhookUrl || slackWebhookUrl) && (
         <section className="card space-y-3">
           <h2 className="font-medium">{t.chatCheckHeading}</h2>
@@ -353,6 +403,7 @@ export default async function SettingsPage({
           </button>
         </ActionForm>
       </section>
+      </div>
     </div>
   );
 }

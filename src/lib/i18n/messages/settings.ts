@@ -3,6 +3,32 @@ import { defineMessages } from "../define";
 export const settings = defineMessages({
   en: {
     title: "Settings",
+    eyebrow: "Workspace administration",
+    subtitle: "Workspace defaults and booking rules, grouped so nothing gets missed.",
+    saveChanges: "Save changes",
+    saveNote: "Changes take effect when saved.",
+    notice: {
+      title: "Workspace settings",
+      body: (name: string) =>
+        `These settings apply to ${name}. Individual member details stay in Members unless you explicitly apply a new allowance to current members.`,
+    },
+    cards: {
+      workspace: "Workspace & notifications",
+      allowance: "Allowance & carryover",
+      rules: "Booking rules & coverage",
+      integrations: "Integrations",
+    },
+    integrationsBody: "Send team updates to Microsoft Teams or Slack. You can use one or both.",
+    on: "On",
+    off: "Off",
+    approvalsWarn: {
+      title: "Before turning approval off",
+      body: "Turning this off approves all pending requests. Review the queue before saving this change.",
+    },
+    individual: {
+      title: "Individual allowances",
+      body: "Set exceptions in Members, without changing workspace defaults.",
+    },
     workspaceName: "Workspace name",
     timezone: "Timezone",
     timezoneHint: 'Decides what "today" is on the calendar.',
@@ -92,6 +118,32 @@ export const settings = defineMessages({
   },
   de: {
     title: "Einstellungen",
+    eyebrow: "Workspace-Verwaltung",
+    subtitle: "Standardwerte und Buchungsregeln des Workspace, übersichtlich gruppiert.",
+    saveChanges: "Änderungen speichern",
+    saveNote: "Änderungen gelten, sobald du speicherst.",
+    notice: {
+      title: "Workspace-Einstellungen",
+      body: (name: string) =>
+        `Diese Einstellungen gelten für ${name}. Angaben zu einzelnen Mitgliedern bleiben unter Mitglieder, außer du wendest ausdrücklich ein neues Kontingent auf aktuelle Mitglieder an.`,
+    },
+    cards: {
+      workspace: "Workspace & Benachrichtigungen",
+      allowance: "Kontingent & Übertrag",
+      rules: "Buchungsregeln & Besetzung",
+      integrations: "Integrationen",
+    },
+    integrationsBody: "Sende Team-Updates an Microsoft Teams oder Slack. Du kannst eines oder beide nutzen.",
+    on: "An",
+    off: "Aus",
+    approvalsWarn: {
+      title: "Bevor du die Freigabe ausschaltest",
+      body: "Wenn du das ausschaltest, werden alle offenen Anträge genehmigt. Prüfe die Warteschlange, bevor du speicherst.",
+    },
+    individual: {
+      title: "Individuelle Kontingente",
+      body: "Lege Ausnahmen unter Mitglieder fest, ohne die Standardwerte des Workspace zu ändern.",
+    },
     workspaceName: "Name des Workspace",
     timezone: "Zeitzone",
     timezoneHint: "Legt fest, was im Kalender „heute“ ist.",
