@@ -12,6 +12,7 @@ import { looksLikeCalendar } from "@/lib/import-ics";
 import { bestSheet, looksLikeOldExcel, looksLikeZip, readCalendarsInZip, readWorkbook, toTabText, type Sheet } from "@/lib/xlsx";
 import {
   applyImportAction,
+  loadSheetAction,
   previewImportAction,
   type ImportKind,
 } from "./actions";
@@ -20,6 +21,7 @@ import {
 const STARTS = [
   ["excel", "people"],
   ["planner", "people"],
+  ["sheets", "people"],
   ["calendar", "timeoff"],
   ["tool", "people"],
   ["directory", "people"],
@@ -42,6 +44,23 @@ function decodeText(bytes: Uint8Array): string {
   }
 }
 
+/** The last Google Sheets link per workspace and tab stays in this browser, so next week's import is one click. */
+const sheetKey = (slug: string, kind: ImportKind) => `import-sheet:${slug}:${kind}`;
+function rememberedSheet(slug: string, kind: ImportKind): string {
+  try {
+    return localStorage.getItem(sheetKey(slug, kind)) ?? "";
+  } catch {
+    return "";
+  }
+}
+function rememberSheet(slug: string, kind: ImportKind, link: string) {
+  try {
+    localStorage.setItem(sheetKey(slug, kind), link);
+  } catch {
+    // Private windows may refuse storage; the link just isn't remembered.
+  }
+}
+
 export function ImportClient({ slug }: { slug: string }) {
   const { locale, t: messages } = useI18n();
   const t = messages.importer;
@@ -56,6 +75,8 @@ export function ImportClient({ slug }: { slug: string }) {
   const [sheets, setSheets] = useState<Sheet[] | null>(null);
   const [sheetIndex, setSheetIndex] = useState(0);
   const [start, setStart] = useState<Start | null>(null);
+  const [sheetUrl, setSheetUrl] = useState("");
+  const [loadingSheet, startSheetLoad] = useTransition();
   const [pending, startTransition] = useTransition();
 
   const reset = () => {
@@ -72,6 +93,7 @@ export function ImportClient({ slug }: { slug: string }) {
   /** Switching tabs with a workbook open picks the sheet that fits, so people and then time off come from one file. */
   const switchKind = (k: ImportKind) => {
     setKind(k);
+    setSheetUrl(rememberedSheet(slug, k));
     reset();
     const fitting = sheets ? sheets.findIndex((s) => SHEET_FITS[k].test(s.name)) : -1;
     if (sheets && fitting >= 0) showSheet(sheets, fitting);
@@ -110,6 +132,19 @@ export function ImportClient({ slug }: { slug: string }) {
       setError(t.fileUnreadable);
     }
   };
+
+  const loadSheet = () =>
+    startSheetLoad(async () => {
+      reset();
+      setSheets(null);
+      const result = await loadSheetAction(slug, sheetUrl);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      rememberSheet(slug, kind, sheetUrl.trim());
+      setText(result.text ?? "");
+    });
 
   const rowError = (e: ImportError) =>
     (t.rowErrors[e.code] as (v?: string) => string)(e.value);
@@ -248,6 +283,34 @@ export function ImportClient({ slug }: { slug: string }) {
             </select>
           </label>
         )}
+      </div>
+      <form
+        className="flex flex-wrap items-end gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          loadSheet();
+        }}
+      >
+        <label className="min-w-0 flex-1 basis-64 space-y-1">
+          <span className="text-sm font-medium">{t.sheetLinkLabel}</span>
+          <input
+            type="url"
+            inputMode="url"
+            className="input"
+            value={sheetUrl}
+            placeholder="https://docs.google.com/spreadsheets/d/…"
+            onChange={(e) => setSheetUrl(e.target.value)}
+            // Read on focus, not on render, so the server and browser render the same page.
+            onFocus={() => {
+              if (sheetUrl === "") setSheetUrl(rememberedSheet(slug, kind));
+            }}
+          />
+        </label>
+        <button type="submit" className="btn-secondary" disabled={loadingSheet || sheetUrl.trim() === ""}>
+          {loadingSheet ? t.sheetLinkLoading : t.sheetLinkLoad}
+        </button>
+      </form>
+      <div>
         <button
           className="btn-secondary"
           onClick={check}
