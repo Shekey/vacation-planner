@@ -17,7 +17,7 @@ export const invite = defineMessages({
     },
     switchAccount: "Sign out and switch account",
     join: (workspace: string) => `Join ${workspace}`,
-    invitedAs: (admin: boolean) => `You've been invited as ${admin ? "an admin" : "a member"}.`,
+    invitedAs: (role: string) => `You've been invited as ${({ ADMIN: "an admin", APPROVER: "an approver", VIEWER: "a viewer" } as Record<string, string>)[role] ?? "a member"}.`,
     accept: "Accept invitation",
   },
   de: {
@@ -36,7 +36,7 @@ export const invite = defineMessages({
     },
     switchAccount: "Abmelden und Konto wechseln",
     join: (workspace: string) => `${workspace} beitreten`,
-    invitedAs: (admin: boolean) => `Du wurdest als ${admin ? "Admin" : "Mitglied"} eingeladen.`,
+    invitedAs: (role: string) => `Du wurdest als ${({ ADMIN: "Admin", APPROVER: "Genehmiger:in", VIEWER: "Person mit Leserecht" } as Record<string, string>)[role] ?? "Mitglied"} eingeladen.`,
     accept: "Einladung annehmen",
   },
 });

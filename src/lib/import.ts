@@ -1,3 +1,4 @@
+import type { Role } from "@/lib/permissions";
 import { normalizeWorkDays, portionOn, type BookingSpan } from "@/lib/booking-days";
 import { eachDay, type ISODate } from "@/lib/dates";
 
@@ -175,10 +176,13 @@ export function parseDateCell(cell: string): ISODate | null | "bad" | "ambiguous
   return "bad";
 }
 
-export function parseRole(cell: string): "ADMIN" | "MEMBER" | "bad" {
+export function parseRole(cell: string): Role | "bad" {
   const t = norm(cell);
-  if (t === "" || ["member", "mitglied", "mitarbeiter", "user", "benutzer"].includes(t)) return "MEMBER";
-  return ["admin", "administrator", "administratorin"].includes(t) ? "ADMIN" : "bad";
+  if (t === "" || ["member", "mitglied", "mitarbeiter", "mitarbeiterin", "user", "benutzer"].includes(t)) return "MEMBER";
+  if (["admin", "administrator", "administratorin"].includes(t)) return "ADMIN";
+  if (["approver", "genehmiger", "genehmigerin", "freigeber", "freigeberin", "teamleitung", "teamleiter", "teamleiterin"].includes(t)) return "APPROVER";
+  if (["viewer", "readonly", "nuransehen", "leserecht", "lesen"].includes(t)) return "VIEWER";
+  return "bad";
 }
 
 export type ImportErrorCode =
@@ -231,7 +235,7 @@ export type PersonRow = {
   region: string | null;
   /** The sheet named a state but the workspace has no holiday country yet, so it was left out. */
   regionIgnored?: boolean;
-  role: "ADMIN" | "MEMBER";
+  role: Role;
   error?: ImportError;
 };
 

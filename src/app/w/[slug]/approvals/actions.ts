@@ -3,11 +3,11 @@
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/components/action-form";
 import { BookingError, decideBooking } from "@/lib/bookings";
-import { actorOf, requireAdmin, settingsOf } from "@/lib/session";
+import { actorOf, requirePermission, settingsOf } from "@/lib/session";
 import { appOrigin } from "@/lib/url";
 
 export async function decideAction(slug: string, bookingId: string, _prev: ActionResult, formData: FormData): Promise<ActionResult> {
-  const ctx = await requireAdmin(slug);
+  const ctx = await requirePermission(slug, "bookings:decide");
   const note =
     String(formData.get("note") ?? "")
       .trim()

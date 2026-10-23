@@ -4,6 +4,7 @@ import { countDays } from "@/lib/booking-days";
 import { ACTIVE_STATUSES, spanOf } from "@/lib/bookings";
 import { db } from "@/lib/db";
 import { getMessages } from "@/lib/i18n/server";
+import { can } from "@/lib/permissions";
 import { requireMembership } from "@/lib/session";
 import { saveBooking } from "../actions";
 import { BookingForm } from "../booking-form";
@@ -20,7 +21,13 @@ export default async function EditBookingPage({ params }: PageProps<"/w/[slug]/b
     where: { id, workspaceId: ctx.workspace.id, status: { in: ACTIVE_STATUSES } },
   });
   if (!booking) notFound();
-  if (booking.membershipId !== ctx.membership.id && ctx.membership.role !== "ADMIN") notFound();
+  // Someone else's booking: admins and approvers, and someone else's sick days only admins (#77).
+  if (
+    booking.membershipId !== ctx.membership.id &&
+    (!can(ctx.membership.role, "bookings:manage-all") || (booking.type === "SICK" && !can(ctx.membership.role, "sick:see")))
+  ) {
+    notFound();
+  }
 
   const data = await loadBookingFormData(ctx);
   const t = (await getMessages()).book;
@@ -45,7 +52,7 @@ export default async function EditBookingPage({ params }: PageProps<"/w/[slug]/b
         members={data.members.filter((m) => m.id === booking.membershipId)}
         canChooseMember={false}
         settings={data.settings}
-        isAdmin={data.isAdmin}
+        roles={data.roles}
         currentYear={data.currentYear}
         team={data.team}
         holidays={data.holidays}

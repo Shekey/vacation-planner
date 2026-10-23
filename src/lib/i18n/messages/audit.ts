@@ -15,7 +15,7 @@ export const audit = defineMessages({
         case "member.restored":
           return `${actor} restored ${target}`;
         case "member.role_changed":
-          return `${actor} made ${target} ${detail === "ADMIN" ? "an admin" : "a member"}`;
+          return `${actor} made ${target} ${({ ADMIN: "an admin", APPROVER: "an approver", VIEWER: "view only" } as Record<string, string>)[detail ?? ""] ?? "a member"}`;
         case "member.added_without_email":
           return `${actor} added ${target} without an email address`;
         case "member.email_added":
@@ -95,7 +95,7 @@ export const audit = defineMessages({
         case "member.restored":
           return `${actor} hat ${target} wiederhergestellt`;
         case "member.role_changed":
-          return `${actor} hat ${target} zum ${detail === "ADMIN" ? "Admin" : "Mitglied"} gemacht`;
+          return `${actor} hat die Rolle von ${target} auf ${({ ADMIN: "Admin", APPROVER: "Genehmiger:in", VIEWER: "Nur ansehen" } as Record<string, string>)[detail ?? ""] ?? "Mitglied"} gesetzt`;
         case "member.added_without_email":
           return `${actor} hat ${target} ohne E-Mail-Adresse hinzugefügt`;
         case "member.email_added":

@@ -33,7 +33,7 @@ export const importer = defineMessages({
       },
     },
     peopleHelp:
-      "One row per person, with a header row. Columns can be in any order: Name (or First name and Last name), Email, Vacation days, Left over (days still open from last year), Work days, Start date, State, Role. Each row needs an email or a name; someone with only a name is added without email and you book their time off. Work days like Mo-Fr or Mo, We, Fr; dates like 01.03.2024 or 2024-03-01; role Admin or Member. Without a header row, the email, name and days are recognised by their content. A year planner works too: its names and allowance column are taken.",
+      "One row per person, with a header row. Columns can be in any order: Name (or First name and Last name), Email, Vacation days, Left over (days still open from last year), Work days, Start date, State, Role. Each row needs an email or a name; someone with only a name is added without email and you book their time off. Work days like Mo-Fr or Mo, We, Fr; dates like 01.03.2024 or 2024-03-01; role Admin, Approver, Member or View only. Without a header row, the email, name and days are recognised by their content. A year planner works too: its names and allowance column are taken.",
     timeOffHelp:
       "One row per absence, with a header row: Email or Name, From, To, Type, Half day. “To” can stay empty for a single day. Type is Vacation (the default) or Other. Half day is morning or afternoon and works for a single day. The people must already be in the workspace, so import them first. Sick days aren't imported: old ones aren't needed, and new ones are entered in the app. You can also open an Excel year planner (names down, days across, U for vacation), a calendar exported from Outlook or Google (.ics), or the absence export of Personio, absence.io, Timetastic or Vacation Tracker.",
     templateLink: "Download a template",
@@ -114,7 +114,7 @@ export const importer = defineMessages({
       date: (v?: string) => `Date “${v}”: use 31.12.2026 or 2026-12-31`,
       dateAmbiguous: (v?: string) => `Date “${v}” could be day/month or month/day: use 31.12.2026 or 2026-12-31`,
       region: (v?: string) => `State “${v}” isn't one of this workspace's holiday regions`,
-      role: (v?: string) => `Role “${v}”: use Admin or Member`,
+      role: (v?: string) => `Role “${v}”: use Admin, Approver, Member or View only`,
       noStart: () => "No start date",
       endBeforeStart: () => "The end is before the start",
       type: (v?: string) => `Type “${v}”: use Vacation or Other`,
@@ -175,7 +175,7 @@ export const importer = defineMessages({
       },
     },
     peopleHelp:
-      "Eine Zeile pro Person, mit Kopfzeile. Die Spalten können in beliebiger Reihenfolge stehen: Name (oder Vorname und Nachname), E-Mail, Urlaubstage, Resturlaub (noch offene Tage aus dem Vorjahr), Arbeitstage, Eintritt, Bundesland, Rolle. Jede Zeile braucht eine E-Mail oder einen Namen; wer nur einen Namen hat, wird ohne E-Mail angelegt und du buchst den Urlaub für die Person. Arbeitstage wie Mo-Fr oder Mo, Mi, Fr; Datum wie 01.03.2024 oder 2024-03-01; Rolle Admin oder Mitglied. Ohne Kopfzeile werden E-Mail, Name und Tage am Inhalt erkannt. Ein Urlaubsplaner geht auch: Namen und Anspruchsspalte werden übernommen.",
+      "Eine Zeile pro Person, mit Kopfzeile. Die Spalten können in beliebiger Reihenfolge stehen: Name (oder Vorname und Nachname), E-Mail, Urlaubstage, Resturlaub (noch offene Tage aus dem Vorjahr), Arbeitstage, Eintritt, Bundesland, Rolle. Jede Zeile braucht eine E-Mail oder einen Namen; wer nur einen Namen hat, wird ohne E-Mail angelegt und du buchst den Urlaub für die Person. Arbeitstage wie Mo-Fr oder Mo, Mi, Fr; Datum wie 01.03.2024 oder 2024-03-01; Rolle Admin, Genehmiger:in, Mitglied oder Nur ansehen. Ohne Kopfzeile werden E-Mail, Name und Tage am Inhalt erkannt. Ein Urlaubsplaner geht auch: Namen und Anspruchsspalte werden übernommen.",
     timeOffHelp:
       "Eine Zeile pro Abwesenheit, mit Kopfzeile: E-Mail oder Name, Von, Bis, Art, Halbtag. „Bis“ kann bei einem einzelnen Tag leer bleiben. Art ist Urlaub (Standard) oder Sonstiges. Halbtag ist vormittags oder nachmittags und geht bei einem einzelnen Tag. Die Personen müssen schon im Workspace sein, importiere sie also zuerst. Krankheitstage werden nicht importiert: Alte braucht es nicht, neue trägst du in der App ein. Du kannst auch einen Excel-Urlaubsplaner öffnen (Namen untereinander, Tage nebeneinander, U für Urlaub), einen aus Outlook oder Google exportierten Kalender (.ics) oder den Abwesenheits-Export von Personio, absence.io, Timetastic oder Vacation Tracker.",
     templateLink: "Vorlage herunterladen",
@@ -256,7 +256,7 @@ export const importer = defineMessages({
       date: (v?: string) => `Datum „${v}“: nimm 31.12.2026 oder 2026-12-31`,
       dateAmbiguous: (v?: string) => `Datum „${v}“ kann Tag/Monat oder Monat/Tag sein: nimm 31.12.2026 oder 2026-12-31`,
       region: (v?: string) => `Bundesland „${v}“ gehört nicht zu den Feiertagsregionen dieses Workspaces`,
-      role: (v?: string) => `Rolle „${v}“: nimm Admin oder Mitglied`,
+      role: (v?: string) => `Rolle „${v}“: nimm Admin, Genehmiger:in, Mitglied oder Nur ansehen`,
       noStart: () => "Kein Startdatum",
       endBeforeStart: () => "Das Ende liegt vor dem Start",
       type: (v?: string) => `Art „${v}“: nimm Urlaub oder Sonstiges`,

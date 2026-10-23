@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { ArrowRight, CalendarDays, CalendarSearch, Check, Info, Plus, Sun, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { StatusBadge, TypeDot, typeLabel } from "@/components/badges";
@@ -10,6 +11,7 @@ import { daysAtRisk, longWeekendTips } from "@/lib/smart-days";
 import { db } from "@/lib/db";
 import { formatNumber, type Locale } from "@/lib/i18n";
 import { getLocale, getMessages } from "@/lib/i18n/server";
+import { can } from "@/lib/permissions";
 import { requireMembership, settingsOf } from "@/lib/session";
 import { Onboarding } from "./onboarding";
 import { holidayName } from "@/lib/holidays";
@@ -21,6 +23,8 @@ export async function generateMetadata() {
 export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
   const { slug } = await params;
   const { workspace, membership, user } = await requireMembership(slug);
+  // Viewers only look at who is in (#77); Home is about one's own time off, so they start on the calendar.
+  if (!can(membership.role, "bookings:own")) redirect(`/w/${slug}/calendar`);
   const locale = await getLocale();
   const { common, overview: t } = await getMessages();
   const fmt = (n: number) => formatNumber(n, locale);
@@ -39,7 +43,7 @@ export default async function OverviewPage({ params }: PageProps<"/w/[slug]">) {
       forViewer(bs, { membershipId: membership.id, role: membership.role }),
     ),
     allowanceSummary(membership, settings, year, holidays, today),
-    membership.role === "ADMIN" && settings.approvalsEnabled
+    can(membership.role, "bookings:decide") && settings.approvalsEnabled
       ? db.booking.count({ where: { workspaceId: workspace.id, status: "PENDING" } })
       : 0,
     db.booking.findFirst({

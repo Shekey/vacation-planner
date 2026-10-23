@@ -18,6 +18,13 @@ export const common = defineMessages({
     languageSwitched: "Language changed",
     admin: "Admin",
     member: "Member",
+    role: { ADMIN: "Admin", APPROVER: "Approver", MEMBER: "Member", VIEWER: "View only" },
+    roleHint: {
+      ADMIN: "Runs the workspace: settings, members, billing, approvals.",
+      APPROVER: "Approves requests and books for others. No settings, members or billing.",
+      MEMBER: "Books their own time off and sees the team calendar.",
+      VIEWER: "Sees the team calendar. Can't book.",
+    },
     save: "Save",
     cancel: "Cancel",
     // Marks made-up people from "Fill with a sample team".
@@ -69,6 +76,13 @@ export const common = defineMessages({
     languageSwitched: "Sprache geändert",
     admin: "Admin",
     member: "Mitglied",
+    role: { ADMIN: "Admin", APPROVER: "Genehmiger:in", MEMBER: "Mitglied", VIEWER: "Nur ansehen" },
+    roleHint: {
+      ADMIN: "Verwaltet den Workspace: Einstellungen, Mitglieder, Abrechnung, Genehmigungen.",
+      APPROVER: "Genehmigt Anträge und bucht für andere. Keine Einstellungen, Mitglieder oder Abrechnung.",
+      MEMBER: "Bucht die eigenen Abwesenheiten und sieht den Teamkalender.",
+      VIEWER: "Sieht den Teamkalender. Kann nicht buchen.",
+    },
     save: "Speichern",
     cancel: "Abbrechen",
     sample: "Beispiel",
